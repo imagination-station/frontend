@@ -1,10 +1,26 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { createAppContainer } from 'react-navigation';
+import { createStackNavigator } from 'react-navigation-stack';
 
 import LoginScreen from './app/screens/Login.js';
+import HomeScreen from './app/screens/Home.js';
+import MapScreen from './app/screens/Map.js';
+
+const AppNavigator = createStackNavigator({
+  Login: {
+    screen: LoginScreen
+  },
+  Home: {
+    screen: HomeScreen
+  },
+  Map: {
+    screen: MapScreen
+  }
+});
+
+const AppContainer = createAppContainer(AppNavigator);
 
 export default function App() {
-  return (
-    <LoginScreen />
-  );
+  return <AppContainer />;
 }
+
