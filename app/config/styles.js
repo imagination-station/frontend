@@ -1,0 +1,1 @@
+export const accentColor = '#ff5a5f';
