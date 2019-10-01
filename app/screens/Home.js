@@ -13,7 +13,7 @@ class HomeScreen extends Component {
           onPress={() => this.props.navigation.navigate('Map')}
         />
       </View>
-    )
+    );
   }
 }
 
