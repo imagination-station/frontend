@@ -31,6 +31,7 @@ Scan the QR code using the Expo client. App will build & run on your mobile devi
 
 ## Project Structure
 
+```
 frontend/
 ├── app/
 │   ├── assets/
@@ -40,6 +41,7 @@ frontend/
 │       └── settings.js
 │   ├── screens/
 └── App.js
+```
 
 - `app` is our source directory.
   - `assets` contains various assets such as images or fonts
