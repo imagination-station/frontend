@@ -54,11 +54,11 @@ frontend/
 
 ## Running the Linter
 
-[ESLint](https://eslint.org/) will enforce a consistent style to our project. To run it, run
+[ESLint](https://eslint.org/) will enforce a consistent style to our project. Run it on a file
 
 ```bash
-./node_modules/.bin/eslint <filename>
+./node_modules/.bin/eslint Example.js
 ```
 
-where `<filename>` is the file you want to run the linter on. Run the linter on files you modified before
+where `Example.js` is the JS file you want to run the linter on. Run the linter on files you modified before
 making a pull request.
