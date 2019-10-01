@@ -15,7 +15,7 @@ class LoginScreen extends Component {
           onPress={() => this.props.navigation.navigate('Home')}
         />
       </View>
-    )
+    );
   }
 }
 
