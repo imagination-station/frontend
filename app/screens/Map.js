@@ -3,38 +3,85 @@ import { View, TextInput, StyleSheet, Keyboard, TouchableWithoutFeedback, FlatLi
 import MapView, { Callout } from 'react-native-maps';
 
 const styles = StyleSheet.create({
-  calloutMapView: {
+  mapView: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center'
   },
-  calloutSearchView: {
+  searchView: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'white'
   },
-  calloutSearch: {
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    height: 40,
+  searchBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    height: 46,
     borderRadius: 10,
     paddingLeft: 10,
     paddingRight: 10,
-    width: '90%',
-    top: 20,
-    borderColor: '#BABABA',
-    borderWidth: 1
+    width: '95%',
+    top: 10,
+  },
+  searchBoxFocused: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    height: 46,
+    borderRadius: 10,
+    paddingLeft: 10,
+    paddingRight: 10,
+    width: '95%',
+    top: 10,
+  },
+  searchList: {
+    marginTop: 10,
+    width: '100%',
+    height: 300,
+    borderColor: '#F2F2F2',
+    borderTopWidth: 5,
+    padding: '2.5%'
+  },
+  searchItem: {
+    borderColor: '#F2F2F2',
+    borderBottomWidth: 1,
+    padding: 10
+  },
+  searchItemText: {
+    fontSize: 16,
   }
 })
 
-const data = [
+const DATA = [
   {
-    name: 'blah1',
+    name: 'Place 1',
   },
   {
-    name: 'blah2'
+    name: 'Place 2'
+  },
+  {
+    name: 'Place 3',
+  },
+  {
+    name: 'Place 4'
   }
 ];
+
+function SearchItem(props) {
+  return (
+    <View style={styles.searchItem}>
+      <Text style={styles.searchItemText}>{props.name}</Text>
+    </View>
+  );
+}
+
+function SearchList(props) {
+  return (
+    <View style={styles.searchList}>
+      <FlatList
+        data={DATA}
+        renderItem={({ item }) => <SearchItem name={item.name} />}
+        keyExtractor={item => item.name}
+      />
+    </View>
+  );
+}
 
 class MapScreen extends Component {
   state = {
@@ -49,20 +96,15 @@ class MapScreen extends Component {
   render() {
     let calloutStyle;
     let calloutViewStyle;
-    let searchResults = null;
+    let searchBoxStyle = styles.searchBox;
 
     if (this.state.view === 'search') {
       calloutStyle = {width: '100%', height: '100%'};
-      calloutViewStyle = styles.calloutSearchView;
-      searchResults = <FlatList
-        style={{width: '90%', height: 200}}
-        data={data}
-        renderItem={item => <Text>{item.name}</Text>}
-        keyExtractor={item => item.name}
-      />;
+      calloutViewStyle = styles.searchView;
+      searchBoxStyle = styles.searchBoxFocused;
     } else {
       calloutStyle = {width: '100%'};
-      calloutViewStyle = styles.calloutMapView;
+      calloutViewStyle = styles.mapView;
     }
 
     return (
@@ -70,6 +112,12 @@ class MapScreen extends Component {
         <MapView
           style={{flex: 1}}
           onPress={Keyboard.dismiss}
+          initialRegion={{
+            latitude: 33.7490,
+            longitude: -84.3880,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421
+          }}
         />
         <Callout style={calloutStyle}>
           <TouchableWithoutFeedback
@@ -78,12 +126,12 @@ class MapScreen extends Component {
           >
             <View style={calloutViewStyle}>
               <TextInput
-                style={styles.calloutSearch}
+                style={searchBoxStyle}
                 placeholder={'Search'}
                 onFocus={() => this.setState({view: 'search'})}
                 onBlur={() => this.setState({view: 'map'})}
               />
-              {searchResults}
+              {this.state.view === 'search' ? <SearchList /> : null}
             </View>
           </TouchableWithoutFeedback>
         </Callout>

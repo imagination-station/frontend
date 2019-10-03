@@ -19,7 +19,7 @@ const AppNavigator = createStackNavigator(
     }
   },
   {
-    initialRouteName: 'Map'
+    initialRouteName: 'Login'
   }
 );
 
