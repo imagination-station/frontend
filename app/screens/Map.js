@@ -15,6 +15,10 @@ import {
 import MapView, { Callout, Marker } from 'react-native-maps';
 
 const {width, height} = Dimensions.get('window');
+const INIT_LOCATION = {
+  latitude: 33.749,
+  longitude: -84.38798
+};
 
 const CARD_HEIGHT = height / 4;
 const CARD_WIDTH = Math.floor(width / 1.5);
@@ -63,6 +67,13 @@ const styles = StyleSheet.create({
     padding: 10
   },
   scrollView: {
+    position: 'absolute',
+    bottom: 30,
+    left: 0,
+    right: 0,
+    paddingVertical: 10
+  },
+  cardContainer: {
     position: 'absolute',
     bottom: 30,
     left: 0,
@@ -143,12 +154,12 @@ function SearchList(props) {
   return (
     <View style={styles.searchList}>
       <FlatList
-        data={DATA}
+        data={props.results}
         renderItem={({ item }) => <SearchItem
           item={item}
           onPress={() => props.onPressItem(item)}
         />}
-        keyExtractor={item => item.placeId}
+        keyExtractor={item => item.place_id}
       />
       <Button
         title='GO BACK'
@@ -162,8 +173,8 @@ function SearchItem(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
       <View style={styles.searchItem}>
-        <Text style={{fontSize: 16}}>{props.item.properties.mainText}</Text>
-        <Text style={{fontSize: 14, color: 'grey'}}>{props.item.properties.secondaryText}</Text>
+        <Text style={{fontSize: 16}}>{props.item.structured_formatting.main_text}</Text>
+        <Text style={{fontSize: 14, color: 'grey'}}>{props.item.structured_formatting.secondary_text}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -171,7 +182,7 @@ function SearchItem(props) {
 
 function Card(props) {
   const source = {
-    uri: `https://maps.googleapis.com/maps/api/place/photo?key=${API_KEY}&photoreference=${props.marker.photoReference}&maxheight=800&maxWidth=${CARD_WIDTH}`
+    uri: `https://maps.googleapis.com/maps/api/place/photo?key=${API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`
   };
 
   return (
@@ -186,13 +197,13 @@ function Card(props) {
           numberOfLines={1}
           style={styles.cardtitle}
         >
-          {props.marker.title}
+          {props.marker.properties.mainText}
         </Text>
         <Text
           numberOfLines={1}
           style={styles.cardDescription}
         >
-          {props.marker.description}
+          {props.marker.properties.secondaryText}
         </Text>
       </View>
     </View>
@@ -202,45 +213,70 @@ function Card(props) {
 class MapScreen extends Component {
   state = {
     search: '',
+    searchResults: null,
     view: 'map',
     markers: [],
-    focused: '',
-
+    focused: null,
   };
 
   constructor(props) {
     super(props);
     this.mapRef = null;
+    this.searchTimer = null;
   }
 
   componentWillMount() {
     this.animation = new Animated.Value(0);
   }
 
+  onSearch = text => {
+    this.setState({search: text});
+    if (!this.searchTimer) {
+      this.searchTimer = setTimeout(() => {
+        fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${text}&key=${API_KEY}&location=${INIT_LOCATION.latitude},${INIT_LOCATION.longitude}`)
+          .then(response => response.json())
+          .then(responseJson => this.setState({searchResults: responseJson.predictions}));
+        this.searchTimer = null;
+      }, 100);
+    }
+  }
+
   onPressSearchItem = item => {
-    this.setState({
-      search: item.properties.mainText,
-      view: 'map',
-      markers: [...this.state.markers, {
-        id: item.properties.placeId,
-        latlng: {
-          latitude: item.geometry.coordinates[0],
-          longitude: item.geometry.coordinates[1]
-        },
-        title: item.properties.mainText,
-        description: item.properties.secondaryText,
-        photoReference: item.properties.photoReference
-      }]
-    }, () => this.mapRef.fitToSuppliedMarkers([item.properties.placeId], {
-        edgePadding: {
-          top: 50,
-          right: 50,
-          bottom: 50,
-          left: 50
-        },
-        animated: true
-      })
-    );
+    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${item.place_id}&key=${API_KEY}`)
+      .then(response => response.json())
+      .then(responseJson => {
+        const marker = {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [
+              responseJson.result.geometry.location.lat,
+              responseJson.result.geometry.location.lng,
+            ]
+          },
+          properties: {
+            placeId: item.place_id,
+            mainText: item.structured_formatting.main_text,
+            secondaryText: item.structured_formatting.secondary_text,
+            photoReference: responseJson.result.photos.map(elem => elem.photo_reference)
+          }
+        };
+
+        this.setState({
+          search: item.structured_formatting.main_text,
+          view: 'map',
+          markers: [...this.state.markers, marker],
+          focused: marker
+        }, () => this.mapRef.fitToSuppliedMarkers([item.place_id], {
+          edgePadding: {
+            top: 50,
+            right: 50,
+            bottom: 50,
+            left: 50
+          },
+          animated: true
+        }));
+      });
   }
 
   render() {
@@ -273,11 +309,11 @@ class MapScreen extends Component {
         >
           {this.state.markers.map(marker => 
             <Marker
-              key={marker.id}
-              identifier={marker.id}
-              coordinate={marker.latlng}
-              title={marker.title}
-              description={marker.description}
+              key={marker.properties.placeId}
+              identifier={marker.properties.placeId}
+              coordinate={{latitude: marker.geometry.coordinates[0], longitude: marker.geometry.coordinates[1]}}
+              title={marker.properties.mainText}
+              description={marker.properties.secondaryText}
             />
           )}
         </MapView>
@@ -288,10 +324,12 @@ class MapScreen extends Component {
               placeholder={'Search'}
               onFocus={() => this.setState({view: 'search'})}
               value={this.state.search}
+              onChangeText={this.onSearch}
             />
             {
               this.state.view === 'search' ?
                 <SearchList
+                  results={this.state.searchResults}
                   onPressItem={this.onPressSearchItem}
                   goBack={() => {
                     this.setState({view: 'map'});
@@ -301,7 +339,10 @@ class MapScreen extends Component {
             }
           </View>
         </Callout>
-        {this.state.view === 'map' ? 
+        <View style={styles.cardContainer}>
+          {this.state.focused && <Card marker={this.state.focused} />}
+        </View>
+        {/* {this.state.view === 'map' ? 
           <Animated.ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.endPadding}
@@ -326,7 +367,7 @@ class MapScreen extends Component {
               <Card key={marker.id} marker={marker} />
             )}
           </Animated.ScrollView> : null
-        }
+        } */}
       </View>
     );
   }
