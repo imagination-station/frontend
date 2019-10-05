@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import { Text, View, Button } from 'react-native';
-import PathCard from '../components/PathCard.js'
-import { mapsAPIKey } from '../config/settings.js'
-
+import PathCard from '../components/PathCard.js';
+import { mapsAPIKey } from '../config/settings.js';
 import styles from '../config/styles.js';
 
 class HomeScreen extends Component {
