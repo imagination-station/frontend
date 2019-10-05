@@ -1,13 +1,13 @@
 import React from 'react';
 import { Image, Text, Dimensions } from 'react-native';
 import { Card } from 'react-native-elements';
-import { mapsAPIKey } from '../config/settings.js';
+import { MAPS_API_KEY } from '../config/settings.js';
 import styles from '../config/styles.js';
 
 export default function PathCard(props) {
   console.log(props);
   let pic = {
-    uri: props.photo_reference
+    uri: props.photoReference
   };
   return (
     <Card containerStyle={{padding: 0}}>
