@@ -13,6 +13,7 @@ import {
   Image
 } from 'react-native';
 import MapView, { Callout, Marker } from 'react-native-maps';
+import { Header } from 'react-navigation-stack';
 
 const {width, height} = Dimensions.get('window');
 const INIT_LOCATION = {
@@ -24,6 +25,8 @@ const CARD_HEIGHT = height / 4;
 const CARD_WIDTH = Math.floor(width / 1.5);
 
 const API_KEY = 'AIzaSyChXhlWL4QeFhqRPoAJRVHdOfl-YaMci-E';
+
+console.log('height: ', height);
 
 const styles = StyleSheet.create({
   mapView: {
@@ -57,21 +60,24 @@ const styles = StyleSheet.create({
     marginTop: 10,
     width: '100%',
     height: 400,
-    borderColor: '#F2F2F2',
+    borderColor: '#f2f2f2',
     borderTopWidth: 5,
     padding: '2.5%',
   },
   searchItem: {
-    borderColor: '#F2F2F2',
+    borderColor: '#f2f2f2',
     borderBottomWidth: 1,
     padding: 10
   },
   scrollView: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 0,
     left: 0,
     right: 0,
-    paddingVertical: 10
+    paddingVertical: 10,
+    paddingBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    alignItems: 'center'
   },
   cardContainer: {
     position: 'absolute',
@@ -85,15 +91,17 @@ const styles = StyleSheet.create({
   },
   card: {
     elevation: 2,
-    backgroundColor: '#FFF',
+    backgroundColor: '#fff',
     marginHorizontal: 10,
+    marginBottom: 5,
     shadowColor: '#000',
-    shadowRadius: 5,
+    shadowRadius: 3,
     shadowOpacity: 0.3,
     shadowOffset: {x: 2, y: -2},
     height: CARD_HEIGHT,
     width: CARD_WIDTH,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    borderRadius: 10,
   },
   cardImage: {
     flex: 3,
@@ -116,6 +124,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#444'
   },
+  collapseButton: {
+    width: 50,
+    height: 15,
+    backgroundColor: '#e3e3e3',
+    borderRadius: 15,
+    marginBottom: 10
+  }
 })
 
 // hardcoded data; this is what it will actually look like
@@ -130,7 +145,7 @@ const DATA = [
       placeId: 'ChIJzal6QUUE9YgRYZqYJzKOXAo',
       mainText: 'Museum of Design Atlanta',
       secondaryText: 'Peachtree Street Northeast, Atlanta, GA, USA',
-      photoReference: 'CmRaAAAApMwKX8N6EhXmxuytk8uqqz4XZwQYDHVDgk8XMigwwu4MnSuGnbbnPb6fCp1LaiOJXkx61D1s7M4kdAibCTy4wug3MTpEFGOAT_wHao1B-2mTF3GTU6gWG-0agXGE2qzkEhCNWHKzJ-OHG2iKfjAhIDo0GhQnmSb2pTi3XIMz00TAXpbHPbvUrQ',
+      photoReference: ['CmRaAAAApMwKX8N6EhXmxuytk8uqqz4XZwQYDHVDgk8XMigwwu4MnSuGnbbnPb6fCp1LaiOJXkx61D1s7M4kdAibCTy4wug3MTpEFGOAT_wHao1B-2mTF3GTU6gWG-0agXGE2qzkEhCNWHKzJ-OHG2iKfjAhIDo0GhQnmSb2pTi3XIMz00TAXpbHPbvUrQ'],
       note: 'Really cool museum!',
     }
   },
@@ -144,7 +159,7 @@ const DATA = [
       placeId: 'ChIJr3p2s-cE9YgR2uIvhPLls3E',
       mainText: 'Urban Tree Cidery',
       secondaryText: 'Howell Mill Road Northwest, Atlanta, GA, USA',
-      photoReference: 'CmRaAAAAN1JSSlKydw6W6-7_eeuYOkJzvVBTW5LBaW0W1sxPnyhkZPKbP4PEbqoPXRU5Q9MHJXBOFzOEJl8KBvB64bI3xtnCOeh9RaUihdBq3-Bi3fOPopG33WVW8avzEZrJ0Dq-EhA4tZV5xpLQP_yEaMXFLzfOGhTeLYBn2z2mW3VmvlOCbUEucED2gg',
+      photoReference: ['CmRaAAAAN1JSSlKydw6W6-7_eeuYOkJzvVBTW5LBaW0W1sxPnyhkZPKbP4PEbqoPXRU5Q9MHJXBOFzOEJl8KBvB64bI3xtnCOeh9RaUihdBq3-Bi3fOPopG33WVW8avzEZrJ0Dq-EhA4tZV5xpLQP_yEaMXFLzfOGhTeLYBn2z2mW3VmvlOCbUEucED2gg'],
       note: 'Chill, unpretentious vibes',
     }
   }
@@ -210,12 +225,21 @@ function Card(props) {
   );
 }
 
+function CollapseButton(props) {
+  return (
+    <TouchableOpacity onPress={props.onPress}>
+      <View style={styles.collapseButton}/>
+    </TouchableOpacity>
+  );
+}
+
 class MapScreen extends Component {
   state = {
     search: '',
     searchResults: null,
     view: 'map',
-    markers: [],
+    collapsed: false,
+    markers: DATA,
     focused: null,
   };
 
@@ -223,6 +247,7 @@ class MapScreen extends Component {
     super(props);
     this.mapRef = null;
     this.searchTimer = null;
+    this.collapseValue = new Animated.Value(height - Header.HEIGHT - (55 + CARD_HEIGHT));
   }
 
   componentWillMount() {
@@ -265,7 +290,6 @@ class MapScreen extends Component {
         this.setState({
           search: item.structured_formatting.main_text,
           view: 'map',
-          markers: [...this.state.markers, marker],
           focused: marker
         }, () => this.mapRef.fitToSuppliedMarkers([item.place_id], {
           edgePadding: {
@@ -274,9 +298,26 @@ class MapScreen extends Component {
             bottom: 50,
             left: 50
           },
-          animated: true
+          animated: false
         }));
       });
+  }
+
+  collapse = () => {
+    let toValue;
+    if (!this.state.collapsed) {
+      toValue = height - Header.HEIGHT - 35;
+    } else {
+      toValue = height - Header.HEIGHT - (55 + CARD_HEIGHT)
+    }
+
+    Animated.timing(
+      this.collapseValue,
+      {
+        toValue: toValue,
+        duration: 200
+      }
+    ).start(() => this.setState({collapsed: !this.state.collapsed}));
   }
 
   render() {
@@ -292,6 +333,17 @@ class MapScreen extends Component {
       calloutStyle = {width: '100%'};
       calloutViewStyle = styles.mapView;
     }
+
+    const animatedStyle = {
+      position: 'absolute',
+      top: this.collapseValue,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      paddingVertical: 10,
+      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+      alignItems: 'center'
+    };
 
     return (
       <View style={{flex: 1}}>
@@ -316,6 +368,15 @@ class MapScreen extends Component {
               description={marker.properties.secondaryText}
             />
           )}
+          {this.state.focused &&
+            <Marker
+              key={this.state.focused.properties.placeId}
+              identifier={this.state.focused.properties.placeId}
+              coordinate={{latitude: this.state.focused.geometry.coordinates[0], longitude: this.state.focused.geometry.coordinates[1]}}
+              title={this.state.focused.properties.mainText}
+              description={this.state.focused.properties.secondaryText}
+            />
+          }
         </MapView>
         <Callout style={calloutStyle}>
           <View style={calloutViewStyle}>
@@ -339,35 +400,37 @@ class MapScreen extends Component {
             }
           </View>
         </Callout>
-        <View style={styles.cardContainer}>
+        {/* <View style={styles.cardContainer}>
           {this.state.focused && <Card marker={this.state.focused} />}
-        </View>
-        {/* {this.state.view === 'map' ? 
-          <Animated.ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.endPadding}
-            horizontal
-            scrollEventThrottle={1}
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={CARD_WIDTH}
-            onScroll={Animated.event(
-              [
-                {
-                  nativeEvent: {
-                    contentOffset: {
-                      x: this.animation,
+        </View> */}
+        {this.state.view === 'map' ? 
+          <Animated.View style={animatedStyle}>
+            <CollapseButton onPress={this.collapse}/>
+            <Animated.ScrollView
+              contentContainerStyle={styles.endPadding}
+              horizontal
+              scrollEventThrottle={1}
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={CARD_WIDTH}
+              onScroll={Animated.event(
+                [
+                  {
+                    nativeEvent: {
+                      contentOffset: {
+                        x: this.animation,
+                      },
                     },
                   },
-                },
-              ],
-              { useNativeDriver: true }
-            )}
-          >
-            {this.state.markers.map(marker => 
-              <Card key={marker.id} marker={marker} />
-            )}
-          </Animated.ScrollView> : null
-        } */}
+                ],
+                { useNativeDriver: true }
+              )}
+            >
+              {this.state.markers.map(marker => 
+                <Card key={marker.placeId} marker={marker} />
+              )}
+            </Animated.ScrollView>
+          </Animated.View>: null
+        }
       </View>
     );
   }
