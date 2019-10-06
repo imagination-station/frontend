@@ -7,13 +7,15 @@ import {
   FlatList,
   Text,
   TouchableOpacity,
-  Button,
   Animated,
   Dimensions,
   Image
 } from 'react-native';
 import MapView, { Callout, Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
+
+import Button from '../components/Button.js';
+import { MAPS_API_KEY } from '../config/settings.js';
 
 const {width, height} = Dimensions.get('window');
 const INIT_LOCATION = {
@@ -23,8 +25,6 @@ const INIT_LOCATION = {
 
 const CARD_HEIGHT = height / 4;
 const CARD_WIDTH = Math.floor(width / 1.5);
-
-const API_KEY = 'AIzaSyChXhlWL4QeFhqRPoAJRVHdOfl-YaMci-E';
 
 console.log('height: ', height);
 
@@ -62,32 +62,39 @@ const styles = StyleSheet.create({
     height: 400,
     borderColor: '#f2f2f2',
     borderTopWidth: 5,
-    padding: '2.5%',
+    padding: '2.5%'
   },
   searchItem: {
     borderColor: '#f2f2f2',
     borderBottomWidth: 1,
     padding: 10
   },
-  scrollView: {
+  animated: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingVertical: 10,
-    paddingBottom: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    alignItems: 'center'
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
-  cardContainer: {
+  empty: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 0,
     left: 0,
     right: 0,
-    paddingVertical: 10
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  drawer: {
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingTop: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)'
   },
   endPadding: {
-    paddingRight: width - CARD_WIDTH,
+    paddingRight: width - CARD_WIDTH
   },
   card: {
     elevation: 2,
@@ -102,6 +109,21 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     overflow: 'hidden',
     borderRadius: 10,
+  },
+  focusedCard: {
+    elevation: 5,
+    backgroundColor: '#fff',
+    marginHorizontal: 10,
+    marginBottom: 5,
+    shadowColor: '#000',
+    shadowRadius: 3,
+    shadowOpacity: 0.3,
+    shadowOffset: {x: 2, y: -2},
+    height: CARD_HEIGHT * 1.4,
+    width: '90%',
+    overflow: 'hidden',
+    borderRadius: 10,
+    marginBottom: 7
   },
   cardImage: {
     flex: 3,
@@ -176,10 +198,10 @@ function SearchList(props) {
         />}
         keyExtractor={item => item.place_id}
       />
-      <Button
-        title='GO BACK'
-        onPress={props.goBack}
-      />
+      <View style={{width: '100%', flexDirection: 'row', justifyContent: 'space-around'}}>
+        <Button title='CLEAR' onPress={props.clear} />
+        <Button title='BACK' onPress={props.goBack} />
+      </View>
     </View>
   );
 }
@@ -197,7 +219,7 @@ function SearchItem(props) {
 
 function Card(props) {
   const source = {
-    uri: `https://maps.googleapis.com/maps/api/place/photo?key=${API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`
+    uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`
   };
 
   return (
@@ -221,6 +243,44 @@ function Card(props) {
           {props.marker.properties.secondaryText}
         </Text>
       </View>
+      <View style={{flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10, padding: 10}}>
+        <Button title={'Add Note'} small />
+        <Button title={'Remove'} onPress={props.onRemove} small />
+      </View>
+    </View>
+  );
+}
+
+function FocusedCard(props) {
+  const source = {
+    uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`
+  };
+
+  return (
+    <View style={styles.focusedCard}>
+      <Image
+        source={source}
+        style={styles.cardImage}
+        resizeMode='cover'
+      />
+      <View style={styles.textContent}>
+        <Text
+          numberOfLines={1}
+          style={styles.cardtitle}
+        >
+          {props.marker.properties.mainText}
+        </Text>
+        <Text
+          numberOfLines={1}
+          style={styles.cardDescription}
+        >
+          {props.marker.properties.secondaryText}
+        </Text>
+      </View>
+      <View style={{flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10, padding: 10}}>
+        <Button title={'Add'} onPress={props.onAdd} />
+        <Button title={'Dismiss'} onPress={props.onDismiss} />
+      </View>
     </View>
   );
 }
@@ -239,18 +299,15 @@ class MapScreen extends Component {
     searchResults: null,
     view: 'map',
     collapsed: false,
-    markers: DATA,
-    focused: null,
+    maxZoomLevel: 20,
+    markers: [],
+    focused: null
   };
 
-  constructor(props) {
-    super(props);
+  componentWillMount() {
     this.mapRef = null;
     this.searchTimer = null;
     this.collapseValue = new Animated.Value(height - Header.HEIGHT - (55 + CARD_HEIGHT));
-  }
-
-  componentWillMount() {
     this.animation = new Animated.Value(0);
   }
 
@@ -258,7 +315,7 @@ class MapScreen extends Component {
     this.setState({search: text});
     if (!this.searchTimer) {
       this.searchTimer = setTimeout(() => {
-        fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${text}&key=${API_KEY}&location=${INIT_LOCATION.latitude},${INIT_LOCATION.longitude}`)
+        fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${text}&key=${MAPS_API_KEY}&location=${INIT_LOCATION.latitude},${INIT_LOCATION.longitude}`)
           .then(response => response.json())
           .then(responseJson => this.setState({searchResults: responseJson.predictions}));
         this.searchTimer = null;
@@ -267,7 +324,7 @@ class MapScreen extends Component {
   }
 
   onPressSearchItem = item => {
-    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${item.place_id}&key=${API_KEY}`)
+    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${item.place_id}&key=${MAPS_API_KEY}`)
       .then(response => response.json())
       .then(responseJson => {
         const marker = {
@@ -287,28 +344,33 @@ class MapScreen extends Component {
           }
         };
 
+        this.closeDrawer();
         this.setState({
           search: item.structured_formatting.main_text,
           view: 'map',
-          focused: marker
-        }, () => this.mapRef.fitToSuppliedMarkers([item.place_id], {
-          edgePadding: {
-            top: 50,
-            right: 50,
-            bottom: 50,
-            left: 50
-          },
-          animated: false
-        }));
-      });
+          focused: marker,
+          maxZoomLevel: 17
+        }, () => {
+          this.mapRef.fitToSuppliedMarkers([item.place_id], {
+            edgePadding: {
+              top: 50,
+              right: 50,
+              bottom: 50,
+              left: 50
+            },
+            animated: true
+          });
+        }
+      );
+    });
   }
 
-  collapse = () => {
+  toggleDrawer = () => {
     let toValue;
-    if (!this.state.collapsed) {
-      toValue = height - Header.HEIGHT - 35;
+    if (this.state.collapsed) {
+      toValue = height - Header.HEIGHT - (55 + CARD_HEIGHT);
     } else {
-      toValue = height - Header.HEIGHT - (55 + CARD_HEIGHT)
+      toValue = height - Header.HEIGHT - 35;
     }
 
     Animated.timing(
@@ -318,6 +380,31 @@ class MapScreen extends Component {
         duration: 200
       }
     ).start(() => this.setState({collapsed: !this.state.collapsed}));
+  }
+
+  closeDrawer = () => {
+    Animated.timing(
+      this.collapseValue,
+      {
+        toValue: height - Header.HEIGHT - 35,
+        duration: 200
+      }
+    ).start(() => this.setState({collapsed: true}));
+  }
+
+  onAddItem = () => {
+    this.setState({
+      markers: [...this.state.markers, this.state.focused],
+      focused: null,
+      search: '',
+      searchResults: null
+    }, this.toggleDrawer);
+  }
+
+  onRemoveItem = id => {
+    this.setState({
+      markers: this.state.markers.filter(marker => marker.properties.placeId != id)
+    });
   }
 
   render() {
@@ -334,30 +421,24 @@ class MapScreen extends Component {
       calloutViewStyle = styles.mapView;
     }
 
-    const animatedStyle = {
-      position: 'absolute',
-      top: this.collapseValue,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      paddingVertical: 10,
-      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-      alignItems: 'center'
-    };
-
     return (
       <View style={{flex: 1}}>
         <MapView
           style={{flex: 1}}
           onPress={() => Keyboard.dismiss()}
           initialRegion={{
-            latitude: 33.7490,
-            longitude: -84.3880,
+            latitude: INIT_LOCATION.latitude,
+            longitude: INIT_LOCATION.longitude,
             latitudeDelta: 0.0922,
             longitudeDelta: 0.0421
           }}
           ref={ref => this.mapRef = ref}
-          maxZoomLevel={19}
+          maxZoomLevel={this.state.maxZoomLevel}
+          onRegionChangeComplete={() => {
+            if (this.state.maxZoomLevel != 20) {
+              this.setState({maxZoomLevel: 20});
+            }
+          }}
         >
           {this.state.markers.map(marker => 
             <Marker
@@ -382,7 +463,7 @@ class MapScreen extends Component {
           <View style={calloutViewStyle}>
             <TextInput
               style={searchBoxStyle}
-              placeholder={'Search'}
+              placeholder={'Search for places to add :)'}
               onFocus={() => this.setState({view: 'search'})}
               value={this.state.search}
               onChangeText={this.onSearch}
@@ -392,6 +473,7 @@ class MapScreen extends Component {
                 <SearchList
                   results={this.state.searchResults}
                   onPressItem={this.onPressSearchItem}
+                  clear={() => this.setState({search: '', searchResults: null})}
                   goBack={() => {
                     this.setState({view: 'map'});
                     Keyboard.dismiss();
@@ -400,37 +482,53 @@ class MapScreen extends Component {
             }
           </View>
         </Callout>
-        {/* <View style={styles.cardContainer}>
-          {this.state.focused && <Card marker={this.state.focused} />}
-        </View> */}
-        {this.state.view === 'map' ? 
-          <Animated.View style={animatedStyle}>
-            <CollapseButton onPress={this.collapse}/>
-            <Animated.ScrollView
-              contentContainerStyle={styles.endPadding}
-              horizontal
-              scrollEventThrottle={1}
-              showsHorizontalScrollIndicator={false}
-              snapToInterval={CARD_WIDTH}
-              onScroll={Animated.event(
-                [
-                  {
-                    nativeEvent: {
-                      contentOffset: {
-                        x: this.animation,
-                      },
-                    },
-                  },
-                ],
-                { useNativeDriver: true }
-              )}
-            >
-              {this.state.markers.map(marker => 
-                <Card key={marker.placeId} marker={marker} />
-              )}
-            </Animated.ScrollView>
-          </Animated.View>: null
-        }
+        {this.state.view === 'map' ?
+          this.state.markers.length != 0 ?
+            <Animated.View style={{...styles.animated, top: this.collapseValue}}>
+              {this.state.focused && <FocusedCard
+                marker={this.state.focused}
+                onDismiss={() => this.setState({focused: null})}
+                onAdd={this.onAddItem} 
+              />}
+              <View style={styles.drawer} >
+                <CollapseButton onPress={this.toggleDrawer} />
+                  <Animated.ScrollView
+                    contentContainerStyle={styles.endPadding}
+                    horizontal
+                    scrollEventThrottle={1}
+                    showsHorizontalScrollIndicator={false}
+                    // snapToInterval={CARD_WIDTH - 30}
+                    onScroll={Animated.event(
+                      [
+                        {
+                          nativeEvent: {
+                            contentOffset: {
+                              x: this.animation,
+                            },
+                          },
+                        },
+                      ],
+                      { useNativeDriver: true }
+                    )}
+                  >
+                    {this.state.markers.map(marker => 
+                      <Card
+                        key={marker.placeId}
+                        marker={marker}
+                        onRemove={() => this.onRemoveItem(marker.properties.placeId)}
+                      />
+                    )}
+                  </Animated.ScrollView>
+              </View>
+            </Animated.View> :
+            <View style={styles.empty}>
+              {this.state.focused && <FocusedCard
+                marker={this.state.focused}
+                onDismiss={() => this.setState({focused: null})}
+                onAdd={this.onAddItem} 
+              />}
+            </View> :
+          null}
       </View>
     );
   }

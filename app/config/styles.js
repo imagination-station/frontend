@@ -14,6 +14,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     padding: 10,
   },
+  button: {
+    color: accentColor,
+    fontSize: 18,
+    paddingHorizontal: 7
+  }
 });
 
 export default styles;
