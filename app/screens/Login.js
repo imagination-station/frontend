@@ -3,7 +3,6 @@ import { Text, View, Button } from 'react-native';
 
 import styles from '../config/styles.js';
 
-
 class LoginScreen extends Component {
 
   render() {
