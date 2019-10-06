@@ -6,17 +6,22 @@ import LoginScreen from './app/screens/Login.js';
 import HomeScreen from './app/screens/Home.js';
 import MapScreen from './app/screens/Map.js';
 
-const AppNavigator = createStackNavigator({
-  Login: {
-    screen: LoginScreen
+const AppNavigator = createStackNavigator(
+  {
+    Login: {
+      screen: LoginScreen
+    },
+    Home: {
+      screen: HomeScreen
+    },
+    Map: {
+      screen: MapScreen
+    }
   },
-  Home: {
-    screen: HomeScreen
-  },
-  Map: {
-    screen: MapScreen
+  {
+    initialRouteName: 'Map'
   }
-});
+);
 
 const AppContainer = createAppContainer(AppNavigator);
 

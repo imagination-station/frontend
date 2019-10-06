@@ -4,7 +4,6 @@ export const accentColor = '#ff5a5f';
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center'
@@ -14,6 +13,11 @@ const styles = StyleSheet.create({
     color: accentColor,
     fontSize: 24,
     padding: 10,
+  },
+  button: {
+    color: accentColor,
+    fontSize: 18,
+    paddingHorizontal: 7
   }
 });
 
