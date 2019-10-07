@@ -1,21 +1,20 @@
 import { StyleSheet } from 'react-native';
 
-export const accentColor = '#ff5a5f';
+export const ACCENT = '#ff5a5f';
+export const GREY = '#f2f2f2';
+export const DARKER_GREY = '#c2c2c2';
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center'
+    flex: 1
   },
   text: {
     backgroundColor: 'whitesmoke',
-    color: accentColor,
-    fontSize: 24,
+    fontSize: 16,
     padding: 10,
   },
   button: {
-    color: accentColor,
+    color: ACCENT,
     fontSize: 18,
     paddingHorizontal: 7
   }
