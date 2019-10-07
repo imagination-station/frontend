@@ -1,0 +1,32 @@
+Object {
+  "apiKey": "AIzaSyAWeLw5FDXUjSYtgzZ-1cxbjMrynXfyKcA",
+  "appName": "[DEFAULT]",
+  "authDomain": "imaginationstation-3c7a7.firebaseapp.com",
+  "createdAt": "1569785775182",
+  "displayName": null,
+  "email": "test@gmail.com",
+  "emailVerified": false,
+  "isAnonymous": false,
+  "lastLoginAt": "1570403072761",
+  "phoneNumber": null,
+  "photoURL": null,
+  "providerData": Array [
+    Object {
+      "displayName": null,
+      "email": "test@gmail.com",
+      "phoneNumber": null,
+      "photoURL": null,
+      "providerId": "password",
+      "uid": "test@gmail.com",
+    },
+  ],
+  "redirectEventId": null,
+  "stsTokenManager": Object {
+    "accessToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjI5NGNlMzNhNWQ3MmI0NjYyNzI3ZGFiYmRhNzVjZjg4Y2Y5OTg4MGUiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW1hZ2luYXRpb25zdGF0aW9uLTNjN2E3IiwiYXVkIjoiaW1hZ2luYXRpb25zdGF0aW9uLTNjN2E3IiwiYXV0aF90aW1lIjoxNTcwNDAzMDcyLCJ1c2VyX2lkIjoid0xPbWR0Qktxa1VsekpuakN6M3Vqa0hNaEN5MiIsInN1YiI6IndMT21kdEJLcWtVbHpKbmpDejN1amtITWhDeTIiLCJpYXQiOjE1NzA0MDMwNzIsImV4cCI6MTU3MDQwNjY3MiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJ0ZXN0QGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.R_Sv6pDoGlTaR1T1NOkHheRDEIOyGsABwo-y-QD1ItTmbU75QPrsjDw7Pu5zakDXymRYQUSR0HFHBx_wKuZkIEekdILwVb3-iKSnsnN76v0sbAUccBDuD_YQo_K0N5oAExYjrsBy78MCDtsOOtVj5mj1zsYjoVG1JsNNapHWehV3JtWa6Z3cCfO9QP9hrHGzOqopTNSzmmV1kLI8SsSYv_dNcKLLQKLRnsOPosvIZZI15QmER4wNpBcDLineSNFOHCrJVLBMHMx-VLv67-WcKYnt6_d9802RN3DYznvDm_yvhlFjzQ9Knoth4DmTtK15VCTGdcT25doyvn_kzdDb3A",
+    "apiKey": "AIzaSyAWeLw5FDXUjSYtgzZ-1cxbjMrynXfyKcA",
+    "expirationTime": 1570406669318,
+    "refreshToken": "AEu4IL3owinZ5itktBr1N9u7LJToi-PHkNh37YWgIADkffnaLQEBP5IxkRrceuf1d_y8dl6lkkM3XnSjC4gy8u79KET3ir3wPipl9AoVchu96nhkKstrORtRjyvSW4F_5dw2qaweMpG8t2_4Wf0yUTHrbeTQVY24MnrUSsUVtmj6XbVqgfmcqkhiiTXPJ_4K3fmlNmJV8FmFxrTVqadlGSZQj44ncT738chclYVWPP-X67p5aTFFGqw",
+  },
+  "tenantId": null,
+  "uid": "wLOmdtBKqkUlzJnjCz3ujkHMhCy2",
+}

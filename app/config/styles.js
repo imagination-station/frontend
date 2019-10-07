@@ -10,7 +10,6 @@ const styles = StyleSheet.create({
   },
   text: {
     backgroundColor: 'whitesmoke',
-    color: ACCENT,
     fontSize: 24,
     padding: 10,
   },
