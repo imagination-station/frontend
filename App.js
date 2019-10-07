@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { createAppContainer } from 'react-navigation';
 import { createStackNavigator } from 'react-navigation-stack';
 import * as firebase from 'firebase';
@@ -9,6 +10,7 @@ import ProfileScreen from './app/screens/Profile.js';
 import MapScreen from './app/screens/Map.js';
 
 import { FIREBASE_CONFIG } from './app/config/settings.js';
+import { DARKER_GREY } from './app/config/styles.js';
 
 firebase.initializeApp(FIREBASE_CONFIG);
 
@@ -28,7 +30,10 @@ const AppNavigator = createStackNavigator(
     }
   },
   {
-    initialRouteName: 'Login'
+    initialRouteName: 'Login',
+    defaultNavigationOptions: {
+      headerTitle: <Text style={{flex: 1, paddingLeft: 10, fontSize: 18, color: DARKER_GREY}}>Stumble</Text>
+    }
   }
 );
 

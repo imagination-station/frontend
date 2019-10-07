@@ -1,30 +1,48 @@
-import React, { Component } from 'react';
-import { Text, View, BackHandler } from 'react-native';
+import React, { Component, StyleSheet } from 'react';
+import { Text, View } from 'react-native';
 import * as firebase from 'firebase';
 
 import Button from '../components/Button.js';
 import globalStyles from '../config/styles.js';
 
+const styles = ({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  }
+});
+
 class ProfileScreen extends Component {
 
-  componentDidMount() {
-    this.backHandler = BackHandler.addEventListener('hardwareBackPress', firebase.auth().signOut);
-  }
+  static navigationOptions = {
+    headerLeft: null
+  };
 
-  componentWillUnmount() {
-    this.backHandler.remove();
+  componentDidMount() {
+    firebase.auth().onAuthStateChanged(user => {
+      if (user == null) {
+        this.props.navigation.navigate('Login');
+      }
+    });
   }
 
   render() {
     return (
-      <View style={globalStyles.container}>
+      <View style={styles.container}>
         <Text style={globalStyles.text}>
-            {`logged in as ${firebase.auth().currentUser.email}`}
+            {firebase.auth().currentUser.email}
         </Text>
-        <Button
-          title='Create New'
-          onPress={() => this.props.navigation.navigate('Map')}
-        />
+        <View style={{alignItems: 'center', marginTop: 30, height: 75, justifyContent: 'space-between'}}>
+          <Button
+            title='Create New Path'
+            onPress={() => this.props.navigation.navigate('Map')}
+          />
+          <Button
+            title='Sign Out'
+            onPress={() => firebase.auth().signOut()}
+          />
+        </View>
       </View>
     );
   }

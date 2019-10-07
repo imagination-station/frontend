@@ -10,3 +10,5 @@ npm-debug.*
 web-build/
 web-report/
 package-lock.json
+
+app/config/settings.1.js

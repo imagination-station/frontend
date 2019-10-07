@@ -19,6 +19,7 @@ import Button from '../components/Button.js';
 import globalStyles, { GREY, DARKER_GREY } from '../config/styles.js';
 import {
   MAPS_API_KEY,
+  SERVER_ADDR,
   UID,
   INIT_LOCATION,
   PLACE_ID,
@@ -346,7 +347,8 @@ class MapScreen extends Component {
     collapsed: false,
     maxZoomLevel: 20,
     markers: [],
-    focused: null
+    focused: null,
+    name: ''
   };
 
   componentWillMount() {
@@ -355,10 +357,6 @@ class MapScreen extends Component {
     this.searchTimer = null;
     this.collapseValue = new Animated.Value(height - Header.HEIGHT - (55 + CARD_HEIGHT));
     this.scrollValue = new Animated.Value(0);
-  }
-
-  componentDidMount() {
-    console.log('user: ', firebase.auth().currentUser.email);
   }
 
   onSearch = text => {
@@ -470,7 +468,30 @@ class MapScreen extends Component {
   }
 
   onCreatePath = () => {
-
+    firebase.auth().currentUser.getIdToken().then(token => {
+      fetch(`${SERVER_ADDR}/cities/routes`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: this.state.name,
+          accessToken: token,
+          creator: UID,
+          city: {
+            placeId: PLACE_ID,
+            name: NAME,
+            photoReference: PHOTO_REFERENCE
+          },
+          pins: this.state.markers
+        })
+      })
+        .then(response => response.json())
+        .then(responseJson => this.props.navigation.goBack())
+        .catch(error => console.error(error));
+      }
+    );
   }
 
   render() {
@@ -611,6 +632,8 @@ class MapScreen extends Component {
                   <TextInput
                     style={{...styles.nameBox, marginBottom: 10}}
                     placeholder={'Name your path'}
+                    onChangeText={text => this.setState({name: text})}
+                    value={this.state.name}
                   />
                   <Button title={'DONE'} onPress={this.onCreatePath} />
                 </View>

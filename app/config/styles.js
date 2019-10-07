@@ -10,7 +10,7 @@ const styles = StyleSheet.create({
   },
   text: {
     backgroundColor: 'whitesmoke',
-    fontSize: 24,
+    fontSize: 16,
     padding: 10,
   },
   button: {

@@ -8,7 +8,7 @@ import {
 import * as firebase from 'firebase';
 
 import Button from '../components/Button.js';
-import { GREY, DARKER_GREY } from '../config/styles.js';
+import globalStyles, { GREY } from '../config/styles.js';
 
 const styles = StyleSheet.create({
   container: {
@@ -28,8 +28,7 @@ const styles = StyleSheet.create({
   logo: {
     top: 20,
     marginBottom: 50,
-    fontSize: 40,
-    color: DARKER_GREY
+    fontSize: 25
   }
 });
 
@@ -57,7 +56,7 @@ class LoginScreen extends Component {
   render() {
     return (
       <View style={styles.container}>
-        <Text style={styles.logo}>Stumble</Text>
+        <Text style={{...globalStyles.text, fontSize: 24, marginBottom: 50}}>A Travel App</Text>
         <TextInput
           style={styles.textInput}
           placeholder={'Email'}
@@ -69,6 +68,8 @@ class LoginScreen extends Component {
           placeholder={'Password'}
           onChangeText={text => this.setState({password: text})}
           value={this.state.password}
+          textContentType={'password'}
+          secureTextEntry
         />
         <Button
           title='Log In'
