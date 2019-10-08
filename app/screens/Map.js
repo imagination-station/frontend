@@ -520,23 +520,20 @@ class MapScreen extends Component {
   }
 
   onCreatePath = () => {
-    firebase.auth().currentUser.getIdToken().then(token => {
+    firebase.auth().currentUser.getIdToken(true).then(token => {
       console.log('token: ', token);
+      
       fetch(`${SERVER_ADDR}/cities/routes`, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: 'Bearer '.concat(token)
         },
         body: JSON.stringify({
           name: this.state.name,
           creator: UID,
-          city: {
-            placeId: PLACE_ID,
-            name: NAME,
-            photoReference: PHOTO_REFERENCE
-          },
+          city: PLACE_ID,
           pins: this.state.markers
         })
       })
