@@ -354,9 +354,13 @@ class MapScreen extends Component {
   componentWillMount() {
     this.mapRef = null;
     this.scrollViewRef = null;
+
     this.searchTimer = null;
+    this.refreshToken = null;
     this.collapseValue = new Animated.Value(height - Header.HEIGHT - (55 + CARD_HEIGHT));
     this.scrollValue = new Animated.Value(0);
+
+    this.token = null;
   }
 
   onSearch = text => {
@@ -381,7 +385,7 @@ class MapScreen extends Component {
             type: 'Point',
             coordinates: [
               responseJson.result.geometry.location.lat,
-              responseJson.result.geometry.location.lng,
+              responseJson.result.geometry.location.lng
             ]
           },
           properties: {
@@ -410,6 +414,54 @@ class MapScreen extends Component {
           });
         }
       );
+    });
+  }
+
+  onPressMap = event => {
+    Keyboard.dismiss();
+    console.log(event.nativeEvent.coordinate);
+  }
+
+  onPoiClick = event => {
+    console.log(event.nativeEvent.placeId);
+    event.persist();
+    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${event.nativeEvent.placeId}&key=${MAPS_API_KEY}`)
+      .then(response => response.json())
+      .then(responseJson => {
+        const marker = {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [
+              responseJson.result.geometry.location.lat,
+              responseJson.result.geometry.location.lng
+            ]
+          },
+          properties: {
+            placeId: event.nativeEvent.placeId,
+            mainText: responseJson.result.name,
+            secondaryText: responseJson.result.formatted_address,
+            photoReference: responseJson.result.photos.map(elem => elem.photo_reference)
+          }
+        };
+
+      this.closeDrawer();
+      this.setState({
+        search: responseJson.result.name,
+        view: 'map',
+        focused: marker,
+        maxZoomLevel: 17
+      }, () => {
+        this.mapRef.fitToSuppliedMarkers([event.nativeEvent.placeId], {
+          edgePadding: {
+            top: 50,
+            right: 50,
+            bottom: 50,
+            left: 50
+          },
+          animated: true
+        });
+      });
     });
   }
 
@@ -469,15 +521,16 @@ class MapScreen extends Component {
 
   onCreatePath = () => {
     firebase.auth().currentUser.getIdToken().then(token => {
+      console.log('token: ', token);
       fetch(`${SERVER_ADDR}/cities/routes`, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
-          'Content-type': 'application/json'
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
           name: this.state.name,
-          accessToken: token,
           creator: UID,
           city: {
             placeId: PLACE_ID,
@@ -487,8 +540,7 @@ class MapScreen extends Component {
           pins: this.state.markers
         })
       })
-        .then(response => response.json())
-        .then(responseJson => this.props.navigation.goBack())
+        .then(response => console.log(response))
         .catch(error => console.error(error));
       }
     );
@@ -509,8 +561,10 @@ class MapScreen extends Component {
     return (
       <View style={globalStyles.container}>
         <MapView
+          provider={'google'}
           style={globalStyles.container}
-          onPress={() => Keyboard.dismiss()}
+          onPress={this.onPressMap}
+          onPoiClick={this.onPoiClick}
           initialRegion={{
             latitude: INIT_LOCATION.latitude,
             longitude: INIT_LOCATION.longitude,
