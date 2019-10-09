@@ -42,7 +42,7 @@ class LoginScreen extends Component {
   componentDidMount() {
     firebase.auth().onAuthStateChanged(user => {
       if (user != null) {
-        this.props.navigation.navigate('Profile');
+        this.props.navigation.navigate('Home');
       }
     });
   }

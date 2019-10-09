@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { StatusBar } from 'react-native';
 
 export const ACCENT = '#ff5a5f';
 export const GREY = '#f2f2f2';

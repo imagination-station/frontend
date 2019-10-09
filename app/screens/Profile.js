@@ -15,10 +15,6 @@ const styles = ({
 
 class ProfileScreen extends Component {
 
-  static navigationOptions = {
-    headerLeft: null
-  };
-
   componentDidMount() {
     firebase.auth().onAuthStateChanged(user => {
       if (user == null) {
