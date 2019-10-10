@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 
 import styles from '../config/styles.js';
 
-class ExploreScreen extends Component {
+class CollectionScreen extends Component {
   render() {
     return (
       <View style={styles.container}>
@@ -13,4 +13,4 @@ class ExploreScreen extends Component {
   }
 }
 
-export default ExploreScreen;
+export default CollectionScreen;

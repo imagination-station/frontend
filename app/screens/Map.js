@@ -9,10 +9,9 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
-  Image,
-  StatusBar
+  Image
 } from 'react-native';
-import MapView, { Callout, Marker } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
 import * as firebase from 'firebase';
 
@@ -32,7 +31,7 @@ const {width, height} = Dimensions.get('window');
 const CARD_HEIGHT = height / 4;
 const CARD_WIDTH = Math.floor(width / 1.5);
 
-const styles = StyleSheet.create({
+const mapStyles = StyleSheet.create({
   mapView: {
     alignItems: 'center',
   },
@@ -45,22 +44,6 @@ const styles = StyleSheet.create({
     top: 10,
     marginHorizontal: '2.5%',
     position: 'absolute'
-  },
-  searchList: {
-    // flex: 1,
-    position: 'absolute',
-    // marginTop: 10,
-    // width: '100%',
-    // height: 400,
-    borderColor: GREY,
-    borderTopWidth: 5,
-    padding: '2.5%',
-    backgroundColor: 'yellow'
-  },
-  searchItem: {
-    borderColor: GREY,
-    borderBottomWidth: 1,
-    padding: 10
   },
   animated: {
     position: 'absolute',
@@ -89,15 +72,32 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     elevation: 0.2
   },
-  actionCard: {
-    backgroundColor: 'white',
-    marginHorizontal: 10,
-    marginBottom: 5,
-    height: CARD_HEIGHT,
-    width: CARD_WIDTH,
-    overflow: 'hidden',
-    borderRadius: 10,
-    elevation: 0.2
+  cardImage: {
+    flex: 3,
+    width: '100%',
+    height: '100%',
+    alignSelf: 'center'
+  },
+  textContent: {
+    paddingLeft: 10,
+    paddingRight: 10,
+    paddingBottom: 5,
+    flex: 1,
+  },
+  cardtitle: {
+    fontSize: 12,
+    marginTop: 5,
+    fontWeight: 'bold'
+  },
+  cardDescription: {
+    fontSize: 12,
+    color: '#444'
+  },
+  cardButtonBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+    padding: 10
   },
   filler: {
     backgroundColor: 'transparent',
@@ -124,27 +124,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderRadius: 10,
     marginBottom: 7
-  },
-  cardImage: {
-    flex: 3,
-    width: "100%",
-    height: "100%",
-    alignSelf: "center",
-  },
-  textContent: {
-    paddingLeft: 10,
-    paddingRight: 10,
-    paddingBottom: 5,
-    flex: 1,
-  },
-  cardtitle: {
-    fontSize: 12,
-    marginTop: 5,
-    fontWeight: 'bold'
-  },
-  cardDescription: {
-    fontSize: 12,
-    color: '#444'
   },
   collapseButton: {
     width: 50,
@@ -205,7 +184,7 @@ const searchStyles = StyleSheet.create({
   }
 });
 
-// hardcoded data; this is what it will actually look like
+// hardcoded data; this is what the data will actually look like
 const DATA = [
   {
     type: 'Feature',
@@ -237,29 +216,26 @@ const DATA = [
   }
 ];
 
-class SearchScreen extends Component {
-
-  render() {
-    return (
-      <View style={searchStyles.container}>
-        {this.props.children}
-        <View style={searchStyles.list}>
-          <FlatList
-            data={this.props.results}
-            renderItem={({ item }) => <SearchItem
-              item={item}
-              onPress={() => this.props.onPressItem(item)}
-            />}
-            keyExtractor={item => item.place_id}
-          />
-          <View style={searchStyles.buttonBar}>
-            <Button title='CLEAR' onPress={this.props.clear} />
-            <Button title='BACK' onPress={this.props.goBack} />
-          </View>
+function SearchScreen(props) {
+  return (
+    <View style={searchStyles.container}>
+      {props.children}
+      <View style={searchStyles.list}>
+        <FlatList
+          data={props.results}
+          renderItem={({ item }) => <SearchItem
+            item={item}
+            onPress={() => props.onPressItem(item)}
+          />}
+          keyExtractor={item => item.place_id}
+        />
+        <View style={searchStyles.buttonBar}>
+          <Button title='CLEAR' onPress={props.clear} />
+          <Button title='BACK' onPress={props.goBack} />
         </View>
       </View>
-    );
-  }
+    </View>
+  );
 }
 
 function SearchItem(props) {
@@ -279,27 +255,17 @@ function Card(props) {
   };
 
   return (
-    <View style={styles.card}>
-      <Image
-        source={source}
-        style={styles.cardImage}
-        resizeMode='cover'
-      />
-      <View style={styles.textContent}>
-        <Text
-          numberOfLines={1}
-          style={styles.cardtitle}
-        >
+    <View style={mapStyles.card}>
+      <Image source={source} style={mapStyles.cardImage} resizeMode='cover' />
+      <View style={mapStyles.textContent}>
+        <Text numberOfLines={1} style={mapStyles.cardtitle}>
           {props.marker.properties.mainText}
         </Text>
-        <Text
-          numberOfLines={1}
-          style={styles.cardDescription}
-        >
+        <Text numberOfLines={1} style={mapStyles.cardDescription}>
           {props.marker.properties.secondaryText}
         </Text>
       </View>
-      <View style={{flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10, padding: 10}}>
+      <View style={mapStyles.cardButtonBar}>
         <Button title={'Add Note'} small />
         <Button title={'Remove'} onPress={props.onRemove} small />
       </View>
@@ -313,27 +279,17 @@ function FocusedCard(props) {
   };
 
   return (
-    <View style={styles.focusedCard}>
-      <Image
-        source={source}
-        style={styles.cardImage}
-        resizeMode='cover'
-      />
-      <View style={styles.textContent}>
-        <Text
-          numberOfLines={1}
-          style={styles.cardtitle}
-        >
+    <View style={mapStyles.focusedCard}>
+      <Image source={source} style={mapStyles.cardImage} resizeMode='cover' />
+      <View style={mapStyles.textContent}>
+        <Text numberOfLines={1} style={mapStyles.cardtitle}>
           {props.marker.properties.mainText}
         </Text>
-        <Text
-          numberOfLines={1}
-          style={styles.cardDescription}
-        >
+        <Text numberOfLines={1} style={mapStyles.cardDescription}>
           {props.marker.properties.secondaryText}
         </Text>
       </View>
-      <View style={{flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10, padding: 10}}>
+      <View style={mapStyles.cardButtonBar}>
         <Button title={'Add'} onPress={props.onAdd} />
         <Button title={'Dismiss'} onPress={props.onDismiss} />
       </View>
@@ -343,16 +299,15 @@ function FocusedCard(props) {
 
 function ActionCard(props) {
   let content;
-  const textStyle = {color: DARKER_GREY};
   if (props.length == 0) {
     content = (
-      <Text style={textStyle}>
+      <Text style={{color: DARKER_GREY}}>
         {'No places added yet :('}
       </Text>
     );
   } else {
     content = [
-      <Text style={textStyle}>
+      <Text style={{color: DARKER_GREY}}>
         {`${props.length} total places added`}
       </Text>,
       !props.isDone && 
@@ -364,8 +319,8 @@ function ActionCard(props) {
   }
 
   return (
-    <View style={styles.actionCard}>
-      <View style={styles.actionCardContent}>
+    <View style={mapStyles.card}>
+      <View style={mapStyles.actionCardContent}>
         {content}
       </View>
     </View>
@@ -376,7 +331,7 @@ function ActionCard(props) {
 function CollapseButton(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
-      <View style={styles.collapseButton}/>
+      <View style={mapStyles.collapseButton}/>
     </TouchableOpacity>
   );
 }
@@ -388,9 +343,9 @@ class MapScreen extends Component {
   };
 
   state = {
+    view: 'map',
     search: '',
     searchResults: null,
-    view: 'map',
     collapsed: false,
     region: {
       latitude: INIT_LOCATION.latitude,
@@ -398,6 +353,7 @@ class MapScreen extends Component {
       latitudeDelta: 0.0922,
       longitudeDelta: 0.0421
     },
+    maxZoomLevel: 20,
     markers: [],
     focused: null,
     name: ''
@@ -412,8 +368,6 @@ class MapScreen extends Component {
     this.refreshToken = null;
     this.collapseValue = new Animated.Value(height - Header.HEIGHT - (55 + CARD_HEIGHT));
     this.scrollValue = new Animated.Value(0);
-
-    this.token = null;
 
     this.focusChanged = false;
   }
@@ -465,19 +419,15 @@ class MapScreen extends Component {
           search: item.structured_formatting.main_text,
           view: 'map',
           focused: marker
-        }, () => {
-        }
-      );
-    });
+        });
+      });
   }
 
   onPressMap = event => {
     Keyboard.dismiss();
-    console.log(event.nativeEvent.coordinate);
   }
 
   onPoiClick = event => {
-    console.log(event.nativeEvent.placeId);
     event.persist();
     fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${event.nativeEvent.placeId}&key=${MAPS_API_KEY}`)
       .then(response => response.json())
@@ -503,7 +453,8 @@ class MapScreen extends Component {
       this.setState({
         search: responseJson.result.name,
         view: 'map',
-        focused: marker
+        focused: marker,
+        maxZoomLevel: 17 // limit zoom temporarily
       }, () => {
         this.mapRef.fitToSuppliedMarkers([event.nativeEvent.placeId], {
           edgePadding: {
@@ -596,12 +547,10 @@ class MapScreen extends Component {
     );
   }
 
-  
-
   render() {
     let searchBox = (<TextInput
       ref={ref => this.searchBoxRef = ref}
-      style={this.state.view === 'search' ? searchStyles.textBox : styles.searchBox}
+      style={this.state.view === 'search' ? searchStyles.textBox : mapStyles.searchBox}
       placeholder={'Search'}
       onFocus={() => this.setState({view: 'search'})}
       value={this.state.search}
@@ -626,6 +575,7 @@ class MapScreen extends Component {
       <View style={globalStyles.container}>
         <View style={globalStyles.container}>
           <MapView
+            maxZoomLevel={this.state.maxZoomLevel}
             provider={'google'}
             style={globalStyles.container}
             onPress={this.onPressMap}
@@ -638,7 +588,7 @@ class MapScreen extends Component {
             }}
             ref={ref => this.mapRef = ref}
             onRegionChangeComplete={region => {
-              this.setState({region: region});
+              this.setState({region: region, maxZoomLevel: 20});
             }}
             onMapReady={() => {
               if (this.focusChanged) {
@@ -648,7 +598,7 @@ class MapScreen extends Component {
                     latitude: this.state.focused.geometry.coordinates[0],
                     longitude: this.state.focused.geometry.coordinates[1],
                   },
-                  zoom: 16
+                  zoom: 17
                 });
               }
             }}
@@ -673,20 +623,20 @@ class MapScreen extends Component {
             }
           </MapView>
           {searchBox}
-          <Animated.View style={{...styles.animated, top: this.collapseValue}}>
+          <Animated.View style={{...mapStyles.animated, top: this.collapseValue}}>
             {/* show focused card */}
             {this.state.focused && <FocusedCard
               marker={this.state.focused}
               onDismiss={() => this.setState({focused: null})}
               onAdd={this.onAddItem} 
             />}
-            <View style={styles.drawer} >
+            <View style={mapStyles.drawer} >
               <CollapseButton onPress={this.toggleDrawer} />
               <Animated.ScrollView
                 style={{flex: 1}}
                 scrollEnabled={this.state.markers.length > 0}
                 ref={ref => this.scrollViewRef = ref}
-                contentContainerStyle={styles.endPadding}
+                contentContainerStyle={mapStyles.endPadding}
                 horizontal
                 scrollEventThrottle={1}
                 showsHorizontalScrollIndicator={false}
@@ -701,7 +651,7 @@ class MapScreen extends Component {
                   {useNativeDriver: true}
                 )}
               >
-                <View style={styles.filler} />
+                <View style={mapStyles.filler} />
                 {this.state.markers.map(marker => 
                   <Card
                     key={marker.placeId}
@@ -728,12 +678,12 @@ class MapScreen extends Component {
                   done={this.showDoneScreen}
                   isDone={this.state.view === 'done'}
                   />
-                <View style={styles.filler} />
+                <View style={mapStyles.filler} />
               </Animated.ScrollView>
               {this.state.view === 'done' &&
-                <View style={styles.doneContainer}>
+                <View style={mapStyles.doneContainer}>
                   <TextInput
-                    style={{...styles.nameBox, marginBottom: 10}}
+                    style={{...mapStyles.nameBox, marginBottom: 10}}
                     placeholder={'Name your path'}
                     onChangeText={text => this.setState({name: text})}
                     value={this.state.name}
