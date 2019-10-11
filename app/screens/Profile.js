@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
   },
   headerSecondaryText: {
     fontSize: 14,
-    color: ACCENT_GREEN
+    color: ACCENT
   },
   sectionContainer: {
     padding: 20,
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderBottomWidth: 1,
     borderBottomColor: GREY,
-    paddingVertical: 10
+    paddingVertical: 15
   },
   buttonTextStyle: {
     fontSize: 16
@@ -54,14 +54,14 @@ const styles = StyleSheet.create({
 });
 
 const NAME = 'Matias Sanders';
-const BIO = "Hello! I'm a hypothetical professor of art history at Georgia State. I have lived in Atlanta for about 10 years."
+const BIO = "Hello! I'm a professor of art history at Georgia State. I have lived in Atlanta for about 10 years."
 
-function BigButton(props) {
+function ActionButton(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
       <View style={styles.buttonStyle}>
         <Text style={props.textStyle}>{props.title}</Text>
-        {props.icon && <Icon name={props.icon} size={30} />}
+        {props.icon && <Icon name={props.icon} size={25} />}
       </View>
     </TouchableOpacity>
   );
@@ -93,13 +93,7 @@ class ProfileScreen extends Component {
         </View>
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionHeader}>ACTIONS</Text>
-          <BigButton
-            title='New path'
-            icon='add'
-            onPress={() => this.props.navigation.navigate('Map')}
-            textStyle={styles.textStyle}
-          />
-          <BigButton
+          <ActionButton
             title='Log out'
             onPress={() => () => firebase.auth().signOut()}
             textStyle={{...styles.textStyle, color: ACCENT_GREEN}}

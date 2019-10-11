@@ -184,38 +184,6 @@ const searchStyles = StyleSheet.create({
   }
 });
 
-// hardcoded data; this is what the data will actually look like
-const DATA = [
-  {
-    type: 'Feature',
-    geometry: {
-      type: 'Point',
-      coordinates: [33.790648, -84.384635]
-    },
-    properties: {
-      placeId: 'ChIJzal6QUUE9YgRYZqYJzKOXAo',
-      mainText: 'Museum of Design Atlanta',
-      secondaryText: 'Peachtree Street Northeast, Atlanta, GA, USA',
-      photoReference: ['CmRaAAAApMwKX8N6EhXmxuytk8uqqz4XZwQYDHVDgk8XMigwwu4MnSuGnbbnPb6fCp1LaiOJXkx61D1s7M4kdAibCTy4wug3MTpEFGOAT_wHao1B-2mTF3GTU6gWG-0agXGE2qzkEhCNWHKzJ-OHG2iKfjAhIDo0GhQnmSb2pTi3XIMz00TAXpbHPbvUrQ'],
-      note: 'Really cool museum!',
-    }
-  },
-  {
-    type: 'Feature',
-    geometry: {
-      type: 'Point',
-      coordinates: [33.7949046, -84.4147967]
-    },
-    properties: {
-      placeId: 'ChIJr3p2s-cE9YgR2uIvhPLls3E',
-      mainText: 'Urban Tree Cidery',
-      secondaryText: 'Howell Mill Road Northwest, Atlanta, GA, USA',
-      photoReference: ['CmRaAAAAN1JSSlKydw6W6-7_eeuYOkJzvVBTW5LBaW0W1sxPnyhkZPKbP4PEbqoPXRU5Q9MHJXBOFzOEJl8KBvB64bI3xtnCOeh9RaUihdBq3-Bi3fOPopG33WVW8avzEZrJ0Dq-EhA4tZV5xpLQP_yEaMXFLzfOGhTeLYBn2z2mW3VmvlOCbUEucED2gg'],
-      note: 'Chill, unpretentious vibes',
-    }
-  }
-];
-
 function SearchScreen(props) {
   return (
     <View style={searchStyles.container}>
@@ -267,7 +235,6 @@ function Card(props) {
       </View>
       <View style={mapStyles.cardButtonBar}>
         <Button title={'Add Note'} small />
-        <Button title={'Remove'} onPress={props.onRemove} small />
       </View>
     </View>
   );
@@ -290,38 +257,22 @@ function FocusedCard(props) {
         </Text>
       </View>
       <View style={mapStyles.cardButtonBar}>
-        <Button title={'Add'} onPress={props.onAdd} />
         <Button title={'Dismiss'} onPress={props.onDismiss} />
       </View>
     </View>
   );
 }
 
-function ActionCard(props) {
-  let content;
-  if (props.length == 0) {
-    content = (
-      <Text style={{color: DARKER_GREY}}>
-        {'No places added yet :('}
-      </Text>
-    );
-  } else {
-    content = [
-      <Text style={{color: DARKER_GREY}}>
-        {`${props.length} places added`}
-      </Text>,
-      !props.isDone && 
-        <View style={{flexDirection: 'row', justifyContent: 'space-around', marginTop: 30}}>
-          <Button title={'View All'} onPress={props.viewAll} small />
-          <Button title={`Create Path`} onPress={props.done} small />
-        </View>
-    ];
-  }
-
+function DetailCard(props) {
   return (
     <View style={mapStyles.card}>
       <View style={mapStyles.actionCardContent}>
-        {content}
+        <Text style={{color: DARKER_GREY}}>
+          {`${props.length} places`}
+        </Text>
+        <View style={{flexDirection: 'row', justifyContent: 'space-around', marginTop: 30}}>
+          <Button title={'View All'} onPress={props.viewAll} small />
+        </View>
       </View>
     </View>
   );
@@ -354,9 +305,9 @@ class MapScreen extends Component {
       longitudeDelta: 0.0421
     },
     maxZoomLevel: 20,
-    markers: [],
+    markers: this.props.navigation.getParam('markers'),
     focused: null,
-    name: ''
+    name: this.props.navigation.getParam('name')
   };
 
   componentWillMount() {
@@ -496,55 +447,6 @@ class MapScreen extends Component {
     ).start(() => this.setState({collapsed: true}));
   }
 
-  showDoneScreen = () => {
-    this.setState({view: 'done'}, () => {
-      Animated.timing(
-        this.collapseValue,
-        {
-          toValue: 0,
-          duration: 200
-        }
-      ).start();
-    });
-  }
-
-  onAddItem = () => {
-    this.setState({
-      markers: [...this.state.markers, this.state.focused],
-      focused: null,
-      search: '',
-      searchResults: null
-    }, this.toggleDrawer);
-  }
-
-  onRemoveItem = id => {
-    this.setState({
-      markers: this.state.markers.filter(marker => marker.properties.placeId != id)
-    });
-  }
-
-  onCreatePath = () => {
-    firebase.auth().currentUser.getIdToken().then(token => {      
-      fetch(`${SERVER_ADDR}/cities/routes`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-type': 'application/json',
-          Authorization: 'Bearer '.concat(token)
-        },
-        body: JSON.stringify({
-          name: this.state.name,
-          creator: UID,
-          city: PLACE_ID,
-          pins: this.state.markers
-        })
-      })
-        .then(this.props.navigation.goBack)
-        .catch(error => console.error(error));
-      }
-    );
-  }
-
   render() {
     let searchBox = (<TextInput
       ref={ref => this.searchBoxRef = ref}
@@ -657,7 +559,7 @@ class MapScreen extends Component {
                     onRemove={() => this.onRemoveItem(marker.properties.placeId)}
                   />
                 )}
-                <ActionCard
+                <DetailCard
                   length={this.state.markers.length}
                   viewAll={() => {
                     this.mapRef.fitToSuppliedMarkers(
@@ -673,22 +575,9 @@ class MapScreen extends Component {
                       }
                     );
                   }}
-                  done={this.showDoneScreen}
-                  isDone={this.state.view === 'done'}
                 />
                 <View style={mapStyles.filler} />
               </Animated.ScrollView>
-              {this.state.view === 'done' &&
-                <View style={mapStyles.doneContainer}>
-                  <TextInput
-                    style={{...mapStyles.nameBox, marginBottom: 10}}
-                    placeholder={'Name your path'}
-                    onChangeText={text => this.setState({name: text})}
-                    value={this.state.name}
-                  />
-                  <Button title={'DONE'} onPress={this.onCreatePath} />
-                </View>
-              }
             </View>
           </Animated.View>
         </View>

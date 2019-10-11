@@ -9,6 +9,7 @@ import ExploreScreen from './app/screens/Explore.js';
 import CollectionScreen from './app/screens/Collection.js';
 import ProfileScreen from './app/screens/Profile.js';
 import MapScreen from './app/screens/Map.js';
+import PathDetailScreen from './app/screens/PathDetail.js';
 
 import { FIREBASE_CONFIG } from './app/config/settings.js';
 import { ACCENT } from './app/config/styles.js';
@@ -17,7 +18,7 @@ firebase.initializeApp(FIREBASE_CONFIG);
 
 const ExploreTab = createMaterialBottomTabNavigator({
   Explore: ExploreScreen,
-  Collections: CollectionScreen,
+  Collection: CollectionScreen,
   Profile: ProfileScreen
 }, {
   activeColor: ACCENT,
@@ -28,7 +29,8 @@ const ExploreTab = createMaterialBottomTabNavigator({
 
 const HomeStack = createStackNavigator({
   Explore: ExploreTab,
-  Map: MapScreen
+  Map: MapScreen,
+  PathDetail: PathDetailScreen
 });
 
 const AppNavigator = createSwitchNavigator(
