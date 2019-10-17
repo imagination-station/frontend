@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { Text, View, StyleSheet, TouchableWithoutFeedback, TouchableOpacity, FlatList } from 'react-native';
 import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -102,7 +102,7 @@ class CollectionScreen extends Component {
             data={this.state.routes}
             renderItem={({ item }) => {
               let photoRef = item.pins[0].properties.photoReference[0] === 'String' ? PHOTO_REFERENCE : item.pins[0].properties.photoReference[0];
-              return (<TouchableOpacity onPress={() => this.props.navigation.navigate('PathDetail', {
+              return (<TouchableWithoutFeedback onPress={() => this.props.navigation.navigate('PathDetail', {
                 markers: item.pins,
                 name: item.name
               })}>
@@ -111,7 +111,7 @@ class CollectionScreen extends Component {
                   photoReference={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
                   onPress={() => props.onPressItem(item)}
                 />
-              </TouchableOpacity>);
+              </TouchableWithoutFeedback>);
             }}
             keyExtractor={item => item.place_id}
             contentContainerStyle={{alignItems: 'center', width: '100%', backgroundColor: 'transparent'}} />
