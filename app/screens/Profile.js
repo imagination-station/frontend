@@ -1,23 +1,73 @@
-import React, { Component, StyleSheet } from 'react';
-import { Text, View } from 'react-native';
+import React, { Component } from 'react';
+import { Text, View, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import * as firebase from 'firebase';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
-import Button from '../components/Button.js';
-import globalStyles from '../config/styles.js';
+import { DARKER_GREY, GREY, ACCENT, ACCENT_GREEN } from '../config/styles.js';
 
-const styles = ({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  header: {
+    flexDirection: 'row',
+    width: '100%',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    elevation: 0.5,
+    backgroundColor: 'white'
+  },
+  headerTextContainer: {
+    flex: 1,
+    marginLeft: 25
+  },
+  headerMainText: {
+    fontSize: 20,
+    fontWeight: 'bold'
+  },
+  headerSecondaryText: {
+    fontSize: 14,
+    color: ACCENT
+  },
+  sectionContainer: {
+    padding: 20,
+    backgroundColor: 'white',
+    width: '100%'
+  },
+  sectionHeader: {
+    fontSize: 12,
+    marginBottom: 5,
+    color: DARKER_GREY
+  },
+  buttonStyle: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: GREY,
+    paddingVertical: 15
+  },
+  buttonTextStyle: {
+    fontSize: 16
   }
 });
 
-class ProfileScreen extends Component {
+const NAME = 'Matias Sanders';
+const BIO = "Hello! I'm a professor of art history at Georgia State. I have lived in Atlanta for about 10 years."
 
-  static navigationOptions = {
-    headerLeft: null
-  };
+function ActionButton(props) {
+  return (
+    <TouchableOpacity onPress={props.onPress}>
+      <View style={styles.buttonStyle}>
+        <Text style={props.textStyle}>{props.title}</Text>
+        {props.icon && <Icon name={props.icon} size={25} />}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+class ProfileScreen extends Component {
 
   componentDidMount() {
     firebase.auth().onAuthStateChanged(user => {
@@ -30,17 +80,23 @@ class ProfileScreen extends Component {
   render() {
     return (
       <View style={styles.container}>
-        <Text style={globalStyles.text}>
-            {firebase.auth().currentUser.email}
-        </Text>
-        <View style={{alignItems: 'center', marginTop: 30, height: 75, justifyContent: 'space-between'}}>
-          <Button
-            title='Create New Path'
-            onPress={() => this.props.navigation.navigate('Map')}
-          />
-          <Button
-            title='Sign Out'
-            onPress={() => firebase.auth().signOut()}
+        <View style={styles.header}>
+          <Image style={{width: 70, height: 70, borderRadius: 70 / 2}} source={require('../assets/profile-pic.jpg')} />
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerMainText}>{NAME}</Text>
+            <Text style={styles.headerSecondaryText}>{firebase.auth().currentUser.email}</Text>
+          </View>
+        </View>
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionHeader}>BIO</Text>
+          <Text style={{lineHeight: 20}}>{BIO}</Text>
+        </View>
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionHeader}>ACTIONS</Text>
+          <ActionButton
+            title='Log out'
+            onPress={() => () => firebase.auth().signOut()}
+            textStyle={{...styles.textStyle, color: ACCENT_GREEN}}
           />
         </View>
       </View>

@@ -2,7 +2,7 @@ export const MAPS_API_KEY = '';
 export const SERVER_ADDR = '';
 
 // hardcoded user ID; replace later
-export const UID = '';
+export const UID = '5d979e6c5a0de701d708959e';
 
 // hardcoded values for Atlanta; replace later
 export const INIT_LOCATION = {
