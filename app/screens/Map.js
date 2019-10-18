@@ -250,10 +250,10 @@ function SearchItem(props) {
 }
 
 function Card(props) {
-  const source = {
-    uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`
+  const source = props.marker.properties.photoReference[0] == undefined ?
+    {uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`} :
+    {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`
   };
-
   return (
     <View style={mapStyles.card}>
       <Image source={source} style={mapStyles.cardImage} resizeMode='cover' />
@@ -274,8 +274,9 @@ function Card(props) {
 }
 
 function FocusedCard(props) {
-  const source = {
-    uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`
+  const source = props.marker.properties.photoReference[0] == undefined ?
+    {uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`} :
+    {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`
   };
 
   return (
@@ -396,6 +397,7 @@ class MapScreen extends Component {
     fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${item.place_id}&key=${MAPS_API_KEY}`)
       .then(response => response.json())
       .then(responseJson => {
+        const photoReference = responseJson.result.photos == undefined ? [undefined] : responseJson.result.photos.map(elem => elem.photo_reference)
         const marker = {
           type: 'Feature',
           geometry: {
@@ -409,7 +411,7 @@ class MapScreen extends Component {
             placeId: item.place_id,
             mainText: item.structured_formatting.main_text,
             secondaryText: item.structured_formatting.secondary_text,
-            photoReference: responseJson.result.photos.map(elem => elem.photo_reference)
+            photoReference: photoReference
           }
         };
 
@@ -432,6 +434,7 @@ class MapScreen extends Component {
     fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${event.nativeEvent.placeId}&key=${MAPS_API_KEY}`)
       .then(response => response.json())
       .then(responseJson => {
+        const photoReference = responseJson.result.photos == undefined ? [undefined] : responseJson.result.photos.map(elem => elem.photo_reference)
         const marker = {
           type: 'Feature',
           geometry: {
@@ -445,7 +448,7 @@ class MapScreen extends Component {
             placeId: event.nativeEvent.placeId,
             mainText: responseJson.result.name,
             secondaryText: responseJson.result.formatted_address,
-            photoReference: responseJson.result.photos.map(elem => elem.photo_reference)
+            photoReference: photoReference
           }
         };
 
