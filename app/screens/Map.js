@@ -474,14 +474,13 @@ class MapScreen extends Component {
 
   onLongPress = event => {
     event.persist();
-    console.log(event.nativeEvent.coordinate);
     var latitude = event.nativeEvent.coordinate.latitude;
     var longitude = event.nativeEvent.coordinate.longitude;
     fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${MAPS_API_KEY}`)
       .then(response => response.json())
       .then(responseJson => {
-        console.log(responseJson.results[0].place_id);
-        fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${responseJson.results[0].place_id}&key=${MAPS_API_KEY}`)
+        var place_id = responseJson.results[0].place_id
+        fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${place_id}&key=${MAPS_API_KEY}`)
           .then(response => response.json())
           .then(responseJson => {
             const photoReference = responseJson.result.photos == undefined ? [undefined] : responseJson.result.photos.map(elem => elem.photo_reference)
@@ -495,7 +494,7 @@ class MapScreen extends Component {
                 ]
               },
               properties: {
-                placeId: responseJson.results[0].place_id,
+                placeId: place_id,
                 mainText: responseJson.result.name,
                 secondaryText: responseJson.result.formatted_address,
                 photoReference: photoReference
@@ -509,7 +508,7 @@ class MapScreen extends Component {
             focused: marker,
             maxZoomLevel: 17 // limit zoom temporarily
           }, () => {
-            this.mapRef.fitToSuppliedMarkers([event.nativeEvent.placeId], {
+            this.mapRef.fitToSuppliedMarkers([place_id], {
               edgePadding: {
                 top: 50,
                 right: 50,
