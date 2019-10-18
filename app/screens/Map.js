@@ -9,14 +9,17 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
-  Image
+  Image,
+  ScrollView,
+  TouchableWithoutFeedback
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
 import * as firebase from 'firebase';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import Button from '../components/Button.js';
-import globalStyles, { GREY, DARKER_GREY } from '../config/styles.js';
+import globalStyles, { GREY, DARKER_GREY, ACCENT, ACCENT_GREEN } from '../config/styles.js';
 import {
   MAPS_API_KEY,
   SERVER_ADDR,
@@ -184,6 +187,59 @@ const searchStyles = StyleSheet.create({
   }
 });
 
+const detailStyles = StyleSheet.create({
+  container: {
+    flex: 1
+  },
+  scrollViewContainer: {
+    alignItems: 'center'
+  },
+  scrollIndicator: {
+    flexDirection: 'row',
+    position: 'absolute',
+    bottom: 10
+  },
+  indicatorDot: {
+    height: 6,
+    width: 6,
+    backgroundColor: 'white',
+    margin: 5,
+    borderRadius: 3
+  },
+  imageScrollView: {
+    height: 300,
+    width: width
+  },
+  image: {
+    height: 300,
+    width: width
+  },
+  textContainer: {
+    padding: 10
+  },
+  mainText: {
+    fontSize: 24,
+    marginBottom: 3
+  },
+  secondaryText: {
+    color: DARKER_GREY
+  },
+  sectionHeader: {
+    fontSize: 12,
+    marginBottom: 5,
+    marginTop: 25,
+    color: ACCENT
+  },
+  buttonStyle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    borderBottomWidth: 1,
+    borderBottomColor: GREY,
+    padding: 10
+  }
+});
+
 // hardcoded data; this is what the data will actually look like
 const DATA = [
   {
@@ -196,8 +252,13 @@ const DATA = [
       placeId: 'ChIJzal6QUUE9YgRYZqYJzKOXAo',
       mainText: 'Museum of Design Atlanta',
       secondaryText: 'Peachtree Street Northeast, Atlanta, GA, USA',
-      photoReference: ['CmRaAAAApMwKX8N6EhXmxuytk8uqqz4XZwQYDHVDgk8XMigwwu4MnSuGnbbnPb6fCp1LaiOJXkx61D1s7M4kdAibCTy4wug3MTpEFGOAT_wHao1B-2mTF3GTU6gWG-0agXGE2qzkEhCNWHKzJ-OHG2iKfjAhIDo0GhQnmSb2pTi3XIMz00TAXpbHPbvUrQ'],
-      note: 'Really cool museum!',
+      photoReference: [
+        'CmRaAAAArfg8qF1oPtvFj18kTkcVbIDtR3Arm04aoHSbno1GNaeEOLANbECjkVf_4SmLdo7uVs7SfD71XjrSbMoEHBZm8EZc53WCXPxNlGxC6b2-DRqxRI0BEZrs5yXQ-HVTjObrEhD5ekbW-N2N1DCujiI1nYgXGhQXIEURuVaLx2_N_nZUGIpmiPyCSA',
+        'CmRaAAAApMwKX8N6EhXmxuytk8uqqz4XZwQYDHVDgk8XMigwwu4MnSuGnbbnPb6fCp1LaiOJXkx61D1s7M4kdAibCTy4wug3MTpEFGOAT_wHao1B-2mTF3GTU6gWG-0agXGE2qzkEhCNWHKzJ-OHG2iKfjAhIDo0GhQnmSb2pTi3XIMz00TAXpbHPbvUrQ',
+        'CmRaAAAA_RFTA6jpX2KiHBW7SWRCkzCYEUnb27xDvA2UZGAZtKvQLAZRT-zbHL4FRlAg86q6CalB-6C9PBGa5y8PLLEBzMSodtmQBeNwTjb4Zb6QDDY3qNo3eYWrV5I8XWZM2BGCEhB86xeYE6mruzEeiFC0xVx9GhQ2jqq80jNH_smOex63RQCmh-GkcA',
+        'CmRaAAAAwpvEMIuqhMPV3zlYk3_1Lnurfv6G636fXQjgHnuySgie5_K-pIeS8FnPWcU0L4JlxeqZC480YtGR36KcuoAPE7H6rP03SAYNTAqwWNrbJm6v7_llTHMolcj5W0n_puDsEhAXbKPL8JBmkPzGNgImSjj6GhRbeGfEAc8-933-sM5tcHkDhA9TNA',
+      ],
+      note: 'Really cool museum! Would definitely recommend!',
     }
   },
   {
@@ -249,27 +310,107 @@ function SearchItem(props) {
   );
 }
 
+class DetailScreen extends Component {
+
+  componentWillMount() {
+    this.scrollValue = new Animated.Value(0);
+  }
+
+  render() {
+    let position = Animated.divide(this.scrollValue, width);
+
+    return (
+      <View style={detailStyles.container}>
+        <View style={detailStyles.scrollViewContainer}>
+          <Animated.ScrollView
+            style={detailStyles.imageScrollView}
+            horizontal
+            scrollEventThrottle={1}
+            showsHorizontalScrollIndicator={false}
+            pagingEnabled
+            onScroll={Animated.event([
+              {
+                nativeEvent: {
+                  contentOffset: {
+                    x: this.scrollValue,
+                  },
+                },
+              }],
+              {useNativeDriver: true}
+            )}
+          >
+            {this.props.place.properties.photoReference.map(ref =>
+              <Image
+                source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
+                style={detailStyles.image}
+              />
+            )}
+          </Animated.ScrollView>
+          <View style={detailStyles.scrollIndicator}>
+            {this.props.place.properties.photoReference.map((_, i) => {
+              let opacity = position.interpolate({
+                inputRange: [i - 1, i, i + 1], // each dot will need to have an opacity of 1 when position is equal to their index (i)
+                outputRange: [0.3, 1, 0.3], // when position is not i, the opacity of the dot will animate to 0.3
+                extrapolate: 'clamp' // this will prevent the opacity of the dots from going outside of the outputRange (i.e. opacity will not be less than 0.3)
+              });
+              return (
+                <Animated.View
+                  key={i}
+                  style={{...detailStyles.indicatorDot, opacity}}
+                />
+              );
+            })}
+          </View>
+        </View>
+        <View style={detailStyles.textContainer}>
+          <Text style={detailStyles.mainText}>{this.props.place.properties.mainText}</Text>
+          <Text style={detailStyles.secondaryText}>{this.props.place.properties.secondaryText}</Text>
+          <Text style={detailStyles.sectionHeader}>NOTES</Text>
+          {this.props.place.properties.note ? <View>
+            <Text>{this.props.place.properties.note}</Text>
+            <Text style={{color: DARKER_GREY, fontSize: 10, marginTop: 2}}>Last edited 10/18/2019</Text>
+          </View> : <Text>Write interesting facts, things to do, or anything you want to record about this place. </Text>}
+          <BigButton icon='create' title='Edit notes' />
+          <BigButton icon='arrow-back' title='Back' onPress={this.props.onBack} />
+        </View>
+      </View>
+    );
+  }
+}
+
+function BigButton(props) {
+  return (
+    <TouchableOpacity onPress={props.onPress}>
+      <View style={detailStyles.buttonStyle}>
+        {props.icon && <Icon name={props.icon} size={30} color='#00A699'/>}
+        <Text style={{marginLeft: 40}}>{props.title}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 function Card(props) {
   const source = {
     uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`
   };
 
   return (
-    <View style={mapStyles.card}>
-      <Image source={source} style={mapStyles.cardImage} resizeMode='cover' />
-      <View style={mapStyles.textContent}>
-        <Text numberOfLines={1} style={mapStyles.cardtitle}>
-          {props.marker.properties.mainText}
-        </Text>
-        <Text numberOfLines={1} style={mapStyles.cardDescription}>
-          {props.marker.properties.secondaryText}
-        </Text>
+    <TouchableWithoutFeedback onPress={props.onPress}>
+      <View style={mapStyles.card}>
+        <Image source={source} style={mapStyles.cardImage} resizeMode='cover' />
+        <View style={mapStyles.textContent}>
+          <Text numberOfLines={1} style={mapStyles.cardtitle}>
+            {props.marker.properties.mainText}
+          </Text>
+          <Text numberOfLines={1} style={mapStyles.cardDescription}>
+            {props.marker.properties.secondaryText}
+          </Text>
+        </View>
+        <View style={mapStyles.cardButtonBar}>
+          <Button title={'Remove'} onPress={props.onRemove} small />
+        </View>
       </View>
-      <View style={mapStyles.cardButtonBar}>
-        <Button title={'Add Note'} small />
-        <Button title={'Remove'} onPress={props.onRemove} small />
-      </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -356,6 +497,7 @@ class MapScreen extends Component {
     maxZoomLevel: 20,
     markers: [],
     focused: null,
+    detail: null,
     name: ''
   };
 
@@ -409,7 +551,7 @@ class MapScreen extends Component {
             placeId: item.place_id,
             mainText: item.structured_formatting.main_text,
             secondaryText: item.structured_formatting.secondary_text,
-            photoReference: responseJson.result.photos.map(elem => elem.photo_reference)
+            photoReference: responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4)
           }
         };
 
@@ -445,7 +587,7 @@ class MapScreen extends Component {
             placeId: event.nativeEvent.placeId,
             mainText: responseJson.result.name,
             secondaryText: responseJson.result.formatted_address,
-            photoReference: responseJson.result.photos.map(elem => elem.photo_reference)
+            photoReference: responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4)
           }
         };
 
@@ -567,6 +709,10 @@ class MapScreen extends Component {
           {searchBox}
         </SearchScreen>
       );
+    } else if (this.state.view === 'detail') {
+      return (
+        <DetailScreen place={this.state.detail} onBack={() => this.setState({view: 'map'})} />
+      );
     }
 
     return (
@@ -654,6 +800,7 @@ class MapScreen extends Component {
                   <Card
                     key={marker.placeId}
                     marker={marker}
+                    onPress={() => this.setState({view: 'detail', detail: marker})}
                     onRemove={() => this.onRemoveItem(marker.properties.placeId)}
                   />
                 )}
