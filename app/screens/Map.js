@@ -3,14 +3,12 @@ import {
   View,
   TextInput,
   StyleSheet,
-  Keyboard,
   FlatList,
   Text,
   TouchableOpacity,
   Animated,
   Dimensions,
   Image,
-  ScrollView,
   TouchableWithoutFeedback
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
@@ -35,18 +33,23 @@ const CARD_HEIGHT = height / 4;
 const CARD_WIDTH = Math.floor(width / 1.5);
 
 const mapStyles = StyleSheet.create({
-  mapView: {
-    alignItems: 'center',
-  },
-  searchBox: {
+  searchBoxContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    flexDirection: 'row',
     height: 46,
     borderRadius: 10,
-    paddingHorizontal: 10,
     width: '95%',
     top: 10,
     marginHorizontal: '2.5%',
-    position: 'absolute'
+    position: 'absolute',
+    alignItems: 'center',
+  },
+  searchBox: {
+    backgroundColor: 'transparent',
+    height: 46,
+    paddingHorizontal: 10,
+    width: '90%',
+    color: 'grey'
   },
   animated: {
     position: 'absolute',
@@ -128,7 +131,7 @@ const mapStyles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 7
   },
-  collapseButton: {
+  drawerButton: {
     width: 50,
     height: 15,
     backgroundColor: '#e3e3e3',
@@ -155,11 +158,17 @@ const searchStyles = StyleSheet.create({
     flex: 1,
     alignItems: 'center'
   },
+  textBoxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: '2.5%',
+    paddingTop: 10
+  },
   textBox: {
     height: 46,
-    width: '95%',
-    marginTop: 10,
-    paddingHorizontal: 10
+    width: '90%',
+    paddingLeft: 10,
   },
   list: {
     height: '50%',
@@ -167,11 +176,6 @@ const searchStyles = StyleSheet.create({
     borderTopWidth: 5,
     borderColor: GREY,
     paddingHorizontal: '2.5%',
-  },
-  buttonBar: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-around'
   },
   autoCompleteItem: {
     borderColor: GREY,
@@ -240,7 +244,11 @@ const detailStyles = StyleSheet.create({
   }
 });
 
-// hardcoded data; this is what the data will actually look like
+const noteEditorStyles = StyleSheet.create({
+
+});
+
+// hardcoded dummy data; this is what the data will actually look like
 const DATA = [
   {
     type: 'Feature',
@@ -277,26 +285,68 @@ const DATA = [
   }
 ];
 
-function SearchScreen(props) {
-  return (
-    <View style={searchStyles.container}>
-      {props.children}
-      <View style={searchStyles.list}>
-        <FlatList
-          data={props.results}
-          renderItem={({ item }) => <SearchItem
-            item={item}
-            onPress={() => props.onPressItem(item)}
-          />}
-          keyExtractor={item => item.place_id}
-        />
-        <View style={searchStyles.buttonBar}>
-          <Button title='CLEAR' onPress={props.clear} />
-          <Button title='BACK' onPress={props.goBack} />
+export class SearchScreen extends Component {
+  state = {
+    textInput: this.props.searchInput,
+    results: null
+  };
+
+  SEARCH_TIMEOUT = 100; // ms
+
+  componentWillMount() {
+    this.searchTimer = null;
+  }
+
+  componentDidMount() {
+    if (this.state.textInput) {
+      fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${this.state.textInput}&key=${MAPS_API_KEY}&location=${INIT_LOCATION.latitude},${INIT_LOCATION.longitude}`)
+        .then(response => response.json())
+        .then(responseJson => this.setState({results: responseJson.predictions}));
+    }
+  }
+
+  onChangeText = text => {
+    this.setState({textInput: text});
+    if (!this.searchTimer) {
+      this.searchTimer = setTimeout(() => {
+        fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${text}&key=${MAPS_API_KEY}&location=${INIT_LOCATION.latitude},${INIT_LOCATION.longitude}`)
+          .then(response => response.json())
+          .then(responseJson => this.setState({results: responseJson.predictions}));
+        this.searchTimer = null;
+      }, this.SEARCH_TIMEOUT);
+    }
+  }
+
+  render() {
+    return (
+      <View style={searchStyles.container}>
+        <View style={searchStyles.textBoxContainer}>
+          <TextInput
+            autoFocus
+            style={searchStyles.textBox}
+            placeholder='Search'
+            value={this.state.textInput}
+            onChangeText={this.onChangeText}
+          />
+          <TouchableOpacity onPress={() => this.setState({textInput: ''})}>
+            <Icon name='clear' size={30} />
+          </TouchableOpacity>
+        </View>
+        <View style={searchStyles.list}>
+          <FlatList
+            data={this.state.results}
+            renderItem={({ item }) => <SearchItem
+              item={item}
+              onPress={() => {
+                this.props.onPressItem(item, this.props.navigation);
+              }}
+            />}
+            keyExtractor={item => item.place_id}
+          />
         </View>
       </View>
-    </View>
-  );
+    );
+  }
 }
 
 function SearchItem(props) {
@@ -310,7 +360,7 @@ function SearchItem(props) {
   );
 }
 
-class DetailScreen extends Component {
+export class DetailScreen extends Component {
 
   componentWillMount() {
     this.scrollValue = new Animated.Value(0);
@@ -369,9 +419,14 @@ class DetailScreen extends Component {
           {this.props.place.properties.note ? <View>
             <Text>{this.props.place.properties.note}</Text>
             <Text style={{color: DARKER_GREY, fontSize: 10, marginTop: 2}}>Last edited 10/18/2019</Text>
-          </View> : <Text>Write interesting facts, things to do, or anything you want to record about this place. </Text>}
-          <BigButton icon='create' title='Edit notes' />
-          <BigButton icon='arrow-back' title='Back' onPress={this.props.onBack} />
+          </View> : <Text style={{color: 'grey'}}>
+            Write interesting facts, things to do, or anything you want to record about this place.
+          </Text>}
+          <BigButton
+            icon='create'
+            title='Edit notes'
+            onPress={() => this.props.navigation.navigate('NoteEditor')}
+          />
         </View>
       </View>
     );
@@ -387,6 +442,16 @@ function BigButton(props) {
       </View>
     </TouchableOpacity>
   );
+}
+
+export class NoteEditorScreen extends Component {
+  render() {
+    return (
+      <View style={globalStyles.container}>
+        <Text>Note editor screen</Text>
+      </View>
+    );
+  }
 }
 
 function Card(props) {
@@ -432,7 +497,6 @@ function FocusedCard(props) {
       </View>
       <View style={mapStyles.cardButtonBar}>
         <Button title={'Add'} onPress={props.onAdd} />
-        <Button title={'Dismiss'} onPress={props.onDismiss} />
       </View>
     </View>
   );
@@ -442,8 +506,8 @@ function ActionCard(props) {
   let content;
   if (props.length == 0) {
     content = (
-      <Text style={{color: DARKER_GREY}}>
-        {'No places added yet :('}
+      <Text style={{color: DARKER_GREY, textAlign: 'center'}}>
+        {'Search or tap on the map to add places :)'}
       </Text>
     );
   } else {
@@ -469,10 +533,10 @@ function ActionCard(props) {
 }
 
 
-function CollapseButton(props) {
+function DrawerButton(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
-      <View style={mapStyles.collapseButton}/>
+      <View style={mapStyles.drawerButton}/>
     </TouchableOpacity>
   );
 }
@@ -485,8 +549,7 @@ class MapScreen extends Component {
 
   state = {
     view: 'map',
-    search: '',
-    searchResults: null,
+    searchInput: '',
     collapsed: false,
     region: {
       latitude: INIT_LOCATION.latitude,
@@ -494,10 +557,8 @@ class MapScreen extends Component {
       latitudeDelta: 0.0922,
       longitudeDelta: 0.0421
     },
-    maxZoomLevel: 20,
     markers: [],
     focused: null,
-    detail: null,
     name: ''
   };
 
@@ -506,7 +567,6 @@ class MapScreen extends Component {
     this.scrollViewRef = null;
     this.searchBoxRef = null;
 
-    this.searchTimer = null;
     this.refreshToken = null;
     this.collapseValue = new Animated.Value(height - Header.HEIGHT - (55 + CARD_HEIGHT));
     this.scrollValue = new Animated.Value(0);
@@ -514,7 +574,7 @@ class MapScreen extends Component {
     this.focusChanged = false;
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(_, prevState) {
     if (prevState.view !== this.state.view) {
       if (this.state.view === 'search') {
         this.searchBoxRef.focus();
@@ -522,19 +582,19 @@ class MapScreen extends Component {
     }
   }
 
-  onChangeSearchText = text => {
-    this.setState({search: text});
-    if (!this.searchTimer) {
-      this.searchTimer = setTimeout(() => {
-        fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${text}&key=${MAPS_API_KEY}&location=${INIT_LOCATION.latitude},${INIT_LOCATION.longitude}`)
-          .then(response => response.json())
-          .then(responseJson => this.setState({searchResults: responseJson.predictions}));
-        this.searchTimer = null;
-      }, 100);
-    }
+  onPressSearch = () => {
+    this.props.navigation.navigate('MapSearch', {
+      searchInput: this.state.searchInput,
+      onPressItem: this.onPressSearchItem,
+      onClearText: () => this.setState({searchInput: ''})
+    });
   }
 
-  onPressSearchItem = item => {
+  onClearSearch = () => {
+    this.setState({searchInput: '', focused: null});
+  }
+
+  onPressSearchItem = (item, navigation) => {
     fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${item.place_id}&key=${MAPS_API_KEY}`)
       .then(response => response.json())
       .then(responseJson => {
@@ -556,21 +616,25 @@ class MapScreen extends Component {
         };
 
         this.closeDrawer();
-        this.focusChanged = true;
         this.setState({
-          search: item.structured_formatting.main_text,
+          searchInput: item.structured_formatting.main_text,
           view: 'map',
           focused: marker
+        }, () => {
+          navigation.goBack();
+          this.mapRef.animateCamera({
+            center: {
+              latitude: this.state.focused.geometry.coordinates[0],
+              longitude: this.state.focused.geometry.coordinates[1],
+            },
+            zoom: 17
+          }, 20);
         });
       });
   }
 
-  onPressMap = event => {
-    Keyboard.dismiss();
-  }
-
   onPoiClick = event => {
-    event.persist();
+    event.persist(); // necessary to persist event data for some reason
     fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${event.nativeEvent.placeId}&key=${MAPS_API_KEY}`)
       .then(response => response.json())
       .then(responseJson => {
@@ -593,20 +657,17 @@ class MapScreen extends Component {
 
       this.closeDrawer();
       this.setState({
-        search: responseJson.result.name,
+        searchInput: responseJson.result.name,
         view: 'map',
         focused: marker,
-        maxZoomLevel: 17 // limit zoom temporarily
       }, () => {
-        this.mapRef.fitToSuppliedMarkers([event.nativeEvent.placeId], {
-          edgePadding: {
-            top: 50,
-            right: 50,
-            bottom: 50,
-            left: 50
+        this.mapRef.animateCamera({
+          center: {
+            latitude: this.state.focused.geometry.coordinates[0],
+            longitude: this.state.focused.geometry.coordinates[1],
           },
-          animated: true
-        });
+          zoom: 15
+        }, 30);
       });
     });
   }
@@ -688,157 +749,120 @@ class MapScreen extends Component {
   }
 
   render() {
-    let searchBox = (<TextInput
-      ref={ref => this.searchBoxRef = ref}
-      style={this.state.view === 'search' ? searchStyles.textBox : mapStyles.searchBox}
-      placeholder={'Search'}
-      onFocus={() => this.setState({view: 'search'})}
-      value={this.state.search}
-      onChangeText={this.onChangeSearchText}
-    />);
-
-    if (this.state.view === 'search') {
-      return (
-        <SearchScreen
-          results={this.state.searchResults}
-          onPressItem={this.onPressSearchItem}
-          clear={() => this.setState({search: ''})}
-          goBack={() => this.setState({view: 'map'})}
-          textBoxRef={this.searchBoxRef}
-        >
-          {searchBox}
-        </SearchScreen>
-      );
-    } else if (this.state.view === 'detail') {
-      return (
-        <DetailScreen place={this.state.detail} onBack={() => this.setState({view: 'map'})} />
-      );
-    }
-
     return (
       <View style={globalStyles.container}>
-        <View style={globalStyles.container}>
-          <MapView
-            maxZoomLevel={this.state.maxZoomLevel}
-            provider={'google'}
-            style={globalStyles.container}
-            onPress={this.onPressMap}
-            onPoiClick={this.onPoiClick}
-            initialRegion={{
-              latitude: this.state.region.latitude,
-              longitude: this.state.region.longitude,
-              latitudeDelta: this.state.region.latitudeDelta,
-              longitudeDelta: this.state.region.longitudeDelta
-            }}
-            ref={ref => this.mapRef = ref}
-            onRegionChangeComplete={region => {
-              this.setState({region: region, maxZoomLevel: 20});
-            }}
-            onMapReady={() => {
-              if (this.focusChanged) {
-                this.focusChanged = false;
-                this.mapRef.setCamera({
-                  center: {
-                    latitude: this.state.focused.geometry.coordinates[0],
-                    longitude: this.state.focused.geometry.coordinates[1],
-                  },
-                  zoom: 17
-                });
-              }
-            }}
-          >
-            {this.state.markers.map(marker => 
-              <Marker
-                key={marker.properties.placeId}
-                identifier={marker.properties.placeId}
-                coordinate={{latitude: marker.geometry.coordinates[0], longitude: marker.geometry.coordinates[1]}}
-                title={marker.properties.mainText}
-                description={marker.properties.secondaryText}
-              />
-            )}
-            {this.state.focused &&
-              <Marker
-                key={this.state.focused.properties.placeId}
-                identifier={this.state.focused.properties.placeId}
-                coordinate={{latitude: this.state.focused.geometry.coordinates[0], longitude: this.state.focused.geometry.coordinates[1]}}
-                title={this.state.focused.properties.mainText}
-                description={this.state.focused.properties.secondaryText}
-              />
-            }
-          </MapView>
-          {searchBox}
-          <Animated.View style={{...mapStyles.animated, top: this.collapseValue}}>
-            {/* show focused card */}
-            {this.state.focused && <FocusedCard
-              marker={this.state.focused}
-              onDismiss={() => this.setState({focused: null})}
-              onAdd={this.onAddItem} 
-            />}
-            <View style={mapStyles.drawer} >
-              <CollapseButton onPress={this.toggleDrawer} />
-              <Animated.ScrollView
-                style={{flex: 1}}
-                scrollEnabled={this.state.markers.length > 0}
-                ref={ref => this.scrollViewRef = ref}
-                contentContainerStyle={mapStyles.endPadding}
-                horizontal
-                scrollEventThrottle={1}
-                showsHorizontalScrollIndicator={false}
-                onScroll={Animated.event([
-                  {
-                    nativeEvent: {
-                      contentOffset: {
-                        x: this.scrollValue,
-                      },
-                    },
-                  }],
-                  {useNativeDriver: true}
-                )}
-              >
-                <View style={mapStyles.filler} />
-                {this.state.markers.map(marker => 
-                  <Card
-                    key={marker.placeId}
-                    marker={marker}
-                    onPress={() => this.setState({view: 'detail', detail: marker})}
-                    onRemove={() => this.onRemoveItem(marker.properties.placeId)}
-                  />
-                )}
-                <ActionCard
-                  length={this.state.markers.length}
-                  viewAll={() => {
-                    this.mapRef.fitToSuppliedMarkers(
-                      this.state.markers.map(marker => marker.properties.placeId),
-                      {
-                        edgePadding: {
-                          top: 500,
-                          left: 500,
-                          bottom: 500,
-                          right: 500
-                        },
-                        animated: true
-                      }
-                    );
-                  }}
-                  done={this.showDoneScreen}
-                  isDone={this.state.view === 'done'}
-                />
-                <View style={mapStyles.filler} />
-              </Animated.ScrollView>
-              {this.state.view === 'done' &&
-                <View style={mapStyles.doneContainer}>
-                  <TextInput
-                    style={{...mapStyles.nameBox, marginBottom: 10}}
-                    placeholder={'Name your path'}
-                    onChangeText={text => this.setState({name: text})}
-                    value={this.state.name}
-                  />
-                  <Button title={'DONE'} onPress={this.onCreatePath} />
-                </View>
-              }
-            </View>
-          </Animated.View>
+        <MapView
+          provider={'google'}
+          style={globalStyles.container}
+          onPoiClick={this.onPoiClick}
+          initialRegion={{
+            latitude: this.state.region.latitude,
+            longitude: this.state.region.longitude,
+            latitudeDelta: this.state.region.latitudeDelta,
+            longitudeDelta: this.state.region.longitudeDelta
+          }}
+          ref={ref => this.mapRef = ref}
+        >
+          {this.state.markers.map(marker => 
+            <Marker
+              key={marker.properties.placeId}
+              identifier={marker.properties.placeId}
+              coordinate={{latitude: marker.geometry.coordinates[0], longitude: marker.geometry.coordinates[1]}}
+              title={marker.properties.mainText}
+              description={marker.properties.secondaryText}
+            />
+          )}
+          {this.state.focused &&
+            <Marker
+              key={this.state.focused.properties.placeId}
+              identifier={this.state.focused.properties.placeId}
+              coordinate={{latitude: this.state.focused.geometry.coordinates[0], longitude: this.state.focused.geometry.coordinates[1]}}
+              title={this.state.focused.properties.mainText}
+              description={this.state.focused.properties.secondaryText}
+            />
+          }
+        </MapView>
+        <View style={mapStyles.searchBoxContainer}>
+          <TextInput
+            style={mapStyles.searchBox}
+            placeholder='Search'
+            value={this.state.searchInput}
+            onTouchEnd={this.onPressSearch}
+          />
+          <TouchableOpacity onPress={this.onClearSearch}>
+            <Icon name='clear' size={30} />
+          </TouchableOpacity>
         </View>
+        <Animated.View style={{...mapStyles.animated, top: this.collapseValue}}>
+          {/* show focused card */}
+          {this.state.focused && <FocusedCard
+            marker={this.state.focused}
+            onAdd={this.onAddItem} 
+          />}
+          <View style={mapStyles.drawer} >
+            <DrawerButton onPress={this.toggleDrawer} />
+            <Animated.ScrollView
+              style={{flex: 1}}
+              scrollEnabled={this.state.markers.length > 0}
+              ref={ref => this.scrollViewRef = ref}
+              contentContainerStyle={mapStyles.endPadding}
+              horizontal
+              scrollEventThrottle={1}
+              showsHorizontalScrollIndicator={false}
+              onScroll={Animated.event([
+                {
+                  nativeEvent: {
+                    contentOffset: {
+                      x: this.scrollValue,
+                    },
+                  }
+                }
+              ], {useNativeDriver: true}
+              )}
+            >
+              <View style={mapStyles.filler} />
+              {this.state.markers.map(marker => 
+                <Card
+                  key={marker.placeId}
+                  marker={marker}
+                  onPress={() => this.props.navigation.navigate('PlaceDetail', {place: marker})}
+                  onRemove={() => this.onRemoveItem(marker.properties.placeId)}
+                />
+              )}
+              <ActionCard
+                length={this.state.markers.length}
+                viewAll={() => {
+                  this.mapRef.fitToSuppliedMarkers(
+                    this.state.markers.map(marker => marker.properties.placeId),
+                    {
+                      edgePadding: {
+                        top: 500,
+                        left: 500,
+                        bottom: 500,
+                        right: 500
+                      },
+                      animated: true
+                    }
+                  );
+                }}
+                done={this.showDoneScreen}
+                isDone={this.state.view === 'done'}
+              />
+              <View style={mapStyles.filler} />
+            </Animated.ScrollView>
+            {this.state.view === 'done' &&
+              <View style={mapStyles.doneContainer}>
+                <TextInput
+                  style={{...mapStyles.nameBox, marginBottom: 10}}
+                  placeholder={'Name your path'}
+                  onChangeText={text => this.setState({name: text})}
+                  value={this.state.name}
+                />
+                <Button title={'DONE'} onPress={this.onCreatePath} />
+              </View>
+            }
+          </View>
+        </Animated.View>
       </View>
     );
   }
