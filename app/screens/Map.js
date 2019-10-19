@@ -479,46 +479,100 @@ class MapScreen extends Component {
     fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${MAPS_API_KEY}`)
       .then(response => response.json())
       .then(responseJson => {
-        var place_id = responseJson.results[0].place_id
-        fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${place_id}&key=${MAPS_API_KEY}`)
-          .then(response => response.json())
-          .then(responseJson => {
-            const photoReference = responseJson.result.photos == undefined ? [undefined] : responseJson.result.photos.map(elem => elem.photo_reference)
-            const marker = {
-              type: 'Feature',
-              geometry: {
-                type: 'Point',
-                coordinates: [
-                  parseFloat(latitude),
-                  parseFloat(longitude)
-                ]
-              },
-              properties: {
-                placeId: place_id,
-                mainText: responseJson.result.name,
-                secondaryText: responseJson.result.formatted_address,
-                photoReference: photoReference
+        console.log(responseJson.results)
+        // var place_id = responseJson.results[0].place_id
+        var hasPhoto = false;
+        for (i = 0; i < Math.floor(Object.keys(responseJson.results).length / 3); i++) {
+          var place_id = responseJson.results[i].place_id;
+          fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${place_id}&key=${MAPS_API_KEY}`)
+            .then(response => response.json())
+            .then(responseJson => {
+              if (!hasPhoto){
+                var photoReference = responseJson.result.photos != undefined;
+                if (photoReference) {
+                  hasPhoto = true;
+                  photoReference = responseJson.result.photos.map(elem => elem.photo_reference);
+                  const marker = {
+                    type: 'Feature',
+                    geometry: {
+                      type: 'Point',
+                      coordinates: [
+                        parseFloat(latitude),
+                        parseFloat(longitude)
+                      ]
+                    },
+                    properties: {
+                      placeId: place_id,
+                      mainText: responseJson.result.name,
+                      secondaryText: responseJson.result.formatted_address,
+                      photoReference: photoReference
+                    }
+                  };
+                  this.closeDrawer();
+                  this.setState({
+                    search: responseJson.result.name,
+                    view: 'map',
+                    focused: marker,
+                    maxZoomLevel: 17 // limit zoom temporarily
+                  }, () => {
+                    this.mapRef.fitToSuppliedMarkers([place_id], {
+                      edgePadding: {
+                        top: 50,
+                        right: 50,
+                        bottom: 50,
+                        left: 50
+                      },
+                      animated: true
+                    });
+                  });
+                }
               }
-            };
-
-          this.closeDrawer();
-          this.setState({
-            search: responseJson.result.name,
-            view: 'map',
-            focused: marker,
-            maxZoomLevel: 17 // limit zoom temporarily
-          }, () => {
-            this.mapRef.fitToSuppliedMarkers([place_id], {
-              edgePadding: {
-                top: 50,
-                right: 50,
-                bottom: 50,
-                left: 50
-              },
-              animated: true
             });
-          });
-        });
+            if (hasPhoto) {
+              break;
+            }
+          }
+          if (!hasPhoto) {
+            var place_id = responseJson.results[0].place_id;
+            fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${place_id}&key=${MAPS_API_KEY}`)
+              .then(response => response.json())
+              .then(responseJson => {
+                const photoReference = responseJson.result.photos == undefined ? [undefined] : responseJson.result.photos.map(elem => elem.photo_reference)
+                const marker = {
+                  type: 'Feature',
+                  geometry: {
+                    type: 'Point',
+                    coordinates: [
+                      parseFloat(latitude),
+                      parseFloat(longitude)
+                    ]
+                  },
+                  properties: {
+                    placeId: place_id,
+                    mainText: responseJson.result.name,
+                    secondaryText: responseJson.result.formatted_address,
+                    photoReference: photoReference
+                  }
+                };
+                this.closeDrawer();
+                this.setState({
+                  search: responseJson.result.name,
+                  view: 'map',
+                  focused: marker,
+                  maxZoomLevel: 17 // limit zoom temporarily
+                }, () => {
+                  this.mapRef.fitToSuppliedMarkers([place_id], {
+                    edgePadding: {
+                      top: 50,
+                      right: 50,
+                      bottom: 50,
+                      left: 50
+                    },
+                    animated: true
+                  });
+                });
+            });
+          }
       });
   }
 
