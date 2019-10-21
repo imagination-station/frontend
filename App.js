@@ -10,6 +10,7 @@ import CollectionScreen from './app/screens/Collection.js';
 import ProfileScreen from './app/screens/Profile.js';
 import MapScreen from './app/screens/Map.js';
 import PathDetailScreen from './app/screens/PathDetail.js';
+import SignUpScreen from './app/screens/SignUp.js';
 
 import { FIREBASE_CONFIG } from './app/config/settings.js';
 import { ACCENT } from './app/config/styles.js';
@@ -35,6 +36,9 @@ const HomeStack = createStackNavigator({
 
 const AppNavigator = createSwitchNavigator(
   {
+    SignUp: {
+      screen: SignUpScreen
+    },
     Login: {
       screen: LoginScreen
     },
