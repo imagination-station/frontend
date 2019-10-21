@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Component } from 'react';
 import { createAppContainer, createSwitchNavigator } from 'react-navigation';
 import { createStackNavigator } from 'react-navigation-stack';
 import { createMaterialBottomTabNavigator } from 'react-navigation-material-bottom-tabs';
@@ -8,7 +8,7 @@ import LoginScreen from './app/screens/Login.js';
 import ExploreScreen from './app/screens/Explore.js';
 import CollectionScreen from './app/screens/Collection.js';
 import ProfileScreen from './app/screens/Profile.js';
-import MapScreen from './app/screens/Map.js';
+import MapScreen, { SearchScreen, DetailScreen, NoteEditorScreen } from './app/screens/Map.js';
 import PathDetailScreen from './app/screens/PathDetail.js';
 import SignUpScreen from './app/screens/SignUp.js';
 
@@ -17,7 +17,17 @@ import { ACCENT } from './app/config/styles.js';
 
 firebase.initializeApp(FIREBASE_CONFIG);
 
-const ExploreTab = createMaterialBottomTabNavigator({
+const mapNavigationStateParamsToProps = (SomeComponent) => {
+  return class extends Component {
+      static navigationOptions = SomeComponent.navigationOptions; // better use hoist-non-react-statics
+      render() {
+          const {navigation: {state: {params}}} = this.props
+          return <SomeComponent {...params} {...this.props} />
+      }
+  }
+}
+
+const HomeTab = createMaterialBottomTabNavigator({
   Explore: ExploreScreen,
   Collection: CollectionScreen,
   Profile: ProfileScreen
@@ -29,8 +39,11 @@ const ExploreTab = createMaterialBottomTabNavigator({
 });
 
 const HomeStack = createStackNavigator({
-  Explore: ExploreTab,
+  Explore: HomeTab,
   Map: MapScreen,
+  MapSearch: mapNavigationStateParamsToProps(SearchScreen),
+  PlaceDetail: mapNavigationStateParamsToProps(DetailScreen),
+  NoteEditor: mapNavigationStateParamsToProps(NoteEditorScreen),
   PathDetail: PathDetailScreen
 });
 

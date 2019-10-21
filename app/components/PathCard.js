@@ -1,5 +1,16 @@
 import React from 'react';
-import { Image, Text, View, StyleSheet, Dimensions } from 'react-native';
+import {
+  Image,
+  Text,
+  View,
+  StyleSheet,
+  Dimensions,
+  TouchableWithoutFeedback,
+  TouchableOpacity
+} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
+import { ACCENT, ACCENT_GREEN } from '../config/styles.js';
 
 const {width, height} = Dimensions.get('window');
 const CARD_HEIGHT = height / 4;
@@ -12,7 +23,7 @@ const styles = StyleSheet.create({
     height: CARD_HEIGHT * 1.4,
     width: 350,
     overflow: 'hidden',
-    elevation: 1
+    elevation: 0.5
   },
   cardImage: {
     flex: 3,
@@ -30,6 +41,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 5,
     fontWeight: 'bold'
+  },
+  iconButtonBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    zIndex: 5
   }
 });
 
@@ -39,13 +58,31 @@ export default function PathCard(props) {
   };
 
   return (
-    <View style={styles.card}>
-      <Image source={pic} style={styles.cardImage} resizeMode='cover' />
-      <View style={styles.textContent}>
-        <Text numberOfLines={1} style={styles.cardtitle}>
-          {props.title}
-        </Text>
+    <TouchableOpacity onPress={props.onPress}>
+      <View style={styles.card}>
+        <View style={styles.iconButtonBar}>
+          <TouchableWithoutFeedback onPress={props.onBookmark}>
+            <Icon
+              name={props.bookmarked ? 'bookmark' : 'bookmark-border'}
+              size={25}
+              color={props.bookmarked ? ACCENT_GREEN : 'rgba(0, 0, 0, 0.5)'}
+            />
+          </TouchableWithoutFeedback>
+          <TouchableWithoutFeedback onPress={props.onLike}>
+            <Icon
+              name={props.liked ? 'favorite' : 'favorite-border'}
+              size={25}
+              color={props.liked ? ACCENT : 'rgba(0, 0, 0, 0.5)'}
+            />
+          </TouchableWithoutFeedback>
+        </View>
+        <Image source={pic} style={styles.cardImage} resizeMode='cover' />
+        <View style={styles.textContent}>
+          <Text numberOfLines={1} style={styles.cardtitle}>
+            {props.title}
+          </Text>
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
