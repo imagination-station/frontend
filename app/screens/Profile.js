@@ -77,6 +77,11 @@ class ProfileScreen extends Component {
     });
   }
 
+  logout = () => {
+    firebase.auth().signOut()
+    this.props.navigation.navigate('Login')
+  }
+
   render() {
     return (
       <View style={styles.container}>
@@ -95,7 +100,7 @@ class ProfileScreen extends Component {
           <Text style={styles.sectionHeader}>ACTIONS</Text>
           <ActionButton
             title='Log out'
-            onPress={() => () => firebase.auth().signOut()}
+            onPress={this.logout}
             textStyle={{...styles.textStyle, color: ACCENT_GREEN}}
           />
         </View>

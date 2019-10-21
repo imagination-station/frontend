@@ -53,6 +53,10 @@ class LoginScreen extends Component {
       .catch(error => console.log(error));
   }
 
+  onPressSignup = () => {
+    this.props.navigation.navigate('SignUp')
+  }
+
   render() {
     return (
       <View style={styles.container}>
@@ -74,6 +78,10 @@ class LoginScreen extends Component {
         <Button
           title='Log In'
           onPress={this.login}
+        />
+        <Button
+          title='Sign Up for an account'
+          onPress={this.onPressSignup}
         />
       </View>
     );

@@ -47,7 +47,7 @@ const AppNavigator = createSwitchNavigator(
     }
   },
   {
-    initialRouteName: 'SignUp',
+    initialRouteName: 'Login',
     // defaultNavigationOptions: {
     //   headerTitle: <Text style={{flex: 1, paddingLeft: 10, fontSize: 18, color: DARKER_GREY}}>Stumble</Text>
     // }
