@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import { Text, View, StyleSheet, TouchableWithoutFeedback, TouchableOpacity, FlatList, Image } from 'react-native';
 import * as firebase from 'firebase';
 
-import { DARKER_GREY, GREY, ACCENT_GREEN } from '../config/styles.js';
+import globalStyles, { DARKER_GREY, GREY, ACCENT_GREEN } from '../config/styles.js';
 import { SERVER_ADDR, PLACE_ID, PHOTO_REFERENCE, MAPS_API_KEY } from '../config/settings.js';
 import PathCard from '../components/PathCard.js';
 
@@ -80,7 +80,7 @@ class ExploreScreen extends Component {
     return (
      <View style={styles.container}>
         <Image source={{uri: this.state.photoReference}} style={{width: '100%', height: 200}} />
-        <Text adjustsFontSizeToFit={true} fontWeight={'bold'}>Explore Atlanta!</Text>
+        <Text style={{...globalStyles.text, fontSize: 18, marginBottom: 5}}>Explore Atlanta!</Text>
         <View style={styles.sectionContainer}>
           <FlatList
             data={this.state.routes}
