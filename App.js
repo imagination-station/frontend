@@ -42,7 +42,7 @@ const HomeStack = createStackNavigator({
   Map: MapScreen,
   MapSearch: mapNavigationStateParamsToProps(SearchScreen),
   PlaceDetail: mapNavigationStateParamsToProps(DetailScreen),
-  NoteEditor: NoteEditorScreen,
+  NoteEditor: mapNavigationStateParamsToProps(NoteEditorScreen),
   PathDetail: PathDetailScreen
 });
 

@@ -245,7 +245,11 @@ const detailStyles = StyleSheet.create({
 });
 
 const noteEditorStyles = StyleSheet.create({
-
+  container: {
+    flex: 1,
+    padding: 10,
+    alignItems: 'center'
+  }
 });
 
 // hardcoded dummy data; this is what the data will actually look like
@@ -425,7 +429,10 @@ export class DetailScreen extends Component {
           <BigButton
             icon='create'
             title='Edit notes'
-            onPress={() => this.props.navigation.navigate('NoteEditor')}
+            onPress={() => this.props.navigation.navigate('NoteEditor', {
+              place: this.props.place,
+              onChangeText: this.props.onEditNote
+            })}
           />
         </View>
       </View>
@@ -445,10 +452,25 @@ function BigButton(props) {
 }
 
 export class NoteEditorScreen extends Component {
+  state = {
+    note: this.props.place.properties.note
+  };
+
   render() {
     return (
-      <View style={globalStyles.container}>
-        <Text>Note editor screen</Text>
+      <View style={noteEditorStyles.container}>
+        <TextInput
+          autoFocus
+          multiline
+          onChangeText={text => this.setState({note: text})}
+          placeholder={this.props.place.properties.mainText}
+          value={this.state.note}
+          style={{alignSelf: 'flex-start'}}
+        />
+        <Button
+          title='DONE'
+          onPress={this.props.navigation.goBack}
+        />
       </View>
     );
   }
@@ -550,13 +572,7 @@ class MapScreen extends Component {
   state = {
     view: 'map',
     searchInput: '',
-    collapsed: false,
-    region: {
-      latitude: INIT_LOCATION.latitude,
-      longitude: INIT_LOCATION.longitude,
-      latitudeDelta: 0.0922,
-      longitudeDelta: 0.0421
-    },
+    drawerCollapsed: false,
     markers: [],
     focused: null,
     name: ''
@@ -674,7 +690,7 @@ class MapScreen extends Component {
 
   toggleDrawer = () => {
     let toValue;
-    if (this.state.collapsed) {
+    if (this.state.drawerCollapsed) {
       toValue = height - Header.HEIGHT - (55 + CARD_HEIGHT);
     } else {
       toValue = height - Header.HEIGHT - 35;
@@ -686,7 +702,7 @@ class MapScreen extends Component {
         toValue: toValue,
         duration: 200
       }
-    ).start(() => this.setState({collapsed: !this.state.collapsed, view: 'map'}));
+    ).start(() => this.setState({drawerCollapsed: !this.state.drawerCollapsed, view: 'map'}));
   }
 
   closeDrawer = () => {
@@ -696,7 +712,7 @@ class MapScreen extends Component {
         toValue: height - Header.HEIGHT - 35,
         duration: 200
       }
-    ).start(() => this.setState({collapsed: true}));
+    ).start(() => this.setState({drawerCollapsed: true}));
   }
 
   showDoneScreen = () => {
@@ -724,6 +740,19 @@ class MapScreen extends Component {
     this.setState({
       markers: this.state.markers.filter(marker => marker.properties.placeId != id)
     });
+  }
+
+  onEditItemNote = (id, text) => {
+    this.setState({markers: this.state.markers.map(marker => {
+      let newMarker = {...marker};
+      if (marker.properties.placeId != id) {
+        return newMarker;
+      }
+
+      newMarker.properties = {...marker.properties};
+      newMarker.properties.note = text;
+      return newMarker;
+    })});
   }
 
   onCreatePath = () => {
@@ -756,10 +785,10 @@ class MapScreen extends Component {
           style={globalStyles.container}
           onPoiClick={this.onPoiClick}
           initialRegion={{
-            latitude: this.state.region.latitude,
-            longitude: this.state.region.longitude,
-            latitudeDelta: this.state.region.latitudeDelta,
-            longitudeDelta: this.state.region.longitudeDelta
+            latitude: INIT_LOCATION.latitude,
+            longitude: INIT_LOCATION.longitude,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421
           }}
           ref={ref => this.mapRef = ref}
         >
@@ -825,7 +854,10 @@ class MapScreen extends Component {
                 <Card
                   key={marker.placeId}
                   marker={marker}
-                  onPress={() => this.props.navigation.navigate('PlaceDetail', {place: marker})}
+                  onPress={() => this.props.navigation.navigate('PlaceDetail', {
+                    place: marker,
+                    onEditNote: this.onEditItemNote
+                  })}
                   onRemove={() => this.onRemoveItem(marker.properties.placeId)}
                 />
               )}
