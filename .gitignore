@@ -12,4 +12,4 @@ web-report/
 package-lock.json
 ./DS_Store
 
-app/config/settings.1.js
+app/config/settings.js
