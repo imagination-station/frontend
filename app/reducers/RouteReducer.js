@@ -33,6 +33,11 @@ const routeReducer = (state = INITIAL_STATE, action) => {
                 ...state,
                 markers: updatedMarkers  
             };
+        case 'CLEAR':
+            return {
+                markers: [],
+                selected: null
+            };
         default:
             return state;
 

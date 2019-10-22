@@ -17,12 +17,11 @@ import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
 
-import Button from '../components/Button.js';
-import globalStyles, { GREY, DARKER_GREY, ACCENT, ACCENT_GREEN } from '../config/styles.js';
+import Button, { LongButton } from '../components/Buttons.js';
+import globalStyles, { GREY, DARKER_GREY, ACCENT } from '../config/styles.js';
 import {
   MAPS_API_KEY,
   SERVER_ADDR,
-  UID,
   INIT_LOCATION,
   PLACE_ID
 } from '../config/settings.js';
@@ -266,6 +265,15 @@ const noteEditorStyles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     marginBottom: 20,
+  },
+  textInput: {
+    alignSelf: 'flex-start',
+    textAlignVertical: 'top',
+    width: '100%'
+  },
+  charCount: {
+    alignSelf: 'flex-start',
+    color: DARKER_GREY
   }
 });
 
@@ -358,9 +366,8 @@ class MapSearch extends Component {
             data={this.state.results}
             renderItem={({ item }) => <SearchItem
               item={item}
-              onPress={() => {
-                this.props.onPressItem(item, this.props.navigation);
-              }}
+              // navigation passed in to pop from current page
+              onPress={() => this.props.onPressItem(item, this.props.navigation)}
             />}
             keyExtractor={item => item.place_id}
           />
@@ -388,7 +395,7 @@ class PlaceDetail extends Component {
   }
 
   render() {
-    let position = Animated.divide(this.scrollValue, width);
+    const position = Animated.divide(this.scrollValue, width);
     const place = this.props.markers[this.props.selected];
 
     return (
@@ -421,9 +428,12 @@ class PlaceDetail extends Component {
           <View style={detailStyles.scrollIndicator}>
             {place.properties.photoReference.map((_, i) => {
               let opacity = position.interpolate({
-                inputRange: [i - 1, i, i + 1], // each dot will need to have an opacity of 1 when position is equal to their index (i)
-                outputRange: [0.3, 1, 0.3], // when position is not i, the opacity of the dot will animate to 0.3
-                extrapolate: 'clamp' // this will prevent the opacity of the dots from going outside of the outputRange (i.e. opacity will not be less than 0.3)
+                // each dot will need to have an opacity of 1 when position is equal to their index (i)
+                inputRange: [i - 1, i, i + 1],
+                // when position is not i, the opacity of the dot will animate to 0.3
+                outputRange: [0.3, 1, 0.3],
+                 // this will prevent the opacity of the dots from going outside of the outputRange (i.e. opacity will not be less than 0.3)
+                extrapolate: 'clamp'
               });
               return (
                 <Animated.View
@@ -444,9 +454,11 @@ class PlaceDetail extends Component {
           </View> : <Text style={{color: 'grey'}}>
             Write interesting facts, things to do, or anything you want to record about this place.
           </Text>}
-          <BigButton
+          <LongButton
             icon='create'
             title='Edit notes'
+            style={detailStyles.buttonStyle}
+            textStyle={{marginLeft: 40}}
             onPress={() => this.props.navigation.navigate('NoteEditor')}
           />
         </View>
@@ -455,21 +467,12 @@ class PlaceDetail extends Component {
   }
 }
 
-function BigButton(props) {
-  return (
-    <TouchableOpacity onPress={props.onPress}>
-      <View style={detailStyles.buttonStyle}>
-        {props.icon && <Icon name={props.icon} size={30} color='#00A699'/>}
-        <Text style={{marginLeft: 40}}>{props.title}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
 class NoteEditor extends Component {
   state = {
     note: this.props.markers[this.props.selected].properties.note 
   };
+
+  MAX_LENGTH = 280; // same as Twitter
 
   render() {
     return (
@@ -479,16 +482,16 @@ class NoteEditor extends Component {
             autoFocus
             multiline
             numberOfLines={10}
-            maxLength={280}
+            maxLength={this.MAX_LENGTH}
             onChangeText={text => this.setState({note: text})}
             placeholder={this.props.markers[this.props.selected].properties.mainText}
             value={this.state.note}
-            style={{alignSelf: 'flex-start', textAlignVertical: 'top', width: '100%'}}
+            style={noteEditorStyles.textInput}
           />
           <Text
-            style={{alignSelf: 'flex-start', color: DARKER_GREY}}
+            style={noteEditorStyles.charCount}
           >
-            {`${280 - (this.state.note ? this.state.note.length : 0)}`}
+            {`${this.MAX_LENGTH - (this.state.note ? this.state.note.length : 0)}`}
           </Text>
         </View>
         <Button
@@ -530,7 +533,7 @@ function Card(props) {
 function FocusedCard(props) {
   const source = props.marker.properties.photoReference ?
     {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`} :
-    {uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`};
+    {uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg'};
 
   return (
     <View style={mapStyles.focusedCard}>
@@ -615,6 +618,10 @@ class MapScreen extends Component {
     this.focusChanged = false;
   }
 
+  componentWillUnmount() {
+    this.props.clear();
+  }
+
   onPressSearch = () => {
     this.props.navigation.navigate('MapSearch', {
       searchInput: this.state.searchInput,
@@ -631,7 +638,7 @@ class MapScreen extends Component {
       .then(response => response.json())
       .then(responseJson => {
         // grab first 4 photos (if they exist)
-        const photoReference = responseJson.result.photos ? responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4) : [];
+        const photoReference = responseJson.result.photos ? responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4) : null;
         const marker = {
           type: 'Feature',
           geometry: {
@@ -652,7 +659,6 @@ class MapScreen extends Component {
         this.closeDrawer();
         this.setState({
           searchInput: item.structured_formatting.main_text,
-          view: 'map',
           focused: marker
         }, () => {
           navigation.goBack();
@@ -672,7 +678,7 @@ class MapScreen extends Component {
     fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${event.nativeEvent.placeId}&key=${MAPS_API_KEY}`)
       .then(response => response.json())
       .then(responseJson => {
-        const photoReference = responseJson.result.photos ? responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4) : [];
+        const photoReference = responseJson.result.photos ? responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4) : null;
         const marker = {
           type: 'Feature',
           geometry: {
@@ -693,7 +699,6 @@ class MapScreen extends Component {
       this.closeDrawer();
       this.setState({
         searchInput: responseJson.result.name,
-        view: 'map',
         focused: marker,
       }, () => {
         this.mapRef.animateCamera({
@@ -709,21 +714,20 @@ class MapScreen extends Component {
 
   onLongPress = event => {
     event.persist();
-    var latitude = event.nativeEvent.coordinate.latitude;
-    var longitude = event.nativeEvent.coordinate.longitude;
+    const latitude = event.nativeEvent.coordinate.latitude;
+    const longitude = event.nativeEvent.coordinate.longitude;
     fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${MAPS_API_KEY}`)
       .then(response => response.json())
       .then(responseJson => {
-        console.log(responseJson.results)
-        // var place_id = responseJson.results[0].place_id
-        var hasPhoto = false;
+        let hasPhoto = false;
+        // cycle through returns places to see if there are any photos
         for (i = 0; i < Math.floor(Object.keys(responseJson.results).length / 3); i++) {
-          var place_id = responseJson.results[i].place_id;
+          let place_id = responseJson.results[i].place_id;
           fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${place_id}&key=${MAPS_API_KEY}`)
             .then(response => response.json())
             .then(responseJson => {
               if (!hasPhoto){
-                var photoReference = responseJson.result.photos != undefined;
+                let photoReference = responseJson.result.photos != undefined;
                 if (photoReference) {
                   hasPhoto = true;
                   photoReference = responseJson.result.photos.map(elem => elem.photo_reference);
@@ -745,20 +749,16 @@ class MapScreen extends Component {
                   };
                   this.closeDrawer();
                   this.setState({
-                    search: responseJson.result.name,
-                    view: 'map',
+                    searchInput: responseJson.result.name,
                     focused: marker,
-                    maxZoomLevel: 17 // limit zoom temporarily
                   }, () => {
-                    this.mapRef.fitToSuppliedMarkers([place_id], {
-                      edgePadding: {
-                        top: 50,
-                        right: 50,
-                        bottom: 50,
-                        left: 50
+                    this.mapRef.animateCamera({
+                      center: {
+                        latitude: this.state.focused.geometry.coordinates[0],
+                        longitude: this.state.focused.geometry.coordinates[1],
                       },
-                      animated: true
-                    });
+                      zoom: 18
+                    }, 30);
                   });
                 }
               }
@@ -768,11 +768,11 @@ class MapScreen extends Component {
             }
           }
           if (!hasPhoto) {
-            var place_id = responseJson.results[0].place_id;
+            let place_id = responseJson.results[0].place_id;
             fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${place_id}&key=${MAPS_API_KEY}`)
               .then(response => response.json())
               .then(responseJson => {
-                const photoReference = responseJson.result.photos == undefined ? [undefined] : responseJson.result.photos.map(elem => elem.photo_reference)
+                const photoReference = null;
                 const marker = {
                   type: 'Feature',
                   geometry: {
@@ -791,20 +791,17 @@ class MapScreen extends Component {
                 };
                 this.closeDrawer();
                 this.setState({
-                  search: responseJson.result.name,
+                  searchInput: responseJson.result.name,
                   view: 'map',
                   focused: marker,
-                  maxZoomLevel: 17 // limit zoom temporarily
                 }, () => {
-                  this.mapRef.fitToSuppliedMarkers([place_id], {
-                    edgePadding: {
-                      top: 50,
-                      right: 50,
-                      bottom: 50,
-                      left: 50
+                  this.mapRef.animateCamera({
+                    center: {
+                      latitude: this.state.focused.geometry.coordinates[0],
+                      longitude: this.state.focused.geometry.coordinates[1],
                     },
-                    animated: true
-                  });
+                    zoom: 18
+                  }, 30);
                 });
             });
           }
@@ -858,25 +855,6 @@ class MapScreen extends Component {
     }, this.toggleDrawer);
   }
 
-  // onRemoveItem = id => {
-  //   this.setState({
-  //     markers: this.state.markers.filter(marker => marker.properties.placeId != id)
-  //   });
-  // }
-
-  // onEditItemNote = (id, text) => {
-  //   this.setState({markers: this.state.markers.map(marker => {
-  //     let newMarker = {...marker};
-  //     if (marker.properties.placeId != id) {
-  //       return newMarker;
-  //     }
-
-  //     newMarker.properties = {...marker.properties};
-  //     newMarker.properties.note = text;
-  //     return newMarker;
-  //   })});
-  // }
-
   onComplete = () => {
     firebase.auth().currentUser.getIdToken().then(token => {      
       fetch(`${SERVER_ADDR}/cities/routes`, {
@@ -888,7 +866,7 @@ class MapScreen extends Component {
         },
         body: JSON.stringify({
           name: this.state.name,
-          creator: UID,
+          creator: firebase.auth().currentUser.getUid(),
           city: PLACE_ID,
           pins: this.props.markers
         })
@@ -1043,7 +1021,8 @@ const mapDispatchToProps = dispatch => {
     }}),
     update: note => dispatch({type: 'UPDATE', payload: {
       note: note
-    }})
+    }}),
+    clear: () => dispatch({type: 'CLEAR'}),
   };
 }
 

@@ -15,7 +15,7 @@ import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
 import * as firebase from 'firebase';
 
-import Button from '../components/Button.js';
+import Button from '../components/Buttons.js';
 import globalStyles, { GREY, DARKER_GREY } from '../config/styles.js';
 import {
   MAPS_API_KEY,

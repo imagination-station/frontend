@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import * as firebase from 'firebase';
 
-import Button from '../components/Button.js';
+import Button from '../components/Buttons.js';
 import globalStyles, { GREY } from '../config/styles.js';
 
 const styles = StyleSheet.create({
