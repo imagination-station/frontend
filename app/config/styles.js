@@ -5,6 +5,9 @@ export const ACCENT_GREEN = '#00A699';
 export const GREY = '#f2f2f2';
 export const DARKER_GREY = '#c2c2c2';
 
+export const HOF = '#484848';
+export const FOGGY = '#767676';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1

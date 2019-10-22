@@ -16,9 +16,10 @@ import { Header } from 'react-navigation-stack';
 import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
+import MapViewDirections from 'react-native-maps-directions';
 
 import Button, { LongButton } from '../components/Buttons.js';
-import globalStyles, { GREY, DARKER_GREY, ACCENT } from '../config/styles.js';
+import globalStyles, { GREY, DARKER_GREY, ACCENT, HOF, FOGGY } from '../config/styles.js';
 import {
   MAPS_API_KEY,
   SERVER_ADDR,
@@ -564,10 +565,16 @@ function ActionCard(props) {
   } else {
     content = [
       <Text style={{color: DARKER_GREY}}>
-        {`${props.length} places added`}
+        {`${props.length} places`}
+      </Text>,
+      <Text style={{color: DARKER_GREY}}>
+        {`${props.distance} m`}
+      </Text>,
+      <Text style={{color: DARKER_GREY}}>
+        {`${Math.floor(props.duration / 60)} mins`}
       </Text>,
       !props.isDone && 
-        <View style={{flexDirection: 'row', justifyContent: 'space-around', marginTop: 30}}>
+        <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}}>
           <Button title={'View All'} onPress={props.viewAll} small />
           <Button title={`Create Path`} onPress={props.done} small />
         </View>
@@ -603,7 +610,8 @@ class MapScreen extends Component {
     searchInput: '',
     drawerCollapsed: false,
     focused: null,
-    name: ''
+    name: '',
+    steps: []
   };
 
   componentWillMount() {
@@ -633,82 +641,59 @@ class MapScreen extends Component {
     this.setState({searchInput: '', focused: null});
   }
 
-  onPressSearchItem = (item, navigation) => {
-    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${item.place_id}&key=${MAPS_API_KEY}`)
-      .then(response => response.json())
-      .then(responseJson => {
-        // grab first 4 photos (if they exist)
-        const photoReference = responseJson.result.photos ? responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4) : null;
-        const marker = {
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [
-              responseJson.result.geometry.location.lat,
-              responseJson.result.geometry.location.lng
-            ]
-          },
-          properties: {
-            placeId: item.place_id,
-            mainText: item.structured_formatting.main_text,
-            secondaryText: item.structured_formatting.secondary_text,
-            photoReference: photoReference
-          }
-        };
-
-        this.closeDrawer();
-        this.setState({
-          searchInput: item.structured_formatting.main_text,
-          focused: marker
-        }, () => {
-          navigation.goBack();
-          this.mapRef.animateCamera({
-            center: {
-              latitude: this.state.focused.geometry.coordinates[0],
-              longitude: this.state.focused.geometry.coordinates[1],
-            },
-            zoom: 17
-          }, 20);
-        });
-      });
-  }
-
-  onPoiClick = event => {
-    event.persist(); // necessary to persist event data for some reason
-    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${event.nativeEvent.placeId}&key=${MAPS_API_KEY}`)
-      .then(response => response.json())
-      .then(responseJson => {
-        const photoReference = responseJson.result.photos ? responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4) : null;
-        const marker = {
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [
-              responseJson.result.geometry.location.lat,
-              responseJson.result.geometry.location.lng
-            ]
-          },
-          properties: {
-            placeId: event.nativeEvent.placeId,
-            mainText: responseJson.result.name,
-            secondaryText: responseJson.result.formatted_address,
-            photoReference: photoReference
-          }
-        };
+  fetchPlaceDetails = (placeId, callback) => {
+    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}`)
+    .then(response => response.json())
+    .then(responseJson => {
+      const photoReference = responseJson.result.photos ? responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4) : null;
+      const marker = {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [
+            responseJson.result.geometry.location.lat,
+            responseJson.result.geometry.location.lng
+          ]
+        },
+        properties: {
+          placeId: placeId,
+          mainText: responseJson.result.name,
+          secondaryText: responseJson.result.formatted_address,
+          photoReference: photoReference
+        }
+      };
 
       this.closeDrawer();
       this.setState({
         searchInput: responseJson.result.name,
         focused: marker,
-      }, () => {
-        this.mapRef.animateCamera({
-          center: {
-            latitude: this.state.focused.geometry.coordinates[0],
-            longitude: this.state.focused.geometry.coordinates[1],
-          },
-          zoom: 15
-        }, 30);
-      });
+      }, callback);
+    });
+  }
+
+  onPressSearchItem = (item, navigation) => {
+    this.fetchPlaceDetails(item.place_id, () => {
+      navigation.goBack();
+      this.mapRef.animateCamera({
+        center: {
+          latitude: this.state.focused.geometry.coordinates[0],
+          longitude: this.state.focused.geometry.coordinates[1],
+        },
+        zoom: 17
+      }, 30);
+    });
+  }
+
+  onPoiClick = event => {
+    event.persist(); // necessary to persist event data for some reason
+    this.fetchPlaceDetails(event.nativeEvent.placeId, () => {
+      this.mapRef.animateCamera({
+        center: {
+          latitude: this.state.focused.geometry.coordinates[0],
+          longitude: this.state.focused.geometry.coordinates[1],
+        },
+        zoom: 17
+      }, 30);
     });
   }
 
@@ -768,42 +753,15 @@ class MapScreen extends Component {
             }
           }
           if (!hasPhoto) {
-            let place_id = responseJson.results[0].place_id;
-            fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${place_id}&key=${MAPS_API_KEY}`)
-              .then(response => response.json())
-              .then(responseJson => {
-                const photoReference = null;
-                const marker = {
-                  type: 'Feature',
-                  geometry: {
-                    type: 'Point',
-                    coordinates: [
-                      parseFloat(latitude),
-                      parseFloat(longitude)
-                    ]
-                  },
-                  properties: {
-                    placeId: place_id,
-                    mainText: responseJson.result.name,
-                    secondaryText: responseJson.result.formatted_address,
-                    photoReference: photoReference
-                  }
-                };
-                this.closeDrawer();
-                this.setState({
-                  searchInput: responseJson.result.name,
-                  view: 'map',
-                  focused: marker,
-                }, () => {
-                  this.mapRef.animateCamera({
-                    center: {
-                      latitude: this.state.focused.geometry.coordinates[0],
-                      longitude: this.state.focused.geometry.coordinates[1],
-                    },
-                    zoom: 18
-                  }, 30);
-                });
-            });
+            this.fetchPlaceDetails(responseJson.results[0].place_id, () => {
+              this.mapRef.animateCamera({
+                center: {
+                  latitude: this.state.focused.geometry.coordinates[0],
+                  longitude: this.state.focused.geometry.coordinates[1],
+                },
+                zoom: 18
+              }, 30);
+            });            
           }
       });
   }
@@ -849,10 +807,26 @@ class MapScreen extends Component {
 
   onAddItem = () => {
     this.props.addMarker(this.state.focused);
-    this.setState({
-      focused: null,
-      searchInput: '',
-    }, this.toggleDrawer);
+    if (this.props.markers.length > 0) {
+      fetch(`https://maps.googleapis.com/maps/api/directions/json?key=${MAPS_API_KEY}&origin=place_id:${this.props.markers[this.props.markers.length-1].properties.placeId}&destination=place_id:${this.state.focused.properties.placeId}&mode=walking`)
+        .then(response => response.json())
+        .then(responseJson => {
+          const info = {
+            distance: responseJson.routes[0].legs[0].distance,
+            duration: responseJson.routes[0].legs[0].duration
+          }
+          this.setState({
+            focused: null,
+            searchInput: '',
+            steps: [...this.state.steps, info]
+          }, this.toggleDrawer);
+        });
+    } else {
+      this.setState({
+        focused: null,
+        searchInput: '',
+      }, this.toggleDrawer);
+    }
   }
 
   onComplete = () => {
@@ -878,6 +852,33 @@ class MapScreen extends Component {
   }
 
   render() {
+    const reducer = (res, marker, index, arr) => {
+      res.push(
+        <Card
+          key={marker.placeId}
+          marker={marker}
+          onPress={() => {
+            this.props.viewDetail(index);
+            this.props.navigation.navigate('PlaceDetail');
+          }}
+          onRemove={() => this.props.removeMarker(marker.properties.placeId)}
+        />);
+
+      if (this.state.steps[index]) {
+        res.push(
+          <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
+            <Icon name='directions-walk' size={30} color={FOGGY} />
+            <Text style={{color: FOGGY}}>{this.state.steps[index].distance.text}</Text>
+            <Text style={{color: FOGGY}}>{this.state.steps[index].duration.text}</Text>
+          </View>
+        );
+      }
+
+      return res;
+    }
+
+    const cards = this.props.markers.reduce(reducer, []);
+
     return (
       <View style={globalStyles.container}>
         <MapView
@@ -911,6 +912,22 @@ class MapScreen extends Component {
               description={this.state.focused.properties.secondaryText}
             />
           }
+          {this.props.markers.map((marker, index) => {
+            if (index == this.props.markers.length - 1) {
+              return null;
+            }
+
+            return (
+              <MapViewDirections
+                origin={`place_id:${marker.properties.placeId}`}
+                destination={`place_id:${this.props.markers[index+1].properties.placeId}`}
+                apikey={MAPS_API_KEY}
+                strokeColor={FOGGY}
+                strokeWidth={6}
+                lineDashPattern={[5, 30]}
+              />
+            );
+          })}
         </MapView>
         <View style={mapStyles.searchBoxContainer}>
           <TextInput
@@ -951,7 +968,7 @@ class MapScreen extends Component {
               )}
             >
               <View style={mapStyles.filler} />
-              {this.props.markers.map((marker, index) => 
+              {/* {this.props.markers.map((marker, index) => 
                 <Card
                   key={marker.placeId}
                   marker={marker}
@@ -961,7 +978,8 @@ class MapScreen extends Component {
                   }}
                   onRemove={() => this.props.removeMarker(marker.properties.placeId)}
                 />
-              )}
+              )} */}
+              {cards}
               <ActionCard
                 length={this.props.markers.length}
                 viewAll={() => {
@@ -969,7 +987,7 @@ class MapScreen extends Component {
                     this.props.markers.map(marker => marker.properties.placeId),
                     {
                       edgePadding: {
-                        top: 75,
+                        top: 100,
                         left: 75,
                         bottom: 500,
                         right: 75
@@ -980,6 +998,8 @@ class MapScreen extends Component {
                 }}
                 done={this.showDoneScreen}
                 isDone={this.state.view === 'done'}
+                distance={this.state.steps.reduce((res, cur) => res + cur.distance.value, 0)}
+                duration={this.state.steps.reduce((res, cur) => res + cur.duration.value, 0)}
               />
               <View style={mapStyles.filler} />
             </Animated.ScrollView>
