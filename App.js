@@ -3,6 +3,8 @@ import { createAppContainer, createSwitchNavigator } from 'react-navigation';
 import { createStackNavigator } from 'react-navigation-stack';
 import { createMaterialBottomTabNavigator } from 'react-navigation-material-bottom-tabs';
 import * as firebase from 'firebase';
+import { Provider } from 'react-redux';
+import { createStore } from 'redux'; 
 
 import LoginScreen from './app/screens/Login.js';
 import ExploreScreen from './app/screens/Explore.js';
@@ -11,11 +13,13 @@ import ProfileScreen from './app/screens/Profile.js';
 import MapScreen, { SearchScreen, DetailScreen, NoteEditorScreen } from './app/screens/Map.js';
 import PathDetailScreen from './app/screens/PathDetail.js';
 import SignUpScreen from './app/screens/SignUp.js';
+import routeReducer from './app/reducers/RouteReducer.js';
 
 import { FIREBASE_CONFIG } from './app/config/settings.js';
 import { ACCENT } from './app/config/styles.js';
 
 firebase.initializeApp(FIREBASE_CONFIG);
+const store = createStore(routeReducer);
 
 const mapNavigationStateParamsToProps = (SomeComponent) => {
   return class extends Component {
@@ -70,6 +74,10 @@ const AppNavigator = createSwitchNavigator(
 const AppContainer = createAppContainer(AppNavigator);
 
 export default function App() {
-  return <AppContainer />;
+  return (
+    <Provider store={store}>
+      <AppContainer />
+    </Provider>
+  );
 }
 
