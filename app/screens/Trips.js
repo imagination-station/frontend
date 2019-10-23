@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, StyleSheet, FlatList, Text } from 'react-native';
+import { View, StyleSheet, FlatList } from 'react-native';
 import * as firebase from 'firebase';
 
 import { DARKER_GREY, GREY, ACCENT_GREEN } from '../config/styles.js';
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   }
 });
 
-class CollectionScreen extends Component {
+class MyTripsScreen extends Component {
 
   state = {
     routes: null,
@@ -61,9 +61,8 @@ class CollectionScreen extends Component {
 
   componentDidMount() {
     firebase.auth().currentUser.getIdToken().then(token => {
-      console.log('token: ', token);
-      
-      fetch(`${SERVER_ADDR}/cities/${PLACE_ID}/routes`, {
+      console.log('uid', firebase.auth().currentUser.uid);
+      fetch(`${SERVER_ADDR}/users/5d979e6c5a0de701d708959e/routes`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -71,7 +70,7 @@ class CollectionScreen extends Component {
           Authorization: 'Bearer '.concat(token)
         }
       })
-        .then(response => response.json())
+        .then(response => {console.log(response);return response.json();})
         .then(responseJson => this.setState({
           routes: responseJson,
           likes: new Array(responseJson.length),
@@ -87,7 +86,13 @@ class CollectionScreen extends Component {
     return (
       <View style={styles.container}>
         <View style={styles.sectionContainer}>
-          <Text style={{fontSize: 30, padding: 10}}>Saved</Text>
+          <LongButton
+            title='New path'
+            icon='add'
+            onPress={() => this.props.navigation.navigate('Map')}
+            style={styles.buttonStyle}
+            textStyle={{marginLeft: 40}}
+          />
           <FlatList
             data={this.state.routes}
             renderItem={({ item, index }) => {
@@ -123,4 +128,4 @@ class CollectionScreen extends Component {
   }
 }
 
-export default CollectionScreen;
+export default MyTripsScreen;

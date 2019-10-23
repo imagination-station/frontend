@@ -9,6 +9,7 @@ import { createStore } from 'redux';
 import LoginScreen from './app/screens/Login.js';
 import ExploreScreen from './app/screens/Explore.js';
 import CollectionScreen from './app/screens/Collection.js';
+import MyTripsScreen from './app/screens/Trips.js';
 import ProfileScreen from './app/screens/Profile.js';
 import MapScreen, { SearchScreen, DetailScreen, NoteEditorScreen } from './app/screens/Map.js';
 import PathDetailScreen from './app/screens/PathDetail.js';
@@ -34,8 +35,10 @@ const mapNavigationStateParamsToProps = (SomeComponent) => {
 const HomeTab = createMaterialBottomTabNavigator({
   Explore: ExploreScreen,
   Collection: CollectionScreen,
+  'My Trips': MyTripsScreen,
   Profile: ProfileScreen
 }, {
+  shifting: false,
   activeColor: ACCENT,
   barStyle: {
     backgroundColor: 'white',
@@ -61,7 +64,7 @@ const AppNavigator = createSwitchNavigator(
     },
     Home: {
       screen: HomeStack
-    }
+    },
   },
   {
     initialRouteName: 'Login',

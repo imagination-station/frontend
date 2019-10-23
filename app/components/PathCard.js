@@ -12,7 +12,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import { ACCENT, ACCENT_GREEN } from '../config/styles.js';
 
-const {width, height} = Dimensions.get('window');
+const {_, height} = Dimensions.get('window');
 const CARD_HEIGHT = height / 4;
 
 const styles = StyleSheet.create({
@@ -23,7 +23,8 @@ const styles = StyleSheet.create({
     height: CARD_HEIGHT * 1.4,
     width: 350,
     overflow: 'hidden',
-    elevation: 0.5
+    elevation: 0.5,
+    borderRadius: 10
   },
   cardImage: {
     flex: 3,
@@ -58,7 +59,7 @@ export default function PathCard(props) {
   };
 
   return (
-    <TouchableOpacity onPress={props.onPress}>
+    <TouchableWithoutFeedback onPress={props.onPress}>
       <View style={styles.card}>
         <View style={styles.iconButtonBar}>
           <TouchableWithoutFeedback onPress={props.onBookmark}>
@@ -83,6 +84,6 @@ export default function PathCard(props) {
           </Text>
         </View>
       </View>
-    </TouchableOpacity>
+    </TouchableWithoutFeedback>
   );
 }

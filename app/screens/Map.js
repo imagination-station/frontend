@@ -19,6 +19,7 @@ import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
 
 import Button, { LongButton } from '../components/Buttons.js';
+import ImageCarousel from '../components/ImageCarousel.js';
 import globalStyles, { GREY, DARKER_GREY, ACCENT, HOF, FOGGY } from '../config/styles.js';
 import {
   MAPS_API_KEY,
@@ -198,18 +199,6 @@ const detailStyles = StyleSheet.create({
   },
   scrollViewContainer: {
     alignItems: 'center'
-  },
-  scrollIndicator: {
-    flexDirection: 'row',
-    position: 'absolute',
-    bottom: 10
-  },
-  indicatorDot: {
-    height: 6,
-    width: 6,
-    backgroundColor: 'white',
-    margin: 5,
-    borderRadius: 3
   },
   imageScrollView: {
     height: 300,
@@ -396,55 +385,23 @@ class PlaceDetail extends Component {
   }
 
   render() {
-    const position = Animated.divide(this.scrollValue, width);
     const place = this.props.markers[this.props.selected];
 
     return (
       <View style={detailStyles.container}>
-        <View style={detailStyles.scrollViewContainer}>
-          <Animated.ScrollView
-            style={detailStyles.imageScrollView}
-            horizontal
-            scrollEventThrottle={1}
-            showsHorizontalScrollIndicator={false}
-            pagingEnabled
-            onScroll={Animated.event([
-              {
-                nativeEvent: {
-                  contentOffset: {
-                    x: this.scrollValue,
-                  },
-                },
-              }],
-              {useNativeDriver: true}
-            )}
-          >
-            {place.properties.photoReference.map(ref =>
-              <Image
-                source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
-                style={detailStyles.image}
-              />
-            )}
-          </Animated.ScrollView>
-          <View style={detailStyles.scrollIndicator}>
-            {place.properties.photoReference.map((_, i) => {
-              let opacity = position.interpolate({
-                // each dot will need to have an opacity of 1 when position is equal to their index (i)
-                inputRange: [i - 1, i, i + 1],
-                // when position is not i, the opacity of the dot will animate to 0.3
-                outputRange: [0.3, 1, 0.3],
-                 // this will prevent the opacity of the dots from going outside of the outputRange (i.e. opacity will not be less than 0.3)
-                extrapolate: 'clamp'
-              });
-              return (
-                <Animated.View
-                  key={i}
-                  style={{...detailStyles.indicatorDot, opacity}}
-                />
-              );
-            })}
-          </View>
-        </View>
+        <ImageCarousel
+          width={width}
+          scrollValue={this.scrollValue}
+          containerStyle={detailStyles.scrollViewContainer}
+          scrollViewStyle={detailStyles.imageScrollView}
+        >
+          {place.properties.photoReference.map(ref =>
+            <Image
+              source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
+              style={detailStyles.image}
+            />
+          )}
+        </ImageCarousel>
         <View style={detailStyles.textContainer}>
           <Text style={detailStyles.mainText}>{place.properties.mainText}</Text>
           <Text style={detailStyles.secondaryText}>{place.properties.secondaryText}</Text>
@@ -840,12 +797,12 @@ class MapScreen extends Component {
         },
         body: JSON.stringify({
           name: this.state.name,
-          creator: firebase.auth().currentUser.getUid(),
+          creator: firebase.auth().currentUser.uid,
           city: PLACE_ID,
           pins: this.props.markers
         })
       })
-        .then(this.props.navigation.goBack)
+        .then(response => console.log(response))
         .catch(error => console.error(error));
       }
     );
