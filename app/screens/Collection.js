@@ -2,10 +2,9 @@ import React, { Component } from 'react';
 import { View, StyleSheet, FlatList, Text } from 'react-native';
 import * as firebase from 'firebase';
 
-import { DARKER_GREY, GREY, ACCENT_GREEN } from '../config/styles.js';
-import { SERVER_ADDR, PLACE_ID, PHOTO_REFERENCE, MAPS_API_KEY } from '../config/settings.js';
+import { DARKER_GREY, GREY, ACCENT_GREEN, HOF } from '../config/styles.js';
+import { SERVER_ADDR, PLACE_ID, PHOTO_REFERENCE, MAPS_API_KEY, UID } from '../config/settings.js';
 import PathCard from '../components/PathCard.js';
-import { LongButton } from '../components/Buttons.js';
 
 const styles = StyleSheet.create({
   container: {
@@ -53,17 +52,12 @@ const styles = StyleSheet.create({
 class CollectionScreen extends Component {
 
   state = {
-    routes: null,
-    // simulate likes & bookmarks
-    likes: null,
-    bookmarks: null,
+    routes: null
   };
 
   componentDidMount() {
     firebase.auth().currentUser.getIdToken().then(token => {
-      console.log('token: ', token);
-      
-      fetch(`${SERVER_ADDR}/cities/${PLACE_ID}/routes`, {
+      fetch(`${SERVER_ADDR}/users/${UID}/forks`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -73,9 +67,7 @@ class CollectionScreen extends Component {
       })
         .then(response => response.json())
         .then(responseJson => this.setState({
-          routes: responseJson,
-          likes: new Array(responseJson.length),
-          bookmarks: new Array(responseJson.length)
+          routes: responseJson
         }))
         .catch(error => console.error(error));
       }
@@ -88,7 +80,7 @@ class CollectionScreen extends Component {
       <View style={styles.container}>
         <View style={styles.sectionContainer}>
           <Text style={{fontSize: 30, padding: 10}}>Saved</Text>
-          <FlatList
+          {this.state.responseJson ? <FlatList
             data={this.state.routes}
             renderItem={({ item, index }) => {
               let photoRef = item.pins[0].properties.photoReference[0] === 'String' ? PHOTO_REFERENCE : item.pins[0].properties.photoReference[0];
@@ -100,23 +92,12 @@ class CollectionScreen extends Component {
                     markers: item.pins,
                     name: item.name
                   })}
-                  liked={this.state.likes[index]}
-                  bookmarked={this.state.bookmarks[index]}
-                  onLike = {() => {
-                    let likes = [...this.state.likes];
-                    likes[index] = !this.state.likes[index];
-                    this.setState({likes: likes});
-                  }}
-                  onBookmark = {() => {
-                    let bookmarks = [...this.state.bookmarks];
-                    bookmarks[index] = !this.state.bookmarks[index];
-                    this.setState({bookmarks: bookmarks});
-                  }}
                 />
               );
             }}
             keyExtractor={item => item.place_id}
-            contentContainerStyle={{alignItems: 'center', width: '100%', backgroundColor: 'transparent'}} />
+            contentContainerStyle={{alignItems: 'center', width: '100%', backgroundColor: 'transparent'}} /> : 
+            <Text style={{padding: 10, alignSelf: 'center', color: HOF}}>Wow, so empty</Text>}
         </View>
       </View>
     );

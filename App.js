@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { View, Text, SafeAreaView } from 'react-native';
 import { createAppContainer, createSwitchNavigator } from 'react-navigation';
 import { createStackNavigator } from 'react-navigation-stack';
 import { createMaterialBottomTabNavigator } from 'react-navigation-material-bottom-tabs';
@@ -30,6 +31,14 @@ const mapNavigationStateParamsToProps = (SomeComponent) => {
           return <SomeComponent {...params} {...this.props} />
       }
   }
+}
+
+function Header(props) {
+  return (
+    <View>
+      <Text>Stumble</Text>
+    </View>
+  );
 }
 
 const HomeTab = createMaterialBottomTabNavigator({
@@ -79,7 +88,9 @@ const AppContainer = createAppContainer(AppNavigator);
 export default function App() {
   return (
     <Provider store={store}>
-      <AppContainer />
+        <SafeAreaView style={{flex: 1}}>
+          <AppContainer />
+        </SafeAreaView>
     </Provider>
   );
 }

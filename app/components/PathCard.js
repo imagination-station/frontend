@@ -66,14 +66,7 @@ export default function PathCard(props) {
             <Icon
               name={props.bookmarked ? 'bookmark' : 'bookmark-border'}
               size={25}
-              color={props.bookmarked ? ACCENT_GREEN : 'rgba(0, 0, 0, 0.5)'}
-            />
-          </TouchableWithoutFeedback>
-          <TouchableWithoutFeedback onPress={props.onLike}>
-            <Icon
-              name={props.liked ? 'favorite' : 'favorite-border'}
-              size={25}
-              color={props.liked ? ACCENT : 'rgba(0, 0, 0, 0.5)'}
+              color={props.bookmarked ? 'yellow' : 'rgba(0, 0, 0, 0.5)'}
             />
           </TouchableWithoutFeedback>
         </View>

@@ -802,7 +802,7 @@ class MapScreen extends Component {
           pins: this.props.markers
         })
       })
-        .then(response => console.log(response))
+        .then(this.props.navigation.goBack)
         .catch(error => console.error(error));
       }
     );

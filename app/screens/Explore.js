@@ -16,8 +16,9 @@ import * as firebase from 'firebase';
 import PathCard from '../components/PathCard.js';
 import ImageCarousel from '../components/ImageCarousel.js';
 
-import globalStyles, { DARKER_GREY, GREY, ACCENT_GREEN } from '../config/styles.js';
+import globalStyles, { DARKER_GREY, GREY, ACCENT_GREEN, ACCENT } from '../config/styles.js';
 import { SERVER_ADDR, PLACE_ID, MAPS_API_KEY, INIT_LOCATION } from '../config/settings.js';
+import { HeaderTitle } from 'react-navigation-stack';
 
 const {width, height} = Dimensions.get('window');
 
@@ -72,9 +73,15 @@ const styles = StyleSheet.create({
 
 class ExploreScreen extends Component {
 
+  static navigationOptions = {
+    headerMode: 'none'
+  };
+
   state = {
     routes: null,
-    photoRefs: []
+    photoRefs: [],
+    // simulate bookmarks
+    bookmarks: null,
   };
 
   componentWillMount() {
@@ -93,7 +100,7 @@ class ExploreScreen extends Component {
         }
       })
         .then(response => response.json())
-        .then(responseJson => this.setState({routes: responseJson}))
+        .then(responseJson => this.setState({routes: responseJson, bookmarks: new Array(responseJson.length)}))
         .catch(error => console.error(error));
       }
     );
@@ -110,7 +117,7 @@ class ExploreScreen extends Component {
 
   render() {
     return (
-     <View style={styles.container}> 
+    <View style={styles.container}> 
         <ScrollView style={{flex: 1}}>
           <ImageCarousel
             width={width}
@@ -144,10 +151,10 @@ class ExploreScreen extends Component {
             style={{width: '100%', height: 150, borderTopLeftRadius: 25, borderTopRightRadius: 25, alignSelf: 'center'}}
           />
           <View style={styles.sectionContainer}>
-            <Text style={{fontWeight: 'bold', fontSize: 16}}>Based on your Interest in Art</Text>
+            <Text style={{fontWeight: 'bold', fontSize: 16}}>Based on your Interest in Colleges</Text>
             <FlatList
               data={this.state.routes}
-              renderItem={({ item }) => {
+              renderItem={({ item, index }) => {
                 let photoRef = item.pins[0].properties.photoReference[0];
                 return (<TouchableWithoutFeedback onPress={() => this.props.navigation.navigate('PathDetail', {
                   markers: item.pins,
@@ -160,6 +167,12 @@ class ExploreScreen extends Component {
                       markers: item.pins,
                       name: item.name
                     })}
+                    bookmarked={this.state.bookmarks[index]}
+                    onBookmark = {() => {
+                      let bookmarks = [...this.state.bookmarks];
+                      bookmarks[index] = !this.state.bookmarks[index];
+                      this.setState({bookmarks: bookmarks});
+                    }}
                   />
                 </TouchableWithoutFeedback>);
               }}
