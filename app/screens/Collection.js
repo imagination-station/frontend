@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Text, View, StyleSheet, TouchableWithoutFeedback, TouchableOpacity, FlatList } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -65,7 +65,10 @@ function BigButton(props) {
 class CollectionScreen extends Component {
 
   state = {
-    routes: null
+    routes: null,
+    // simulate likes & bookmarks
+    likes: null,
+    bookmarks: null,
   };
 
   componentDidMount() {
@@ -81,7 +84,11 @@ class CollectionScreen extends Component {
         }
       })
         .then(response => response.json())
-        .then(responseJson => this.setState({routes: responseJson}))
+        .then(responseJson => this.setState({
+          routes: responseJson,
+          likes: new Array(responseJson.length),
+          bookmarks: new Array(responseJson.length)
+        }))
         .catch(error => console.error(error));
       }
     );
@@ -100,18 +107,30 @@ class CollectionScreen extends Component {
           />
           <FlatList
             data={this.state.routes}
-            renderItem={({ item }) => {
+            renderItem={({ item, index }) => {
               let photoRef = item.pins[0].properties.photoReference[0] === 'String' ? PHOTO_REFERENCE : item.pins[0].properties.photoReference[0];
-              return (<TouchableWithoutFeedback onPress={() => this.props.navigation.navigate('PathDetail', {
-                markers: item.pins,
-                name: item.name
-              })}>
+              return (
                 <PathCard
                   title={item.name}
                   photoReference={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
-                  onPress={() => props.onPressItem(item)}
+                  onPress={() => this.props.navigation.navigate('PathDetail', {
+                    markers: item.pins,
+                    name: item.name
+                  })}
+                  liked={this.state.likes[index]}
+                  bookmarked={this.state.bookmarks[index]}
+                  onLike = {() => {
+                    let likes = [...this.state.likes];
+                    likes[index] = !this.state.likes[index];
+                    this.setState({likes: likes});
+                  }}
+                  onBookmark = {() => {
+                    let bookmarks = [...this.state.bookmarks];
+                    bookmarks[index] = !this.state.bookmarks[index];
+                    this.setState({bookmarks: bookmarks});
+                  }}
                 />
-              </TouchableWithoutFeedback>);
+              );
             }}
             keyExtractor={item => item.place_id}
             contentContainerStyle={{alignItems: 'center', width: '100%', backgroundColor: 'transparent'}} />
