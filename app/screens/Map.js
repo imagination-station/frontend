@@ -373,6 +373,18 @@ export class DetailScreen extends Component {
   render() {
     let position = Animated.divide(this.scrollValue, width);
 
+    const source = this.props.place.properties.photoReference[0] == undefined ?
+      (<Image
+        source={{uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`}}
+        style={detailStyles.image}
+       />):
+      (this.props.place.properties.photoReference.map(ref =>
+        <Image
+          source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
+          style={detailStyles.image}
+        />
+      ));
+
     return (
       <View style={detailStyles.container}>
         <View style={detailStyles.scrollViewContainer}>
@@ -393,12 +405,7 @@ export class DetailScreen extends Component {
               {useNativeDriver: true}
             )}
           >
-            {this.props.place.properties.photoReference.map(ref =>
-              <Image
-                source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
-                style={detailStyles.image}
-              />
-            )}
+            {source}
           </Animated.ScrollView>
           <View style={detailStyles.scrollIndicator}>
             {this.props.place.properties.photoReference.map((_, i) => {
