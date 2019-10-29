@@ -14,3 +14,5 @@ package-lock.json
 
 app/config/settings.js
 app/config/settings.1.js
+
+.env
