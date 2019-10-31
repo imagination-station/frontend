@@ -1,5 +1,5 @@
-import React, { Component } from 'react';
-import { Text, View, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { Component, Fragment } from 'react';
+import { Text, View, Image, StyleSheet, TouchableOpacity, StatusBar, SafeAreaView } from 'react-native';
 import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -8,7 +8,8 @@ import { DARKER_GREY, GREY, ACCENT, ACCENT_GREEN } from '../config/styles.js';
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center'
+    alignItems: 'center',
+    paddingTop: StatusBar.currentHeight
   },
   header: {
     flexDirection: 'row',
@@ -50,6 +51,14 @@ const styles = StyleSheet.create({
   },
   buttonTextStyle: {
     fontSize: 16
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff'
+  },
+  safeStatusArea: {
+    flex: 0,
+    backgroundColor: '#fff'
   }
 });
 
@@ -78,33 +87,37 @@ class ProfileScreen extends Component {
   }
 
   logout = () => {
-    firebase.auth().signOut()
-    this.props.navigation.navigate('Login')
+    firebase.auth().signOut();
   }
 
   render() {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Image style={{width: 70, height: 70, borderRadius: 70 / 2}} source={require('../assets/profile-pic.jpg')} />
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.headerMainText}>{NAME}</Text>
-            <Text style={styles.headerSecondaryText}>{firebase.auth().currentUser.email}</Text>
+      <Fragment>
+        <SafeAreaView style={styles.safeStatusArea} />
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.container}>
+            <View style={styles.header}>
+              <Image style={{width: 70, height: 70, borderRadius: 70 / 2}} source={require('../assets/profile-pic.jpg')} />
+              <View style={styles.headerTextContainer}>
+                <Text style={styles.headerMainText}>{NAME}</Text>
+                <Text style={styles.headerSecondaryText}>{firebase.auth().currentUser.email}</Text>
+              </View>
+            </View>
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionHeader}>BIO</Text>
+              <Text style={{lineHeight: 20}}>{BIO}</Text>
+            </View>
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionHeader}>ACTIONS</Text>
+              <ActionButton
+                title='Log out'
+                onPress={this.logout}
+                textStyle={{...styles.textStyle, color: ACCENT_GREEN}}
+              />
+            </View>
           </View>
-        </View>
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionHeader}>BIO</Text>
-          <Text style={{lineHeight: 20}}>{BIO}</Text>
-        </View>
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionHeader}>ACTIONS</Text>
-          <ActionButton
-            title='Log out'
-            onPress={this.logout}
-            textStyle={{...styles.textStyle, color: ACCENT_GREEN}}
-          />
-        </View>
-      </View>
+        </SafeAreaView>
+      </Fragment>
     );
   }
 }

@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, StyleSheet, FlatList } from 'react-native';
 import * as firebase from 'firebase';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import { DARKER_GREY, GREY, ACCENT_GREEN } from '../config/styles.js';
 import { SERVER_ADDR, PLACE_ID, PHOTO_REFERENCE, MAPS_API_KEY } from '../config/settings.js';
 import PathCard from '../components/PathCard.js';
+import { LongButton } from '../components/Buttons.js';
 
 const styles = StyleSheet.create({
   container: {
@@ -44,25 +44,13 @@ const styles = StyleSheet.create({
   buttonStyle: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     borderBottomWidth: 1,
     borderBottomColor: GREY,
     padding: 15
   }
 });
 
-function BigButton(props) {
-  return (
-    <TouchableOpacity onPress={props.onPress}>
-      <View style={styles.buttonStyle}>
-        <Text style={props.textStyle}>{props.title}</Text>
-        {props.icon && <Icon name={props.icon} size={30} color={ACCENT_GREEN} />}
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-class CollectionScreen extends Component {
+class MyTripsScreen extends Component {
 
   state = {
     routes: null,
@@ -73,9 +61,8 @@ class CollectionScreen extends Component {
 
   componentDidMount() {
     firebase.auth().currentUser.getIdToken().then(token => {
-      console.log('token: ', token);
-      
-      fetch(`${SERVER_ADDR}/cities/${PLACE_ID}/routes`, {
+      console.log('uid', firebase.auth().currentUser.uid);
+      fetch(`${SERVER_ADDR}/users/5d979e6c5a0de701d708959e/routes`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -83,7 +70,7 @@ class CollectionScreen extends Component {
           Authorization: 'Bearer '.concat(token)
         }
       })
-        .then(response => response.json())
+        .then(response => {console.log(response);return response.json();})
         .then(responseJson => this.setState({
           routes: responseJson,
           likes: new Array(responseJson.length),
@@ -99,11 +86,12 @@ class CollectionScreen extends Component {
     return (
       <View style={styles.container}>
         <View style={styles.sectionContainer}>
-          <BigButton
+          <LongButton
             title='New path'
             icon='add'
             onPress={() => this.props.navigation.navigate('Map')}
-            textStyle={{...styles.textStyle, color: ACCENT_GREEN}}
+            style={styles.buttonStyle}
+            textStyle={{marginLeft: 40}}
           />
           <FlatList
             data={this.state.routes}
@@ -140,4 +128,4 @@ class CollectionScreen extends Component {
   }
 }
 
-export default CollectionScreen;
+export default MyTripsScreen;

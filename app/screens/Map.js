@@ -15,13 +15,15 @@ import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
 import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { connect } from 'react-redux';
+import MapViewDirections from 'react-native-maps-directions';
 
-import Button from '../components/Button.js';
-import globalStyles, { GREY, DARKER_GREY, ACCENT, ACCENT_GREEN } from '../config/styles.js';
+import Button, { LongButton } from '../components/Buttons.js';
+import ImageCarousel from '../components/ImageCarousel.js';
+import globalStyles, { GREY, DARKER_GREY, ACCENT, HOF, FOGGY } from '../config/styles.js';
 import {
   MAPS_API_KEY,
   SERVER_ADDR,
-  UID,
   INIT_LOCATION,
   PLACE_ID
 } from '../config/settings.js';
@@ -198,18 +200,6 @@ const detailStyles = StyleSheet.create({
   scrollViewContainer: {
     alignItems: 'center'
   },
-  scrollIndicator: {
-    flexDirection: 'row',
-    position: 'absolute',
-    bottom: 10
-  },
-  indicatorDot: {
-    height: 6,
-    width: 6,
-    backgroundColor: 'white',
-    margin: 5,
-    borderRadius: 3
-  },
   imageScrollView: {
     height: 300,
     width: width
@@ -247,8 +237,33 @@ const detailStyles = StyleSheet.create({
 const noteEditorStyles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
     alignItems: 'center'
+  },
+  editor: {
+    width: '100%',
+    shadowColor: 'black',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.20,
+    shadowRadius: 1.41,
+    elevation: 2,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 20,
+  },
+  textInput: {
+    alignSelf: 'flex-start',
+    textAlignVertical: 'top',
+    width: '100%'
+  },
+  charCount: {
+    alignSelf: 'flex-start',
+    color: DARKER_GREY
   }
 });
 
@@ -264,7 +279,7 @@ const DATA = [
       placeId: 'ChIJzal6QUUE9YgRYZqYJzKOXAo',
       mainText: 'Museum of Design Atlanta',
       secondaryText: 'Peachtree Street Northeast, Atlanta, GA, USA',
-      photoReference: [
+      photoRefs: [
         'CmRaAAAArfg8qF1oPtvFj18kTkcVbIDtR3Arm04aoHSbno1GNaeEOLANbECjkVf_4SmLdo7uVs7SfD71XjrSbMoEHBZm8EZc53WCXPxNlGxC6b2-DRqxRI0BEZrs5yXQ-HVTjObrEhD5ekbW-N2N1DCujiI1nYgXGhQXIEURuVaLx2_N_nZUGIpmiPyCSA',
         'CmRaAAAApMwKX8N6EhXmxuytk8uqqz4XZwQYDHVDgk8XMigwwu4MnSuGnbbnPb6fCp1LaiOJXkx61D1s7M4kdAibCTy4wug3MTpEFGOAT_wHao1B-2mTF3GTU6gWG-0agXGE2qzkEhCNWHKzJ-OHG2iKfjAhIDo0GhQnmSb2pTi3XIMz00TAXpbHPbvUrQ',
         'CmRaAAAA_RFTA6jpX2KiHBW7SWRCkzCYEUnb27xDvA2UZGAZtKvQLAZRT-zbHL4FRlAg86q6CalB-6C9PBGa5y8PLLEBzMSodtmQBeNwTjb4Zb6QDDY3qNo3eYWrV5I8XWZM2BGCEhB86xeYE6mruzEeiFC0xVx9GhQ2jqq80jNH_smOex63RQCmh-GkcA',
@@ -283,13 +298,13 @@ const DATA = [
       placeId: 'ChIJr3p2s-cE9YgR2uIvhPLls3E',
       mainText: 'Urban Tree Cidery',
       secondaryText: 'Howell Mill Road Northwest, Atlanta, GA, USA',
-      photoReference: ['CmRaAAAAN1JSSlKydw6W6-7_eeuYOkJzvVBTW5LBaW0W1sxPnyhkZPKbP4PEbqoPXRU5Q9MHJXBOFzOEJl8KBvB64bI3xtnCOeh9RaUihdBq3-Bi3fOPopG33WVW8avzEZrJ0Dq-EhA4tZV5xpLQP_yEaMXFLzfOGhTeLYBn2z2mW3VmvlOCbUEucED2gg'],
+      photoRefs: ['CmRaAAAAN1JSSlKydw6W6-7_eeuYOkJzvVBTW5LBaW0W1sxPnyhkZPKbP4PEbqoPXRU5Q9MHJXBOFzOEJl8KBvB64bI3xtnCOeh9RaUihdBq3-Bi3fOPopG33WVW8avzEZrJ0Dq-EhA4tZV5xpLQP_yEaMXFLzfOGhTeLYBn2z2mW3VmvlOCbUEucED2gg'],
       note: 'Chill, unpretentious vibes',
     }
   }
 ];
 
-export class SearchScreen extends Component {
+class MapSearch extends Component {
   state = {
     textInput: this.props.searchInput,
     results: null
@@ -341,9 +356,8 @@ export class SearchScreen extends Component {
             data={this.state.results}
             renderItem={({ item }) => <SearchItem
               item={item}
-              onPress={() => {
-                this.props.onPressItem(item, this.props.navigation);
-              }}
+              // navigation passed in to pop from current page
+              onPress={() => this.props.onPressItem(item, this.props.navigation)}
             />}
             keyExtractor={item => item.place_id}
           />
@@ -364,82 +378,52 @@ function SearchItem(props) {
   );
 }
 
-export class DetailScreen extends Component {
+class PlaceDetail extends Component {
 
   componentWillMount() {
     this.scrollValue = new Animated.Value(0);
   }
 
   render() {
-    let position = Animated.divide(this.scrollValue, width);
+    const place = this.props.markers[this.props.selected];
 
-    const source = this.props.place.properties.photoReference[0] == undefined ?
-      (<Image
-        source={{uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`}}
-        style={detailStyles.image}
-       />):
-      (this.props.place.properties.photoReference.map(ref =>
+    const photos = place.properties.photoRefs ?
+      place.properties.photoRefs.map(ref =>
         <Image
           source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
           style={detailStyles.image}
         />
-      ));
+      ) : [<Image
+        source={{uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`}}
+        style={detailStyles.image}
+      />];
 
     return (
       <View style={detailStyles.container}>
-        <View style={detailStyles.scrollViewContainer}>
-          <Animated.ScrollView
-            style={detailStyles.imageScrollView}
-            horizontal
-            scrollEventThrottle={1}
-            showsHorizontalScrollIndicator={false}
-            pagingEnabled
-            onScroll={Animated.event([
-              {
-                nativeEvent: {
-                  contentOffset: {
-                    x: this.scrollValue,
-                  },
-                },
-              }],
-              {useNativeDriver: true}
-            )}
-          >
-            {source}
-          </Animated.ScrollView>
-          <View style={detailStyles.scrollIndicator}>
-            {this.props.place.properties.photoReference.map((_, i) => {
-              let opacity = position.interpolate({
-                inputRange: [i - 1, i, i + 1], // each dot will need to have an opacity of 1 when position is equal to their index (i)
-                outputRange: [0.3, 1, 0.3], // when position is not i, the opacity of the dot will animate to 0.3
-                extrapolate: 'clamp' // this will prevent the opacity of the dots from going outside of the outputRange (i.e. opacity will not be less than 0.3)
-              });
-              return (
-                <Animated.View
-                  key={i}
-                  style={{...detailStyles.indicatorDot, opacity}}
-                />
-              );
-            })}
-          </View>
-        </View>
+        <ImageCarousel
+          width={width}
+          scrollValue={this.scrollValue}
+          containerStyle={detailStyles.scrollViewContainer}
+          scrollViewStyle={detailStyles.imageScrollView}
+        >
+          {photos}
+        </ImageCarousel>
         <View style={detailStyles.textContainer}>
-          <Text style={detailStyles.mainText}>{this.props.place.properties.mainText}</Text>
-          <Text style={detailStyles.secondaryText}>{this.props.place.properties.secondaryText}</Text>
+          <Text style={detailStyles.mainText}>{place.properties.mainText}</Text>
+          <Text style={detailStyles.secondaryText}>{place.properties.secondaryText}</Text>
           <Text style={detailStyles.sectionHeader}>NOTES</Text>
-          {this.props.place.properties.note ? <View>
-            <Text>{this.props.place.properties.note}</Text>
+          {place.properties.note ? <View>
+            <Text>{place.properties.note}</Text>
             <Text style={{color: DARKER_GREY, fontSize: 10, marginTop: 2}}>Last edited 10/18/2019</Text>
           </View> : <Text style={{color: 'grey'}}>
             Write interesting facts, things to do, or anything you want to record about this place.
           </Text>}
-          <BigButton
+          <LongButton
             icon='create'
             title='Edit notes'
-            onPress={() => this.props.navigation.navigate('NoteEditor', {
-              place: this.props.place,
-              onChangeText: this.props.onEditNote
-            })}
+            style={detailStyles.buttonStyle}
+            textStyle={{marginLeft: 40}}
+            onPress={() => this.props.navigation.navigate('NoteEditor')}
           />
         </View>
       </View>
@@ -447,36 +431,39 @@ export class DetailScreen extends Component {
   }
 }
 
-function BigButton(props) {
-  return (
-    <TouchableOpacity onPress={props.onPress}>
-      <View style={detailStyles.buttonStyle}>
-        {props.icon && <Icon name={props.icon} size={30} color='#00A699'/>}
-        <Text style={{marginLeft: 40}}>{props.title}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-export class NoteEditorScreen extends Component {
+class NoteEditor extends Component {
   state = {
-    note: this.props.place.properties.note
+    note: this.props.markers[this.props.selected].properties.note 
   };
+
+  MAX_LENGTH = 280; // same as Twitter
 
   render() {
     return (
       <View style={noteEditorStyles.container}>
-        <TextInput
-          autoFocus
-          multiline
-          onChangeText={text => this.setState({note: text})}
-          placeholder={this.props.place.properties.mainText}
-          value={this.state.note}
-          style={{alignSelf: 'flex-start'}}
-        />
+        <View style={noteEditorStyles.editor}>
+          <TextInput
+            autoFocus
+            multiline
+            numberOfLines={10}
+            maxLength={this.MAX_LENGTH}
+            onChangeText={text => this.setState({note: text})}
+            placeholder={this.props.markers[this.props.selected].properties.mainText}
+            value={this.state.note}
+            style={noteEditorStyles.textInput}
+          />
+          <Text
+            style={noteEditorStyles.charCount}
+          >
+            {`${this.MAX_LENGTH - (this.state.note ? this.state.note.length : 0)}`}
+          </Text>
+        </View>
         <Button
           title='DONE'
-          onPress={this.props.navigation.goBack}
+          onPress={() => {
+            this.props.update(this.state.note);
+            this.props.navigation.goBack();
+          }}
         />
       </View>
     );
@@ -484,10 +471,9 @@ export class NoteEditorScreen extends Component {
 }
 
 function Card(props) {
-  const source = props.marker.properties.photoReference[0] == undefined ?
-    {uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`} :
-    {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`
-  };
+  const source = props.marker.properties.photoRefs ?
+    {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoRefs[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`} :
+    {uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`};
   return (
     <TouchableWithoutFeedback onPress={props.onPress}>
       <View style={mapStyles.card}>
@@ -509,10 +495,9 @@ function Card(props) {
 }
 
 function FocusedCard(props) {
-  const source = props.marker.properties.photoReference[0] == undefined ?
-    {uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`} :
-    {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`
-  };
+  const source = props.marker.properties.photoRefs ?
+    {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoRefs[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`} :
+    {uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg'};
 
   return (
     <View style={mapStyles.focusedCard}>
@@ -543,10 +528,16 @@ function ActionCard(props) {
   } else {
     content = [
       <Text style={{color: DARKER_GREY}}>
-        {`${props.length} places added`}
+        {`${props.length} places`}
+      </Text>,
+      <Text style={{color: DARKER_GREY}}>
+        {`${props.distance} m`}
+      </Text>,
+      <Text style={{color: DARKER_GREY}}>
+        {`${Math.floor(props.duration / 60)} mins`}
       </Text>,
       !props.isDone && 
-        <View style={{flexDirection: 'row', justifyContent: 'space-around', marginTop: 30}}>
+        <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}}>
           <Button title={'View All'} onPress={props.viewAll} small />
           <Button title={`Create Path`} onPress={props.done} small />
         </View>
@@ -581,9 +572,9 @@ class MapScreen extends Component {
     view: 'map',
     searchInput: '',
     drawerCollapsed: false,
-    markers: [],
     focused: null,
-    name: ''
+    name: '',
+    steps: []
   };
 
   componentWillMount() {
@@ -598,19 +589,14 @@ class MapScreen extends Component {
     this.focusChanged = false;
   }
 
-  componentDidUpdate(_, prevState) {
-    if (prevState.view !== this.state.view) {
-      if (this.state.view === 'search') {
-        this.searchBoxRef.focus();
-      }
-    }
+  componentWillUnmount() {
+    this.props.clear();
   }
 
   onPressSearch = () => {
     this.props.navigation.navigate('MapSearch', {
       searchInput: this.state.searchInput,
       onPressItem: this.onPressSearchItem,
-      onClearText: () => this.setState({searchInput: ''})
     });
   }
 
@@ -618,106 +604,83 @@ class MapScreen extends Component {
     this.setState({searchInput: '', focused: null});
   }
 
-  onPressSearchItem = (item, navigation) => {
-    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${item.place_id}&key=${MAPS_API_KEY}`)
-      .then(response => response.json())
-      .then(responseJson => {
-        const photoReference = responseJson.result.photos == undefined ? [undefined] : responseJson.result.photos.map(elem => elem.photo_reference)
-        const marker = {
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [
-              responseJson.result.geometry.location.lat,
-              responseJson.result.geometry.location.lng
-            ]
-          },
-          properties: {
-            placeId: item.place_id,
-            mainText: item.structured_formatting.main_text,
-            secondaryText: item.structured_formatting.secondary_text,
-            photoReference: responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4)
-          }
-        };
-
-        this.closeDrawer();
-        this.setState({
-          searchInput: item.structured_formatting.main_text,
-          view: 'map',
-          focused: marker
-        }, () => {
-          navigation.goBack();
-          this.mapRef.animateCamera({
-            center: {
-              latitude: this.state.focused.geometry.coordinates[0],
-              longitude: this.state.focused.geometry.coordinates[1],
-            },
-            zoom: 17
-          }, 20);
-        });
-      });
-  }
-
-  onPoiClick = event => {
-    event.persist(); // necessary to persist event data for some reason
-    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${event.nativeEvent.placeId}&key=${MAPS_API_KEY}`)
-      .then(response => response.json())
-      .then(responseJson => {
-        const photoReference = responseJson.result.photos == undefined ? [undefined] : responseJson.result.photos.map(elem => elem.photo_reference)
-        const marker = {
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [
-              responseJson.result.geometry.location.lat,
-              responseJson.result.geometry.location.lng
-            ]
-          },
-          properties: {
-            placeId: event.nativeEvent.placeId,
-            mainText: responseJson.result.name,
-            secondaryText: responseJson.result.formatted_address,
-            photoReference: responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4)
-          }
-        };
+  fetchPlaceDetails = (placeId, callback) => {
+    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}`)
+    .then(response => response.json())
+    .then(responseJson => {
+      // limit showing photos to 4 to save ca$h
+      const photos = responseJson.result.photos ? responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4) : null;
+      const marker = {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [
+            responseJson.result.geometry.location.lat,
+            responseJson.result.geometry.location.lng
+          ]
+        },
+        properties: {
+          placeId: placeId,
+          mainText: responseJson.result.name,
+          secondaryText: responseJson.result.formatted_address,
+          photoRefs: photos
+        }
+      };
 
       this.closeDrawer();
       this.setState({
         searchInput: responseJson.result.name,
-        view: 'map',
         focused: marker,
-      }, () => {
-        this.mapRef.animateCamera({
-          center: {
-            latitude: this.state.focused.geometry.coordinates[0],
-            longitude: this.state.focused.geometry.coordinates[1],
-          },
-          zoom: 15
-        }, 30);
-      });
+      }, callback);
+    });
+  }
+
+  onPressSearchItem = (item, navigation) => {
+    this.fetchPlaceDetails(item.place_id, () => {
+      navigation.goBack();
+      this.mapRef.animateCamera({
+        center: {
+          latitude: this.state.focused.geometry.coordinates[0],
+          longitude: this.state.focused.geometry.coordinates[1],
+        },
+        zoom: 17
+      }, 30);
+    });
+  }
+
+  onPoiClick = event => {
+    event.persist(); // necessary to persist event data for some reason
+    this.fetchPlaceDetails(event.nativeEvent.placeId, () => {
+      this.mapRef.animateCamera({
+        center: {
+          latitude: this.state.focused.geometry.coordinates[0],
+          longitude: this.state.focused.geometry.coordinates[1],
+        },
+        zoom: 17
+      }, 30);
     });
   }
 
   onLongPress = event => {
     event.persist();
-    var latitude = event.nativeEvent.coordinate.latitude;
-    var longitude = event.nativeEvent.coordinate.longitude;
+    const latitude = event.nativeEvent.coordinate.latitude;
+    const longitude = event.nativeEvent.coordinate.longitude;
     fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${MAPS_API_KEY}`)
       .then(response => response.json())
       .then(responseJson => {
-        console.log(responseJson.results)
-        // var place_id = responseJson.results[0].place_id
-        var hasPhoto = false;
-        for (i = 0; i < Math.floor(Object.keys(responseJson.results).length / 3); i++) {
-          var place_id = responseJson.results[i].place_id;
-          fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${place_id}&key=${MAPS_API_KEY}`)
+        let hasPhoto = false;
+        let placeId;
+        // cycle through returns places to see if there are any photos
+        for (i = 0; i <= Math.floor(Object.keys(responseJson.results).length / 3); i++) {
+          placeId = responseJson.results[i].place_id;
+          fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}`)
             .then(response => response.json())
             .then(responseJson => {
-              if (!hasPhoto){
-                var photoReference = responseJson.result.photos != undefined;
-                if (photoReference) {
+              if (!hasPhoto) {
+                let photos = responseJson.result.photos;
+                if (photos != undefined) {
                   hasPhoto = true;
-                  photoReference = responseJson.result.photos.map(elem => elem.photo_reference);
+                  photos = responseJson.result.photos.map(elem => elem.photo_reference);
                   const marker = {
                     type: 'Feature',
                     geometry: {
@@ -728,28 +691,24 @@ class MapScreen extends Component {
                       ]
                     },
                     properties: {
-                      placeId: place_id,
+                      placeId: placeId,
                       mainText: responseJson.result.name,
                       secondaryText: responseJson.result.formatted_address,
-                      photoReference: photoReference
+                      photoRefs: photos
                     }
                   };
                   this.closeDrawer();
                   this.setState({
-                    search: responseJson.result.name,
-                    view: 'map',
+                    searchInput: responseJson.result.name,
                     focused: marker,
-                    maxZoomLevel: 17 // limit zoom temporarily
                   }, () => {
-                    this.mapRef.fitToSuppliedMarkers([place_id], {
-                      edgePadding: {
-                        top: 50,
-                        right: 50,
-                        bottom: 50,
-                        left: 50
+                    this.mapRef.animateCamera({
+                      center: {
+                        latitude: this.state.focused.geometry.coordinates[0],
+                        longitude: this.state.focused.geometry.coordinates[1],
                       },
-                      animated: true
-                    });
+                      zoom: 18
+                    }, 30);
                   });
                 }
               }
@@ -759,45 +718,15 @@ class MapScreen extends Component {
             }
           }
           if (!hasPhoto) {
-            var place_id = responseJson.results[0].place_id;
-            fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${place_id}&key=${MAPS_API_KEY}`)
-              .then(response => response.json())
-              .then(responseJson => {
-                const photoReference = responseJson.result.photos == undefined ? [undefined] : responseJson.result.photos.map(elem => elem.photo_reference)
-                const marker = {
-                  type: 'Feature',
-                  geometry: {
-                    type: 'Point',
-                    coordinates: [
-                      parseFloat(latitude),
-                      parseFloat(longitude)
-                    ]
-                  },
-                  properties: {
-                    placeId: place_id,
-                    mainText: responseJson.result.name,
-                    secondaryText: responseJson.result.formatted_address,
-                    photoReference: photoReference
-                  }
-                };
-                this.closeDrawer();
-                this.setState({
-                  search: responseJson.result.name,
-                  view: 'map',
-                  focused: marker,
-                  maxZoomLevel: 17 // limit zoom temporarily
-                }, () => {
-                  this.mapRef.fitToSuppliedMarkers([place_id], {
-                    edgePadding: {
-                      top: 50,
-                      right: 50,
-                      bottom: 50,
-                      left: 50
-                    },
-                    animated: true
-                  });
-                });
-            });
+            this.fetchPlaceDetails(responseJson.results[0].place_id, () => {
+              this.mapRef.animateCamera({
+                center: {
+                  latitude: this.state.focused.geometry.coordinates[0],
+                  longitude: this.state.focused.geometry.coordinates[1],
+                },
+                zoom: 18
+              }, 30);
+            });            
           }
       });
   }
@@ -842,31 +771,27 @@ class MapScreen extends Component {
   }
 
   onAddItem = () => {
-    this.setState({
-      markers: [...this.state.markers, this.state.focused],
-      focused: null,
-      search: '',
-      searchResults: null
-    }, this.toggleDrawer);
-  }
-
-  onRemoveItem = id => {
-    this.setState({
-      markers: this.state.markers.filter(marker => marker.properties.placeId != id)
-    });
-  }
-
-  onEditItemNote = (id, text) => {
-    this.setState({markers: this.state.markers.map(marker => {
-      let newMarker = {...marker};
-      if (marker.properties.placeId != id) {
-        return newMarker;
-      }
-
-      newMarker.properties = {...marker.properties};
-      newMarker.properties.note = text;
-      return newMarker;
-    })});
+    this.props.addMarker(this.state.focused);
+    if (this.props.markers.length > 0) {
+      fetch(`https://maps.googleapis.com/maps/api/directions/json?key=${MAPS_API_KEY}&origin=place_id:${this.props.markers[this.props.markers.length-1].properties.placeId}&destination=place_id:${this.state.focused.properties.placeId}&mode=walking`)
+        .then(response => response.json())
+        .then(responseJson => {
+          const info = {
+            distance: responseJson.routes[0].legs[0].distance,
+            duration: responseJson.routes[0].legs[0].duration
+          }
+          this.setState({
+            focused: null,
+            searchInput: '',
+            steps: [...this.state.steps, info]
+          }, this.toggleDrawer);
+        });
+    } else {
+      this.setState({
+        focused: null,
+        searchInput: '',
+      }, this.toggleDrawer);
+    }
   }
 
   onComplete = () => {
@@ -880,9 +805,9 @@ class MapScreen extends Component {
         },
         body: JSON.stringify({
           name: this.state.name,
-          creator: UID,
+          creator: firebase.auth().currentUser.uid,
           city: PLACE_ID,
-          pins: this.state.markers
+          pins: this.props.markers
         })
       })
         .then(this.props.navigation.goBack)
@@ -892,6 +817,33 @@ class MapScreen extends Component {
   }
 
   render() {
+    const reducer = (res, marker, index, arr) => {
+      res.push(
+        <Card
+          key={marker.placeId}
+          marker={marker}
+          onPress={() => {
+            this.props.viewDetail(index);
+            this.props.navigation.navigate('PlaceDetail');
+          }}
+          onRemove={() => this.props.removeMarker(marker.properties.placeId)}
+        />);
+
+      if (this.state.steps[index]) {
+        res.push(
+          <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
+            <Icon name='directions-walk' size={30} color={FOGGY} />
+            <Text style={{color: FOGGY}}>{this.state.steps[index].distance.text}</Text>
+            <Text style={{color: FOGGY}}>{this.state.steps[index].duration.text}</Text>
+          </View>
+        );
+      }
+
+      return res;
+    }
+
+    const cards = this.props.markers.reduce(reducer, []);
+
     return (
       <View style={globalStyles.container}>
         <MapView
@@ -907,7 +859,7 @@ class MapScreen extends Component {
           }}
           ref={ref => this.mapRef = ref}
         >
-          {this.state.markers.map(marker => 
+          {this.props.markers.map(marker => 
             <Marker
               key={marker.properties.placeId}
               identifier={marker.properties.placeId}
@@ -925,6 +877,22 @@ class MapScreen extends Component {
               description={this.state.focused.properties.secondaryText}
             />
           }
+          {this.props.markers.map((marker, index) => {
+            if (index == this.props.markers.length - 1) {
+              return null;
+            }
+
+            return (
+              <MapViewDirections
+                origin={`place_id:${marker.properties.placeId}`}
+                destination={`place_id:${this.props.markers[index+1].properties.placeId}`}
+                apikey={MAPS_API_KEY}
+                strokeColor={FOGGY}
+                strokeWidth={6}
+                lineDashPattern={[5, 30]}
+              />
+            );
+          })}
         </MapView>
         <View style={mapStyles.searchBoxContainer}>
           <TextInput
@@ -947,7 +915,7 @@ class MapScreen extends Component {
             <DrawerButton onPress={this.toggleDrawer} />
             <Animated.ScrollView
               style={{flex: 1}}
-              scrollEnabled={this.state.markers.length > 0}
+              scrollEnabled={this.props.markers.length > 0}
               ref={ref => this.scrollViewRef = ref}
               contentContainerStyle={mapStyles.endPadding}
               horizontal
@@ -965,28 +933,29 @@ class MapScreen extends Component {
               )}
             >
               <View style={mapStyles.filler} />
-              {this.state.markers.map(marker => 
+              {/* {this.props.markers.map((marker, index) => 
                 <Card
                   key={marker.placeId}
                   marker={marker}
-                  onPress={() => this.props.navigation.navigate('PlaceDetail', {
-                    place: marker,
-                    onEditNote: this.onEditItemNote
-                  })}
-                  onRemove={() => this.onRemoveItem(marker.properties.placeId)}
+                  onPress={() => {
+                    this.props.viewDetail(index);
+                    this.props.navigation.navigate('PlaceDetail');
+                  }}
+                  onRemove={() => this.props.removeMarker(marker.properties.placeId)}
                 />
-              )}
+              )} */}
+              {cards}
               <ActionCard
-                length={this.state.markers.length}
+                length={this.props.markers.length}
                 viewAll={() => {
                   this.mapRef.fitToSuppliedMarkers(
-                    this.state.markers.map(marker => marker.properties.placeId),
+                    this.props.markers.map(marker => marker.properties.placeId),
                     {
                       edgePadding: {
-                        top: 500,
-                        left: 500,
+                        top: 100,
+                        left: 75,
                         bottom: 500,
-                        right: 500
+                        right: 75
                       },
                       animated: true
                     }
@@ -994,6 +963,8 @@ class MapScreen extends Component {
                 }}
                 done={this.showDoneScreen}
                 isDone={this.state.view === 'done'}
+                distance={this.state.steps.reduce((res, cur) => res + cur.distance.value, 0)}
+                duration={this.state.steps.reduce((res, cur) => res + cur.duration.value, 0)}
               />
               <View style={mapStyles.filler} />
             </Animated.ScrollView>
@@ -1015,4 +986,33 @@ class MapScreen extends Component {
   }
 }
 
-export default MapScreen;
+const mapStateToProps = state => {
+  return {
+    markers: state.markers,
+    selected: state.selected
+  };
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    addMarker: marker => dispatch({type: 'ADD', payload: {
+      marker: marker
+    }}),
+    removeMarker: id => dispatch({type: 'REMOVE', payload: {
+      id: id
+    }}),
+    viewDetail: index => dispatch({type: 'VIEW_DETAIL', payload: {
+      selectedIndex: index
+    }}),
+    update: note => dispatch({type: 'UPDATE', payload: {
+      note: note
+    }}),
+    clear: () => dispatch({type: 'CLEAR'}),
+  };
+}
+
+export const SearchScreen = connect(mapStateToProps)(MapSearch);
+export const DetailScreen = connect(mapStateToProps)(PlaceDetail);
+export const NoteEditorScreen = connect(mapStateToProps, mapDispatchToProps)(NoteEditor);
+
+export default connect(mapStateToProps, mapDispatchToProps)(MapScreen);
