@@ -73,7 +73,11 @@ class LoginScreen extends Component {
   componentDidMount() {
     firebase.auth().onAuthStateChanged(user => {
       if (user != null) {
-        console.log('logged in with facebook!');
+        console.log('logged in!');
+        // check if user logged in through facebook
+        console.log('auth provider', firebase.auth().currentUser.providerData[0].providerId);
+        // can use this in Facebook Graph API
+        console.log('facebook uid', firebase.auth().currentUser.providerData[0].uid);
         this.props.navigation.navigate('Home');
       }
     });
@@ -85,7 +89,7 @@ class LoginScreen extends Component {
       .catch(error => console.log(error));
   }
 
-  async logInWithFacebook() {
+  logInWithFacebook = async () => {
     try {
       const {
         type,
@@ -98,7 +102,12 @@ class LoginScreen extends Component {
         case 'success':
           await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
           const credential = firebase.auth.FacebookAuthProvider.credential(token);
-          const facebookProfileData = await firebase.auth().signInAndRetrieveDataWithCredential(credential); 
+          firebase.auth().signInAndRetrieveDataWithCredential(credential)
+            .then(cred => {
+              console.log('logged in with facebook!');
+              console.log('is new user:', cred.additionalUserInfo.isNewUser);
+            }
+          ); 
 
           return Promise.resolve({type: 'success'});
         case 'cancel':

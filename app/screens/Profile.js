@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Text, View, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, View, Image, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
 import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -8,7 +8,8 @@ import { DARKER_GREY, GREY, ACCENT, ACCENT_GREEN } from '../config/styles.js';
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center'
+    alignItems: 'center',
+    paddingTop: StatusBar.currentHeight
   },
   header: {
     flexDirection: 'row',
@@ -78,8 +79,7 @@ class ProfileScreen extends Component {
   }
 
   logout = () => {
-    firebase.auth().signOut()
-    this.props.navigation.navigate('Login')
+    firebase.auth().signOut();
   }
 
   render() {
