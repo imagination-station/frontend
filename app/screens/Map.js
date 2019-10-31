@@ -671,14 +671,14 @@ class MapScreen extends Component {
         let hasPhoto = false;
         let placeId;
         // cycle through returns places to see if there are any photos
-        for (i = 0; i < Math.floor(Object.keys(responseJson.results).length / 3); i++) {
+        for (i = 0; i <= Math.floor(Object.keys(responseJson.results).length / 3); i++) {
           placeId = responseJson.results[i].place_id;
           fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}`)
             .then(response => response.json())
             .then(responseJson => {
               if (!hasPhoto) {
                 let photos = responseJson.result.photos;
-                if (photoRefs) {
+                if (photos != undefined) {
                   hasPhoto = true;
                   photos = responseJson.result.photos.map(elem => elem.photo_reference);
                   const marker = {
@@ -691,7 +691,7 @@ class MapScreen extends Component {
                       ]
                     },
                     properties: {
-                      placeId: place_id,
+                      placeId: placeId,
                       mainText: responseJson.result.name,
                       secondaryText: responseJson.result.formatted_address,
                       photoRefs: photos
