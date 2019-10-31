@@ -279,7 +279,7 @@ const DATA = [
       placeId: 'ChIJzal6QUUE9YgRYZqYJzKOXAo',
       mainText: 'Museum of Design Atlanta',
       secondaryText: 'Peachtree Street Northeast, Atlanta, GA, USA',
-      photoReference: [
+      photoRefs: [
         'CmRaAAAArfg8qF1oPtvFj18kTkcVbIDtR3Arm04aoHSbno1GNaeEOLANbECjkVf_4SmLdo7uVs7SfD71XjrSbMoEHBZm8EZc53WCXPxNlGxC6b2-DRqxRI0BEZrs5yXQ-HVTjObrEhD5ekbW-N2N1DCujiI1nYgXGhQXIEURuVaLx2_N_nZUGIpmiPyCSA',
         'CmRaAAAApMwKX8N6EhXmxuytk8uqqz4XZwQYDHVDgk8XMigwwu4MnSuGnbbnPb6fCp1LaiOJXkx61D1s7M4kdAibCTy4wug3MTpEFGOAT_wHao1B-2mTF3GTU6gWG-0agXGE2qzkEhCNWHKzJ-OHG2iKfjAhIDo0GhQnmSb2pTi3XIMz00TAXpbHPbvUrQ',
         'CmRaAAAA_RFTA6jpX2KiHBW7SWRCkzCYEUnb27xDvA2UZGAZtKvQLAZRT-zbHL4FRlAg86q6CalB-6C9PBGa5y8PLLEBzMSodtmQBeNwTjb4Zb6QDDY3qNo3eYWrV5I8XWZM2BGCEhB86xeYE6mruzEeiFC0xVx9GhQ2jqq80jNH_smOex63RQCmh-GkcA',
@@ -298,7 +298,7 @@ const DATA = [
       placeId: 'ChIJr3p2s-cE9YgR2uIvhPLls3E',
       mainText: 'Urban Tree Cidery',
       secondaryText: 'Howell Mill Road Northwest, Atlanta, GA, USA',
-      photoReference: ['CmRaAAAAN1JSSlKydw6W6-7_eeuYOkJzvVBTW5LBaW0W1sxPnyhkZPKbP4PEbqoPXRU5Q9MHJXBOFzOEJl8KBvB64bI3xtnCOeh9RaUihdBq3-Bi3fOPopG33WVW8avzEZrJ0Dq-EhA4tZV5xpLQP_yEaMXFLzfOGhTeLYBn2z2mW3VmvlOCbUEucED2gg'],
+      photoRefs: ['CmRaAAAAN1JSSlKydw6W6-7_eeuYOkJzvVBTW5LBaW0W1sxPnyhkZPKbP4PEbqoPXRU5Q9MHJXBOFzOEJl8KBvB64bI3xtnCOeh9RaUihdBq3-Bi3fOPopG33WVW8avzEZrJ0Dq-EhA4tZV5xpLQP_yEaMXFLzfOGhTeLYBn2z2mW3VmvlOCbUEucED2gg'],
       note: 'Chill, unpretentious vibes',
     }
   }
@@ -387,6 +387,17 @@ class PlaceDetail extends Component {
   render() {
     const place = this.props.markers[this.props.selected];
 
+    const photos = place.properties.photoRefs ?
+      place.properties.photoRefs.map(ref =>
+        <Image
+          source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
+          style={detailStyles.image}
+        />
+      ) : [<Image
+        source={{uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`}}
+        style={detailStyles.image}
+      />];
+
     return (
       <View style={detailStyles.container}>
         <ImageCarousel
@@ -395,12 +406,7 @@ class PlaceDetail extends Component {
           containerStyle={detailStyles.scrollViewContainer}
           scrollViewStyle={detailStyles.imageScrollView}
         >
-          {place.properties.photoReference.map(ref =>
-            <Image
-              source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
-              style={detailStyles.image}
-            />
-          )}
+          {photos}
         </ImageCarousel>
         <View style={detailStyles.textContainer}>
           <Text style={detailStyles.mainText}>{place.properties.mainText}</Text>
@@ -465,8 +471,8 @@ class NoteEditor extends Component {
 }
 
 function Card(props) {
-  const source = props.marker.properties.photoReference ?
-    {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`} :
+  const source = props.marker.properties.photoRefs ?
+    {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoRefs[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`} :
     {uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`};
   return (
     <TouchableWithoutFeedback onPress={props.onPress}>
@@ -489,8 +495,8 @@ function Card(props) {
 }
 
 function FocusedCard(props) {
-  const source = props.marker.properties.photoReference ?
-    {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoReference[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`} :
+  const source = props.marker.properties.photoRefs ?
+    {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoRefs[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`} :
     {uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg'};
 
   return (
@@ -602,7 +608,8 @@ class MapScreen extends Component {
     fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}`)
     .then(response => response.json())
     .then(responseJson => {
-      const photoReference = responseJson.result.photos ? responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4) : null;
+      // limit showing photos to 4 to save ca$h
+      const photos = responseJson.result.photos ? responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4) : null;
       const marker = {
         type: 'Feature',
         geometry: {
@@ -616,7 +623,7 @@ class MapScreen extends Component {
           placeId: placeId,
           mainText: responseJson.result.name,
           secondaryText: responseJson.result.formatted_address,
-          photoReference: photoReference
+          photoRefs: photos
         }
       };
 
@@ -662,17 +669,18 @@ class MapScreen extends Component {
       .then(response => response.json())
       .then(responseJson => {
         let hasPhoto = false;
+        let placeId;
         // cycle through returns places to see if there are any photos
         for (i = 0; i < Math.floor(Object.keys(responseJson.results).length / 3); i++) {
-          let place_id = responseJson.results[i].place_id;
-          fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${place_id}&key=${MAPS_API_KEY}`)
+          placeId = responseJson.results[i].place_id;
+          fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}`)
             .then(response => response.json())
             .then(responseJson => {
-              if (!hasPhoto){
-                let photoReference = responseJson.result.photos != undefined;
-                if (photoReference) {
+              if (!hasPhoto) {
+                let photos = responseJson.result.photos;
+                if (photoRefs) {
                   hasPhoto = true;
-                  photoReference = responseJson.result.photos.map(elem => elem.photo_reference);
+                  photos = responseJson.result.photos.map(elem => elem.photo_reference);
                   const marker = {
                     type: 'Feature',
                     geometry: {
@@ -686,7 +694,7 @@ class MapScreen extends Component {
                       placeId: place_id,
                       mainText: responseJson.result.name,
                       secondaryText: responseJson.result.formatted_address,
-                      photoReference: photoReference
+                      photoRefs: photos
                     }
                   };
                   this.closeDrawer();

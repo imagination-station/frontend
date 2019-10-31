@@ -88,9 +88,7 @@ const AppContainer = createAppContainer(AppNavigator);
 export default function App() {
   return (
     <Provider store={store}>
-        <SafeAreaView style={{flex: 1}}>
-          <AppContainer />
-        </SafeAreaView>
+      <AppContainer />
     </Provider>
   );
 }

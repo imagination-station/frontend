@@ -104,6 +104,9 @@ class ExploreScreen extends Component {
         .catch(error => console.error(error));
       }
     );
+
+    console.log('auth provider', firebase.auth().currentUser.providerData[0].providerId);
+    console.log('facebook uid', firebase.auth().currentUser.providerData[0].uid);
   }
 
   fetchPhotos = () => {
