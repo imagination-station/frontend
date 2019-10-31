@@ -53,26 +53,23 @@ class SignUpScreen extends Component {
     }
 
     signUp = () => {
-        // firebase.auth().currentUser.getIdToken().then(token => {
-            fetch(`${SERVER_ADDR}/email`, {
-                method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'Content-type': 'application/json'
-                    // Authorization: 'Bearer '.concat(token)
-                },
-                body: JSON.stringify({
-                    name: this.state.name,
-                    username: this.state.username,
-                    email: this.state.email,
-                    password: this.state.password,
-                    bio: this.state.bio,
-                    location: PLACE_ID
-                })
+        fetch(`${SERVER_ADDR}/users/email`, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: this.state.name,
+                username: this.state.username,
+                email: this.state.email,
+                password: this.state.password,
+                bio: this.state.bio,
+                location: PLACE_ID
             })
-            .then(this.props.navigation.navigate('Login'))
-            .catch(error => console.error(error));
-        // });
+        })
+        .then(this.props.navigation.navigate('Login'))
+        .catch(error => console.error(error));
     }
 
     render() {
@@ -99,7 +96,7 @@ class SignUpScreen extends Component {
             />
             <TextInput
               style={styles.textInput}
-              placeholder={'Password'}
+              placeholder={'Password (Must be at least 6 characters)'}
               onChangeText={text => this.setState({password: text})}
               value={this.state.password}
               textContentType={'password'}
