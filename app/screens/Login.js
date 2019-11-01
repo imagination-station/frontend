@@ -11,7 +11,7 @@ import {
 import * as firebase from 'firebase';
 import * as Facebook from 'expo-facebook';
 
-import { GREY, DARKER_GREY, ACCENT, PRIMARY, FACEBOOK } from '../config/styles.js';
+import { GREY, DARKER_GREY, ACCENT, FACEBOOK } from '../config/styles.js';
 
 const styles = StyleSheet.create({
   container: {
@@ -69,19 +69,6 @@ class LoginScreen extends Component {
     email: '',
     password: ''
   };
-
-  componentDidMount() {
-    firebase.auth().onAuthStateChanged(user => {
-      if (user != null) {
-        console.log('logged in!');
-        // check if user logged in through facebook
-        console.log('auth provider', firebase.auth().currentUser.providerData[0].providerId);
-        // can use this in Facebook Graph API
-        console.log('facebook uid', firebase.auth().currentUser.providerData[0].uid);
-        this.props.navigation.navigate('Home');
-      }
-    });
-  }
 
   logInWithEmail = () => {
     firebase.auth()
@@ -149,7 +136,7 @@ class LoginScreen extends Component {
         <LogInButton 
           title='Log In'
           onPress={this.logInWithEmail}
-          textStyle={{...styles.logInButtton, backgroundColor: ACCENT, marginTop: 20}}
+          textStyle={{...styles.logInButtton, marginTop: 20, borderWidth: 2, borderColor: ACCENT, color: ACCENT}}
         />
         <LogInButton 
           title='Continue with Facebook'
@@ -161,7 +148,7 @@ class LoginScreen extends Component {
           <SignUpButton
             title='Sign up.'
             onPress={this.onPressSignup}
-            textStyle={{color: PRIMARY, textDecorationLine: 'underline'}}
+            textStyle={{color: ACCENT, textDecorationLine: 'underline'}}
           />
         </View>
       </View>
