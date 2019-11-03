@@ -14,7 +14,7 @@ import * as firebase from 'firebase';
 import RouteCard from '../components/RouteCard.js';
 
 import { DARKER_GREY, PRIMARY } from '../config/styles.js';
-import { SERVER_ADDR, PLACE_ID, MAPS_API_KEY } from '../config/settings.js';
+import { SERVER_ADDR, PLACE_ID, MAPS_API_KEY, UID } from '../config/settings.js';
 
 const {width, height} = Dimensions.get('window');
 
@@ -129,6 +129,43 @@ class ExploreScreen extends Component {
                       let bookmarks = [...this.state.bookmarks];
                       bookmarks[index] = !this.state.bookmarks[index];
                       this.setState({bookmarks: bookmarks});
+                      let routeId = this.state.routes[index]._id;
+                      console.log(`Route ID: ${routeId}`);
+                      if (bookmarks[index]) {
+                        firebase.auth().currentUser.getIdToken().then(token =>
+                          fetch(`${SERVER_ADDR}/users/${UID}/forks`, {
+                            method: 'POST',
+                            headers: {
+                              Accept: 'application/json',
+                              'Content-type': 'application/json',
+                              Authorization: `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                              routeId: routeId,
+                            })
+                          })
+                        )
+                          .then(response => {
+                            console.log(response);
+                          })
+                          .catch(error => console.error(error));
+                          firebase.auth().currentUser.getIdToken().then(token =>
+                            fetch(`${SERVER_ADDR}/users/${UID}/forks`, {
+                            method: 'GET',
+                              headers: {
+                                Accept: 'application/json',
+                                'Content-type': 'application/json',
+                                Authorization: `Bearer ${token}`
+                              }
+                            }))
+                            .then(response => {
+                              console.log(response);
+                              response.json();
+                            })
+                            .catch(error => {
+                              console.error(error)
+                            });
+                      }
                     }}
                   />
                 );
