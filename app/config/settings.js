@@ -4,7 +4,8 @@ export const MAPS_API_KEY = env.MAPS_API_KEY;
 export const SERVER_ADDR = env.API_SERVER_ADDR;
 
 // hardcoded user ID; replace later
-export const UID = '5d979e6c5a0de701d708959e';
+// export const UID = '5d979e6c5a0de701d708959e';
+export const UID = '5db34c8a72ddbf4cb0b31a93';
 
 // hardcoded values for Atlanta; replace later
 export const INIT_LOCATION = {
