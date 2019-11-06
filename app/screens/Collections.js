@@ -39,19 +39,20 @@ const styles = StyleSheet.create({
 class CollectionsScreen extends Component {
 
   state = {
-    routes: null
+    routes: []
   };
 
   componentDidMount() {
-    firebase.auth().currentUser.getIdToken().then(token => fetch(`${SERVER_ADDR}/users/${this.props.userId}/routes`, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-type': 'application/json',
-        Authorization: `Bearer ${token}`
-      }
-    }))
-      .then(response => {console.log(response); response.json();})
+    firebase.auth().currentUser.getIdToken()
+      .then(token => fetch(`${SERVER_ADDR}/users/${this.props.userId}/routes`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      }))
+      .then(response => response.json())
       .then(responseJson => this.setState({
         routes: responseJson
       }))
@@ -72,7 +73,7 @@ class CollectionsScreen extends Component {
                   <Text style={styles.headerBlurred}>New</Text>
                 </TouchableOpacity>
               </View>
-              {this.state.routes ? <FlatList
+              {this.state.routes.length != 0 ? <FlatList
                 data={this.state.routes}
                 renderItem={({ item }) => {
                   const photoRef = item.pins[0].properties.photoRefs[0];
@@ -87,8 +88,8 @@ class CollectionsScreen extends Component {
                     />
                   );
                 }}
-                keyExtractor={item => item.place_id}
-                contentContainerStyle={{alignItems: 'center', width: '100%', backgroundColor: 'transparent'}} /> :
+                keyExtractor={item => item._id}
+                contentContainerStyle={{alignItems: 'center', width: '100%', backgroundColor: 'transparent'}}/> :
                 <Text style={{padding: 30, alignSelf: 'center', color: DARKER_GREY}}>Wow, so empty :)</Text>}
             </View>
           </View>

@@ -1,9 +1,7 @@
 import React, { Component } from 'react';
 import {
   View,
-  TextInput,
   StyleSheet,
-  FlatList,
   Text,
   TouchableOpacity,
   Animated,
@@ -18,14 +16,12 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
 
-import Button, { LongButton } from '../components/Buttons.js';
-import ImageCarousel from '../components/ImageCarousel.js';
-import globalStyles, { GREY, DARKER_GREY, PRIMARY } from '../config/styles.js';
+import Button from '../components/Buttons.js';
+import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
 import {
   MAPS_API_KEY,
-  SERVER_ADDR,
   INIT_LOCATION,
-  PLACE_ID
+  PLACEHOLDER_IMG
 } from '../config/settings.js';
 
 // dimensions of the screen
@@ -140,7 +136,7 @@ const mapStyles = StyleSheet.create({
     borderRadius: 15,
     marginBottom: 10
   },
-  doneContainer: {
+  infoContainer: {
     flex: 2.4,
     width: width,
     alignItems: 'center'
@@ -155,11 +151,10 @@ const mapStyles = StyleSheet.create({
   }
 });
 
-
 function Card(props) {
   const source = props.marker.properties.photoRefs ?
     {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoRefs[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`} :
-    {uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`};
+    {uri: PLACEHOLDER_IMG};
   return (
     <TouchableWithoutFeedback onPress={props.onPress}>
       <View style={mapStyles.card}>
@@ -172,9 +167,9 @@ function Card(props) {
             {props.marker.properties.secondaryText}
           </Text>
         </View>
-        {/* <View style={mapStyles.cardButtonBar}>
-          <Button title={'Remove'} onPress={props.onRemove} small />
-        </View> */}
+        <View style={mapStyles.cardButtonBar}>
+          <Button title={'More'} onPress={props.onMore} small />
+        </View>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -185,23 +180,24 @@ function ActionCard(props) {
   if (props.length == 0) {
     content = (
       <Text style={{color: DARKER_GREY, textAlign: 'center'}}>
-        {'Search or tap on the map to add places :)'}
+        {'Loading...'}
       </Text>
     );
   } else {
     content = [
-      <Text style={{color: DARKER_GREY}}>
+      <Text style={{color: DARKER_GREY}} key='num_places'>
         {`${props.length} places`}
       </Text>,
-      <Text style={{color: DARKER_GREY}}>
+      <Text style={{color: DARKER_GREY}} key='distance'>
         {`${props.distance} m`}
       </Text>,
-      <Text style={{color: DARKER_GREY}}>
+      <Text style={{color: DARKER_GREY}} key='time'>
         {`${Math.floor(props.duration / 60)} mins`}
       </Text>,
-      !props.isDone && 
-        <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}}>
-          <Button title={'View All'} onPress={props.viewAll} small />
+      props.view != 'info' && 
+        <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}} key='buttons'>
+          <Button title='View All' onPress={props.viewAll} small />
+          <Button title='Info' onPress={props.showRouteInfo} small />
         </View>
     ];
   }
@@ -221,6 +217,14 @@ function DrawerButton(props) {
     <TouchableOpacity onPress={props.onPress}>
       <View style={mapStyles.drawerButton}/>
     </TouchableOpacity>
+  );
+}
+
+function Tag(props) {
+  return (
+    <View style={{flexDirection: 'row', backgroundColor: ACCENT, height: 30, width: 'auto', padding: 3, alignItems: 'center', borderRadius: 5, marginRight: 10, marginBottom: 10}}>
+      <Text style={{color: 'white', paddingRight: 5}} numberOfLines={1} ellipsizeMode='tail'>{props.title}</Text>
+    </View>
   );
 }
 
@@ -267,6 +271,10 @@ class RouteDetailScreen extends Component {
         });
 
         this.props.loadRoute(this.props.navigation.getParam('route').pins, steps);
+        if (this.props.navigation.getParam('route').pins.length > 1) {
+          // show first leg by default
+          this.props.selectRoute(0);
+        }
       }
     );
   }
@@ -318,9 +326,18 @@ class RouteDetailScreen extends Component {
     const reducer = (res, marker, index) => {
       res.push(
         <Card
-          key={marker.placeId}
+          key={marker.properties.placeId}
           marker={marker}
           onPress={() => {
+            this.mapRef.animateCamera({
+              center: {
+                latitude: marker.geometry.coordinates[0],
+                longitude: marker.geometry.coordinates[1],
+              },
+              zoom: 17
+            }, 30);
+          }}
+          onMore={() => {
             this.props.viewDetail(index);
             this.props.navigation.navigate('PlaceDetail');
           }}
@@ -329,25 +346,28 @@ class RouteDetailScreen extends Component {
 
       if (this.props.steps[index]) {
         res.push(
-          <TouchableOpacity onPress={() => {
-            if (index === this.props.showRoute) {
-              this.props.clearRoute();
-            } else {
-              this.props.selectRoute(index);
-              this.mapRef.fitToSuppliedMarkers(
-                [this.props.markers[index], this.props.markers[index+1]].map(marker => marker.properties.placeId),
-                {
-                  edgePadding: {
-                    top: 500,
-                    left: 500,
-                    bottom: 800,
-                    right: 500
-                  },
-                  animated: true
-                }
-              );
-            }
-          }}>
+          <TouchableOpacity
+            onPress={() => {
+              if (index === this.props.showRoute) {
+                this.props.clearRoute();
+              } else {
+                this.props.selectRoute(index);
+                this.mapRef.fitToSuppliedMarkers(
+                  [this.props.markers[index], this.props.markers[index+1]].map(marker => marker.properties.placeId),
+                  {
+                    edgePadding: {
+                      top: 500,
+                      left: 500,
+                      bottom: 800,
+                      right: 500
+                    },
+                    animated: true
+                  }
+                );
+              }
+            }}
+            key={`${marker.properties.placeId}_leg`}
+          >
             <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
               <Icon name='directions-walk' size={30} color={index === this.props.showRoute ? PRIMARY : DARKER_GREY} />
               <Text style={{color: index === this.props.showRoute ? PRIMARY : DARKER_GREY}}>
@@ -437,16 +457,21 @@ class RouteDetailScreen extends Component {
                     }
                   );
                 }}
-                done={this.showDoneScreen}
-                isDone={this.state.view === 'done'}
+                showRouteInfo={this.showRouteInfo}
+                view={this.state.view}
                 distance={this.props.steps.reduce((res, cur) => res + cur.distance.value, 0)}
                 duration={this.props.steps.reduce((res, cur) => res + cur.duration.value, 0)}
               />
               <View style={mapStyles.filler} />
             </Animated.ScrollView>
             {this.state.view === 'info' &&
-              <View style={mapStyles.doneContainer}>
-                <Text>{this.props.navigation.getParam('route').name}</Text>
+              <View style={mapStyles.infoContainer}>
+                <Text style={{alignSelf: 'flex-start', margin: 15, fontSize: 20, fontWeight: 'bold', width: 300}}>
+                  {this.props.navigation.getParam('route').name}
+                </Text>
+                <View style={{flexDirection: 'row', alignSelf: 'flex-start', marginLeft: 15, flexWrap: 'wrap'}}>
+                  {this.props.navigation.getParam('route').tags.map(tag => <Tag title={tag} key={tag} />)}
+                </View>
               </View>
             }
           </View>

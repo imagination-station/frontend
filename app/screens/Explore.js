@@ -129,6 +129,7 @@ class ExploreScreen extends Component {
                       bookmarks[index] = !this.state.bookmarks[index];
                       this.setState({bookmarks: bookmarks});
                     }}
+                    key={item._id}
                   />
                 );
               })}

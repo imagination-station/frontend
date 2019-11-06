@@ -5,10 +5,9 @@ import {
   View,
   StyleSheet,
   TouchableWithoutFeedback,
+  TouchableOpacity
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-
-import { PRIMARY } from '../config/styles.js';
 
 const styles = StyleSheet.create({
   card: {
@@ -56,13 +55,13 @@ export default function PathCard(props) {
     <TouchableWithoutFeedback onPress={props.onPress}>
       <View style={styles.card}>
         <View style={styles.iconButtonBar}>
-          <TouchableWithoutFeedback onPress={props.onBookmark}>
+          <TouchableOpacity onPress={props.onBookmark}>
             <Icon
               name={props.bookmarked ? 'bookmark' : 'bookmark-border'}
               size={25}
-              color={props.bookmarked ? PRIMARY : 'rgba(0, 0, 0, 0.5)'}
+              color={props.bookmarked ? '#f1c236': 'rgba(0, 0, 0, 0.5)'}
             />
-          </TouchableWithoutFeedback>
+          </TouchableOpacity>
         </View>
         <Image source={pic} style={styles.cardImage} resizeMode='cover' />
         <View style={styles.textContent}>

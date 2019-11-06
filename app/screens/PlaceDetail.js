@@ -2,10 +2,10 @@ import React, { Component } from 'react';
 import { View, StyleSheet, Text, Animated, Image, Dimensions } from 'react-native';
 import { connect } from 'react-redux';
 
-import { LongButton } from '../../components/Buttons.js';
-import ImageCarousel from '../../components/ImageCarousel.js';
-import { GREY, DARKER_GREY, PRIMARY } from '../../config/styles.js';
-import { MAPS_API_KEY } from '../../config/settings.js';
+import { LongButton } from '../components/Buttons.js';
+import ImageCarousel from '../components/ImageCarousel.js';
+import { GREY, DARKER_GREY, PRIMARY } from '../config/styles.js';
+import { MAPS_API_KEY, PLACEHOLDER_IMG } from '../config/settings.js';
 
 const {width, height} = Dimensions.get('window');
 const CARD_WIDTH = Math.floor(width / 1.5);
@@ -64,11 +64,9 @@ class PlaceDetailScreen extends Component {
         <Image
           source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
           style={styles.image}
+          key={ref}
         />
-      ) : [<Image
-        source={{uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`}}
-        style={styles.image}
-      />];
+      ) : <Image source={{uri: PLACEHOLDER_IMG}} style={styles.image} />;
 
     let placeholder;
     if (this.props.editable) {

@@ -12,7 +12,7 @@ import ExploreScreen from './app/screens/Explore.js';
 import CollectionsScreen from './app/screens/Collections.js';
 import ProfileScreen from './app/screens/Profile.js';
 import MapScreen, { SearchScreen, NoteEditorScreen } from './app/screens/RouteEditor.js';
-import PlaceDetailScreen from './app/screens/Routes/PlaceDetail.js';
+import PlaceDetailScreen from './app/screens/PlaceDetail.js';
 import RouteDetailScreen from './app/screens/RouteDetail.js';
 import SignUpScreen from './app/screens/SignUp.js';
 import SplashScreen from './app/screens/Splash.js';
