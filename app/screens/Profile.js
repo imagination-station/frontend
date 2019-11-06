@@ -3,7 +3,7 @@ import { Text, View, Image, StyleSheet, TouchableOpacity, StatusBar, SafeAreaVie
 import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-import { DARKER_GREY, GREY, ACCENT, ACCENT_GREEN } from '../config/styles.js';
+import { DARKER_GREY, GREY, PRIMARY, ACCENT } from '../config/styles.js';
 
 const styles = StyleSheet.create({
   container: {
@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
   },
   headerSecondaryText: {
     fontSize: 14,
-    color: ACCENT
+    color: PRIMARY
   },
   sectionContainer: {
     padding: 20,
@@ -112,7 +112,7 @@ class ProfileScreen extends Component {
               <ActionButton
                 title='Log out'
                 onPress={this.logout}
-                textStyle={{...styles.textStyle, color: ACCENT_GREEN}}
+                textStyle={{...styles.textStyle, color: ACCENT}}
               />
             </View>
           </View>

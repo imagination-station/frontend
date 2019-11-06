@@ -18,9 +18,8 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
 
-import Button, { LongButton } from '../components/Buttons.js';
-import ImageCarousel from '../components/ImageCarousel.js';
-import globalStyles, { GREY, DARKER_GREY, ACCENT, HOF, FOGGY } from '../config/styles.js';
+import Button from '../components/Buttons.js';
+import globalStyles, { GREY, DARKER_GREY, PRIMARY } from '../config/styles.js';
 import {
   MAPS_API_KEY,
   SERVER_ADDR,
@@ -193,47 +192,6 @@ const searchStyles = StyleSheet.create({
   }
 });
 
-const detailStyles = StyleSheet.create({
-  container: {
-    flex: 1
-  },
-  scrollViewContainer: {
-    alignItems: 'center'
-  },
-  imageScrollView: {
-    height: 300,
-    width: width
-  },
-  image: {
-    height: 300,
-    width: width
-  },
-  textContainer: {
-    padding: 10
-  },
-  mainText: {
-    fontSize: 24,
-    marginBottom: 3
-  },
-  secondaryText: {
-    color: DARKER_GREY
-  },
-  sectionHeader: {
-    fontSize: 12,
-    marginBottom: 5,
-    marginTop: 25,
-    color: ACCENT
-  },
-  buttonStyle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    borderBottomWidth: 1,
-    borderBottomColor: GREY,
-    padding: 10
-  }
-});
-
 const noteEditorStyles = StyleSheet.create({
   container: {
     flex: 1,
@@ -378,59 +336,6 @@ function SearchItem(props) {
   );
 }
 
-class PlaceDetail extends Component {
-
-  componentWillMount() {
-    this.scrollValue = new Animated.Value(0);
-  }
-
-  render() {
-    const place = this.props.markers[this.props.selected];
-
-    const photos = place.properties.photoRefs ?
-      place.properties.photoRefs.map(ref =>
-        <Image
-          source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
-          style={detailStyles.image}
-        />
-      ) : [<Image
-        source={{uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`}}
-        style={detailStyles.image}
-      />];
-
-    return (
-      <View style={detailStyles.container}>
-        <ImageCarousel
-          width={width}
-          scrollValue={this.scrollValue}
-          containerStyle={detailStyles.scrollViewContainer}
-          scrollViewStyle={detailStyles.imageScrollView}
-        >
-          {photos}
-        </ImageCarousel>
-        <View style={detailStyles.textContainer}>
-          <Text style={detailStyles.mainText}>{place.properties.mainText}</Text>
-          <Text style={detailStyles.secondaryText}>{place.properties.secondaryText}</Text>
-          <Text style={detailStyles.sectionHeader}>NOTES</Text>
-          {place.properties.note ? <View>
-            <Text>{place.properties.note}</Text>
-            <Text style={{color: DARKER_GREY, fontSize: 10, marginTop: 2}}>Last edited 10/18/2019</Text>
-          </View> : <Text style={{color: 'grey'}}>
-            Write interesting facts, things to do, or anything you want to record about this place.
-          </Text>}
-          <LongButton
-            icon='create'
-            title='Edit notes'
-            style={detailStyles.buttonStyle}
-            textStyle={{marginLeft: 40}}
-            onPress={() => this.props.navigation.navigate('NoteEditor')}
-          />
-        </View>
-      </View>
-    );
-  }
-}
-
 class NoteEditor extends Component {
   state = {
     note: this.props.markers[this.props.selected].properties.note 
@@ -539,7 +444,7 @@ function ActionCard(props) {
       !props.isDone && 
         <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}}>
           <Button title={'View All'} onPress={props.viewAll} small />
-          <Button title={`Create Path`} onPress={props.done} small />
+          <Button title={`Create Route`} onPress={props.done} small />
         </View>
     ];
   }
@@ -574,7 +479,6 @@ class MapScreen extends Component {
     drawerCollapsed: false,
     focused: null,
     name: '',
-    steps: []
   };
 
   componentWillMount() {
@@ -770,71 +674,70 @@ class MapScreen extends Component {
     });
   }
 
-  onAddItem = () => {
-    this.props.addMarker(this.state.focused);
+  onAddItem = async () => {
+    let info;
     if (this.props.markers.length > 0) {
-      fetch(`https://maps.googleapis.com/maps/api/directions/json?key=${MAPS_API_KEY}&origin=place_id:${this.props.markers[this.props.markers.length-1].properties.placeId}&destination=place_id:${this.state.focused.properties.placeId}&mode=walking`)
+      await fetch(`https://maps.googleapis.com/maps/api/directions/json?key=${MAPS_API_KEY}&origin=place_id:${this.props.markers[this.props.markers.length-1].properties.placeId}&destination=place_id:${this.state.focused.properties.placeId}&mode=walking`)
         .then(response => response.json())
         .then(responseJson => {
-          const info = {
+          info = {
             distance: responseJson.routes[0].legs[0].distance,
             duration: responseJson.routes[0].legs[0].duration
           }
-          this.setState({
-            focused: null,
-            searchInput: '',
-            steps: [...this.state.steps, info]
-          }, this.toggleDrawer);
         });
-    } else {
-      this.setState({
-        focused: null,
-        searchInput: '',
-      }, this.toggleDrawer);
     }
+
+    this.props.addMarker(this.state.focused, info);
+    this.setState({
+      focused: null,
+      searchInput: '',
+    }, this.toggleDrawer);
   }
 
   onComplete = () => {
-    firebase.auth().currentUser.getIdToken().then(token => {      
+    firebase.auth().currentUser.getIdToken().then(token =>
       fetch(`${SERVER_ADDR}/cities/routes`, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-type': 'application/json',
-          Authorization: 'Bearer '.concat(token)
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
           name: this.state.name,
-          creator: firebase.auth().currentUser.uid,
+          creator: this.state.userId,
           city: PLACE_ID,
           pins: this.props.markers
         })
       })
-        .then(this.props.navigation.goBack)
-        .catch(error => console.error(error));
-      }
-    );
+    )
+      .then(response => {
+        console.log(response);
+        this.props.navigation.goBack();
+      })
+      .catch(error => console.error(error));
   }
 
   render() {
-    const reducer = (res, marker, index, arr) => {
+    const reducer = (res, marker, index) => {
       res.push(
         <Card
           key={marker.placeId}
           marker={marker}
           onPress={() => {
             this.props.viewDetail(index);
-            this.props.navigation.navigate('PlaceDetail');
+            this.props.navigation.navigate('PlaceDetail', {editable: true});
           }}
           onRemove={() => this.props.removeMarker(marker.properties.placeId)}
-        />);
+        />
+      );
 
-      if (this.state.steps[index]) {
+      if (this.props.steps[index]) {
         res.push(
           <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
-            <Icon name='directions-walk' size={30} color={FOGGY} />
-            <Text style={{color: FOGGY}}>{this.state.steps[index].distance.text}</Text>
-            <Text style={{color: FOGGY}}>{this.state.steps[index].duration.text}</Text>
+            <Icon name='directions-walk' size={30} color={DARKER_GREY} />
+            <Text style={{color: DARKER_GREY}}>{this.props.steps[index].distance.text}</Text>
+            <Text style={{color: DARKER_GREY}}>{this.props.steps[index].duration.text}</Text>
           </View>
         );
       }
@@ -887,7 +790,7 @@ class MapScreen extends Component {
                 origin={`place_id:${marker.properties.placeId}`}
                 destination={`place_id:${this.props.markers[index+1].properties.placeId}`}
                 apikey={MAPS_API_KEY}
-                strokeColor={FOGGY}
+                strokeColor={DARKER_GREY}
                 strokeWidth={6}
                 lineDashPattern={[5, 30]}
               />
@@ -933,17 +836,6 @@ class MapScreen extends Component {
               )}
             >
               <View style={mapStyles.filler} />
-              {/* {this.props.markers.map((marker, index) => 
-                <Card
-                  key={marker.placeId}
-                  marker={marker}
-                  onPress={() => {
-                    this.props.viewDetail(index);
-                    this.props.navigation.navigate('PlaceDetail');
-                  }}
-                  onRemove={() => this.props.removeMarker(marker.properties.placeId)}
-                />
-              )} */}
               {cards}
               <ActionCard
                 length={this.props.markers.length}
@@ -963,8 +855,8 @@ class MapScreen extends Component {
                 }}
                 done={this.showDoneScreen}
                 isDone={this.state.view === 'done'}
-                distance={this.state.steps.reduce((res, cur) => res + cur.distance.value, 0)}
-                duration={this.state.steps.reduce((res, cur) => res + cur.duration.value, 0)}
+                distance={this.props.steps.reduce((res, cur) => res + cur.distance.value, 0)}
+                duration={this.props.steps.reduce((res, cur) => res + cur.duration.value, 0)}
               />
               <View style={mapStyles.filler} />
             </Animated.ScrollView>
@@ -972,7 +864,7 @@ class MapScreen extends Component {
               <View style={mapStyles.doneContainer}>
                 <TextInput
                   style={{...mapStyles.nameBox, marginBottom: 10}}
-                  placeholder={'Name your path'}
+                  placeholder={'Name your route'}
                   onChangeText={text => this.setState({name: text})}
                   value={this.state.name}
                 />
@@ -989,14 +881,17 @@ class MapScreen extends Component {
 const mapStateToProps = state => {
   return {
     markers: state.markers,
-    selected: state.selected
+    steps: state.steps,
+    selected: state.selected,
+    userId: state.userId
   };
 }
 
 const mapDispatchToProps = dispatch => {
   return {
-    addMarker: marker => dispatch({type: 'ADD', payload: {
-      marker: marker
+    addMarker: (marker, routeInfo) => dispatch({type: 'ADD', payload: {
+      marker: marker,
+      routeInfo: routeInfo
     }}),
     removeMarker: id => dispatch({type: 'REMOVE', payload: {
       id: id
@@ -1012,7 +907,6 @@ const mapDispatchToProps = dispatch => {
 }
 
 export const SearchScreen = connect(mapStateToProps)(MapSearch);
-export const DetailScreen = connect(mapStateToProps)(PlaceDetail);
 export const NoteEditorScreen = connect(mapStateToProps, mapDispatchToProps)(NoteEditor);
 
 export default connect(mapStateToProps, mapDispatchToProps)(MapScreen);

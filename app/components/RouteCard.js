@@ -4,24 +4,19 @@ import {
   Text,
   View,
   StyleSheet,
-  Dimensions,
   TouchableWithoutFeedback,
-  TouchableOpacity
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-import { ACCENT, ACCENT_GREEN } from '../config/styles.js';
-
-const {_, height} = Dimensions.get('window');
-const CARD_HEIGHT = height / 4;
+import { ACCENT } from '../config/styles.js';
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: 'white',
     marginHorizontal: 10,
     marginVertical: 15,
-    height: CARD_HEIGHT * 1.4,
-    width: 350,
+    height: 200,
+    width: 250,
     overflow: 'hidden',
     elevation: 0.5,
     borderRadius: 10
@@ -39,9 +34,8 @@ const styles = StyleSheet.create({
     flex: 1
   },
   cardtitle: {
-    fontSize: 12,
+    fontSize: 16,
     marginTop: 5,
-    fontWeight: 'bold'
   },
   iconButtonBar: {
     flexDirection: 'row',
@@ -55,7 +49,7 @@ const styles = StyleSheet.create({
 
 export default function PathCard(props) {
   let pic = {
-    uri: props.photoReference
+    uri: props.photoRef
   };
 
   return (
@@ -66,7 +60,7 @@ export default function PathCard(props) {
             <Icon
               name={props.bookmarked ? 'bookmark' : 'bookmark-border'}
               size={25}
-              color={props.bookmarked ? 'yellow' : 'rgba(0, 0, 0, 0.5)'}
+              color={props.bookmarked ? ACCENT : 'rgba(0, 0, 0, 0.5)'}
             />
           </TouchableWithoutFeedback>
         </View>

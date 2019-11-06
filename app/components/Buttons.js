@@ -2,7 +2,7 @@ import React from 'react';
 import { TouchableOpacity, Text, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-import styles, { ACCENT_GREEN } from '../config/styles.js';
+import styles, { ACCENT } from '../config/styles.js';
 
 function Button(props) {
   let style = styles.button;
@@ -21,7 +21,7 @@ export function LongButton(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
       <View style={props.style}>
-        {props.icon && <Icon name={props.icon} size={30} color='#00A699'/>}
+        {props.icon && <Icon name={props.icon} size={30} color={ACCENT} />}
         <Text style={props.textStyle}>{props.title}</Text>
       </View>
     </TouchableOpacity>

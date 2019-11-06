@@ -1,10 +1,11 @@
 import React, { Component, Fragment } from 'react';
 import { View, StyleSheet, FlatList, Text, StatusBar, TouchableOpacity, SafeAreaView } from 'react-native';
 import * as firebase from 'firebase';
+import { connect } from 'react-redux';
 
-import { DARKER_GREY, GREY, ACCENT_GREEN, HOF } from '../config/styles.js';
-import { SERVER_ADDR, PLACE_ID, PHOTO_REFERENCE, MAPS_API_KEY, UID } from '../config/settings.js';
-import PathCard from '../components/PathCard.js';
+import { DARKER_GREY, GREY } from '../config/styles.js';
+import { SERVER_ADDR, MAPS_API_KEY } from '../config/settings.js';
+import RouteCard from '../components/RouteCard.js';
 
 const styles = StyleSheet.create({
   container: {
@@ -42,22 +43,19 @@ class CollectionsScreen extends Component {
   };
 
   componentDidMount() {
-    // firebase.auth().currentUser.getIdToken().then(token => {
-    //   fetch(`${SERVER_ADDR}/users/${UID}/forks`, {
-    //     method: 'GET',
-    //     headers: {
-    //       Accept: 'application/json',
-    //       'Content-type': 'application/json',
-    //       Authorization: 'Bearer '.concat(token)
-    //     }
-    //   })
-    //     .then(response => response.json())
-    //     .then(responseJson => this.setState({
-    //       routes: responseJson
-    //     }))
-    //     .catch(error => console.error(error));
-    //   }
-    // );
+    firebase.auth().currentUser.getIdToken().then(token => fetch(`${SERVER_ADDR}/users/${this.props.userId}/routes`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-type': 'application/json',
+        Authorization: `Bearer ${token}`
+      }
+    }))
+      .then(response => {console.log(response); response.json();})
+      .then(responseJson => this.setState({
+        routes: responseJson
+      }))
+      .catch(error => console.error(error));
   }
 
   render() {
@@ -76,12 +74,12 @@ class CollectionsScreen extends Component {
               </View>
               {this.state.routes ? <FlatList
                 data={this.state.routes}
-                renderItem={({ item, index }) => {
-                  let photoRef = item.pins[0].properties.photoRefs[0] === 'String' ? PHOTO_REFERENCE : item.pins[0].properties.photoRefs[0];
+                renderItem={({ item }) => {
+                  const photoRef = item.pins[0].properties.photoRefs[0];
                   return (
-                    <PathCard
+                    <RouteCard
                       title={item.name}
-                      photoReference={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
+                      photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
                       onPress={() => this.props.navigation.navigate('PathDetail', {
                         markers: item.pins,
                         name: item.name
@@ -91,7 +89,7 @@ class CollectionsScreen extends Component {
                 }}
                 keyExtractor={item => item.place_id}
                 contentContainerStyle={{alignItems: 'center', width: '100%', backgroundColor: 'transparent'}} /> :
-                <Text style={{padding: 30, alignSelf: 'center', color: HOF}}>Wow, so empty :)</Text>}
+                <Text style={{padding: 30, alignSelf: 'center', color: DARKER_GREY}}>Wow, so empty :)</Text>}
             </View>
           </View>
         </SafeAreaView>
@@ -100,4 +98,10 @@ class CollectionsScreen extends Component {
   }
 }
 
-export default CollectionsScreen;
+const mapStateToProps = state => {
+  return {
+    userId: state.userId
+  };
+}
+
+export default connect(mapStateToProps, null)(CollectionsScreen);
