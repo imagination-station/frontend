@@ -10,6 +10,7 @@ import {
   ScrollView
 } from 'react-native';
 import * as firebase from 'firebase';
+import { connect } from 'react-redux';
 
 import RouteCard from '../components/RouteCard.js';
 
@@ -66,6 +67,7 @@ class ExploreScreen extends Component {
     routes: [],
     // simulate bookmarks
     bookmarks: [],
+    bookmarks_id: [],
     // hardcoded for Atlanta for now
     photoUri: 'https://d13k13wj6adfdf.cloudfront.net/urban_areas/atlanta-9e33744cb4.jpg',
   };
@@ -86,13 +88,14 @@ class ExploreScreen extends Component {
       .then(responseJson => this.setState({
         routes: responseJson,
         bookmarks: new Array(responseJson.length),
+        bookmarks_id: new Array(responseJson.length)
       }))
       .catch(error => console.error(error));
   }
 
   render() {
     return (
-    <View style={styles.container}> 
+    <View style={styles.container}>
         <ScrollView style={{flex: 1}}>
           <CityImage title='Atlanta' uri={this.state.photoUri} />
           <View style={styles.sectionContainer}>
@@ -118,6 +121,7 @@ class ExploreScreen extends Component {
                 let photoRef = item.pins[0].properties.photoRefs[0];
                 return (
                   <RouteCard
+                    key={item._id}
                     title={item.name}
                     photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
                     onPress={() => this.props.navigation.navigate('RouteDetail', {
@@ -128,8 +132,49 @@ class ExploreScreen extends Component {
                       let bookmarks = [...this.state.bookmarks];
                       bookmarks[index] = !this.state.bookmarks[index];
                       this.setState({bookmarks: bookmarks});
-                    }}
-                    key={item._id}
+                      let bookmarks_id = [...this.state.bookmarks_id];
+                      let routeId = this.state.routes[index]._id;
+                      console.log(`Route ID: ${routeId}`);
+                      console.log(bookmarks);
+                      if (bookmarks[index]) {
+                        firebase.auth().currentUser.getIdToken().then(token =>
+                          fetch(`${SERVER_ADDR}/users/${this.props.userId}/forks`, {
+                            method: 'POST',
+                            headers: {
+                              Accept: 'application/json',
+                              'Content-type': 'application/json',
+                              Authorization: `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                              routeId: routeId,
+                            })
+                          })
+                        )
+                        .then(response => response.json())
+                        .then(responseJson => {
+                          let tempID = responseJson["Mongo ObjectID"];
+                          bookmarks_id[index] = tempID;
+                          this.setState({bookmarks_id: bookmarks_id});
+                        })
+                       } else {
+                         let route_id = this.state.bookmarks_id[index];
+                         console.log(`Deleting ${route_id}`);
+                         firebase.auth().currentUser.getIdToken().then(token =>
+                           fetch(`${SERVER_ADDR}/cities/routes/${route_id}`, {
+                             method: 'DELETE',
+                             headers: {
+                               Accept: 'application/json',
+                               'Content-type': 'application/json',
+                               Authorization: `Bearer ${token}`
+                             }
+                           }))
+                           .then(response => response.json())
+                           .then(responseJson => {
+                             console.log(responseJson);
+                           })
+                       }
+                    }
+                  }
                   />
                 );
               })}
@@ -142,4 +187,10 @@ class ExploreScreen extends Component {
   }
 }
 
-export default ExploreScreen;
+const mapStateToProps = state => {
+  return {
+    userId: state.userId
+  };
+}
+
+export default connect(mapStateToProps, null)(ExploreScreen);
