@@ -18,8 +18,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
 
-import Button, { LongButton } from '../components/Buttons.js';
-import ImageCarousel from '../components/ImageCarousel.js';
+import Button from '../components/Buttons.js';
 import globalStyles, { GREY, DARKER_GREY, PRIMARY } from '../config/styles.js';
 import {
   MAPS_API_KEY,

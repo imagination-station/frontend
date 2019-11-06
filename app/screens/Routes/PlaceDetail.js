@@ -7,6 +7,9 @@ import ImageCarousel from '../../components/ImageCarousel.js';
 import { GREY, DARKER_GREY, PRIMARY } from '../../config/styles.js';
 import { MAPS_API_KEY } from '../../config/settings.js';
 
+const {width, height} = Dimensions.get('window');
+const CARD_WIDTH = Math.floor(width / 1.5);
+
 const styles = StyleSheet.create({
   container: {
     flex: 1
@@ -48,9 +51,7 @@ const styles = StyleSheet.create({
   }
 });
 
-const {width, height} = Dimensions.get('window');
-
-class PlaceDetail extends Component {
+class PlaceDetailScreen extends Component {
 
   componentWillMount() {
     this.scrollValue = new Animated.Value(0);
@@ -58,7 +59,6 @@ class PlaceDetail extends Component {
 
   render() {
     const place = this.props.markers[this.props.selected];
-
     const photos = place.properties.photoRefs ?
       place.properties.photoRefs.map(ref =>
         <Image
@@ -70,12 +70,11 @@ class PlaceDetail extends Component {
         style={styles.image}
       />];
 
-    const placeholder = 'Write interesting facts, things to do, or anything you want to record about this place.';
-
+    let placeholder;
     if (this.props.editable) {
       placeholder = 'Write interesting facts, things to do, or anything you want to record about this place.';
     } else {
-      placeholder = 'No notes about this place';
+      placeholder = 'No notes :(';
     }
 
     return (
@@ -98,13 +97,13 @@ class PlaceDetail extends Component {
           </View> : <Text style={{color: 'grey'}}>
             {placeholder}
           </Text>}
-          <LongButton
+          {this.props.editable ? <LongButton
             icon='create'
             title='Edit notes'
             style={styles.buttonStyle}
             textStyle={{marginLeft: 40}}
             onPress={() => this.props.navigation.navigate('NoteEditor')}
-          />
+          /> : null}
         </View>
       </View>
     );
@@ -118,4 +117,4 @@ const mapStateToProps = state => {
   };
 }
 
-export default connect(mapStateToProps)(PlaceDetail);
+export default connect(mapStateToProps)(PlaceDetailScreen);

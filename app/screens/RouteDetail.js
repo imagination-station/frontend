@@ -271,6 +271,10 @@ class RouteDetailScreen extends Component {
     );
   }
 
+  componentWillUnmount() {
+    this.props.clear();
+  }
+
   toggleDrawer = () => {
     let toValue;
     if (this.state.drawerCollapsed) {
@@ -325,23 +329,42 @@ class RouteDetailScreen extends Component {
 
       if (this.props.steps[index]) {
         res.push(
-          <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
-            <Icon name='directions-walk' size={30} color={DARKER_GREY} />
-            <Text style={{color: DARKER_GREY}}>{this.props.steps[index].distance.text}</Text>
-            <Text style={{color: DARKER_GREY}}>{this.props.steps[index].duration.text}</Text>
-          </View>
+          <TouchableOpacity onPress={() => {
+            if (index === this.props.showRoute) {
+              this.props.clearRoute();
+            } else {
+              this.props.selectRoute(index);
+              this.mapRef.fitToSuppliedMarkers(
+                [this.props.markers[index], this.props.markers[index+1]].map(marker => marker.properties.placeId),
+                {
+                  edgePadding: {
+                    top: 500,
+                    left: 500,
+                    bottom: 800,
+                    right: 500
+                  },
+                  animated: true
+                }
+              );
+            }
+          }}>
+            <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
+              <Icon name='directions-walk' size={30} color={index === this.props.showRoute ? PRIMARY : DARKER_GREY} />
+              <Text style={{color: index === this.props.showRoute ? PRIMARY : DARKER_GREY}}>
+                {this.props.steps[index].distance.text}
+              </Text>
+              <Text style={{color: index === this.props.showRoute ? PRIMARY : DARKER_GREY}}>
+                {this.props.steps[index].duration.text}
+              </Text>
+            </View>
+          </TouchableOpacity>
         );
       }
 
       return res;
     }
 
-    let cards;
-    if (this.props.markers) {
-      cards = this.props.markers.reduce(reducer, []);
-    }
-
-    console.log(this.props.markers);
+    const cards = this.props.markers.reduce(reducer, []);
 
     return (
       <View style={globalStyles.container}>
@@ -356,7 +379,7 @@ class RouteDetailScreen extends Component {
           }}
           ref={ref => this.mapRef = ref}
         >
-          {this.props.markers && this.props.markers.map(marker => 
+          {this.props.markers.map(marker => 
             <Marker
               key={marker.properties.placeId}
               identifier={marker.properties.placeId}
@@ -365,22 +388,14 @@ class RouteDetailScreen extends Component {
               description={marker.properties.secondaryText}
             />
           )}
-          {this.props.markers && this.props.markers.map((marker, index) => {
-            if (index == this.props.markers.length - 1) {
-              return null;
-            }
-
-            return (
-              <MapViewDirections
-                origin={`place_id:${marker.properties.placeId}`}
-                destination={`place_id:${this.props.markers[index+1].properties.placeId}`}
-                apikey={MAPS_API_KEY}
-                strokeColor={PRIMARY}
-                strokeWidth={6}
-                // lineDashPattern={[5, 30]}
-              />
-            );
-          })}
+          {this.props.showRoute !== null ? <MapViewDirections
+            origin={`place_id:${this.props.markers[this.props.showRoute].properties.placeId}`}
+            destination={`place_id:${this.props.markers[this.props.showRoute+1].properties.placeId}`}
+            apikey={MAPS_API_KEY}
+            strokeColor={PRIMARY}
+            strokeWidth={6}
+            // lineDashPattern={[5, 30]}
+          /> : null}
         </MapView>
         <Animated.View style={{...mapStyles.animated, top: this.collapseValue}}>
           <View style={mapStyles.drawer} >
@@ -446,6 +461,7 @@ const mapStateToProps = state => {
     markers: state.markers,
     steps: state.steps,
     selected: state.selected,
+    showRoute: state.showRoute,
     userId: state.userId
   };
 }
@@ -459,7 +475,11 @@ const mapDispatchToProps = dispatch => {
     loadRoute: (markers, steps) => dispatch({type: 'LOAD_ROUTE', payload: {
       markers: markers,
       steps: steps
-    }})
+    }}),
+    selectRoute: index => dispatch({type: 'SELECT_ROUTE', payload: {
+      selectedIndex: index
+    }}),
+    clearRoute: () => dispatch({type: 'CLEAR_ROUTE'})
   };
 }
 

@@ -2,6 +2,7 @@ const INITIAL_STATE = {
   markers: [],
   steps: [],
   selected: null,
+  showRoute: null,
   userId: null
 };
 
@@ -53,7 +54,8 @@ const routeReducer = (state = INITIAL_STATE, action) => {
       return {
         markers: [],
         steps: [],
-        selected: null
+        selected: null,
+        showRoute: null
       };
     case 'LOG_IN':
       return {
@@ -66,6 +68,16 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         markers: action.payload.markers,
         steps: action.payload.steps
       };
+    case 'SELECT_ROUTE':
+      return {
+        ...state,
+        showRoute: action.payload.selectedIndex
+      };
+    case 'CLEAR_ROUTE':
+      return {
+        ...state,
+        showRoute: null
+      }
     default:
       return state;
   }
