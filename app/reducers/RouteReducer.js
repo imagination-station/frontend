@@ -60,6 +60,12 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         ...state,
         userId: action.payload.userId
       };
+    case 'LOAD_ROUTE':
+      return {
+        ...state,
+        markers: action.payload.markers,
+        steps: action.payload.steps
+      };
     default:
       return state;
   }

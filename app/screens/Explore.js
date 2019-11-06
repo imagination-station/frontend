@@ -120,10 +120,9 @@ class ExploreScreen extends Component {
                   <RouteCard
                     title={item.name}
                     photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
-                    // onPress={() => this.props.navigation.navigate('PathDetail', {
-                    //   markers: item.pins,
-                    //   name: item.name
-                    // })}
+                    onPress={() => this.props.navigation.navigate('RouteDetail', {
+                      route: item
+                    })}
                     bookmarked={this.state.bookmarks[index]}
                     onBookmark = {() => {
                       let bookmarks = [...this.state.bookmarks];

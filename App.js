@@ -11,8 +11,9 @@ import LoginScreen from './app/screens/Login.js';
 import ExploreScreen from './app/screens/Explore.js';
 import CollectionsScreen from './app/screens/Collections.js';
 import ProfileScreen from './app/screens/Profile.js';
-import MapScreen, { SearchScreen, DetailScreen, NoteEditorScreen } from './app/screens/RouteEditor.js';
-import PathDetailScreen from './app/screens/PathDetail.js';
+import MapScreen, { SearchScreen, NoteEditorScreen } from './app/screens/RouteEditor.js';
+import DetailScreen from './app/screens/Routes/PlaceDetail.js';
+import RouteDetailScreen from './app/screens/RouteDetail.js';
 import SignUpScreen from './app/screens/SignUp.js';
 import SplashScreen from './app/screens/Splash.js';
 
@@ -73,9 +74,9 @@ const HomeStack = createStackNavigator({
   },
   Map: MapScreen,
   MapSearch: mapNavigationStateParamsToProps(SearchScreen),
-  PlaceDetail: mapNavigationStateParamsToProps(DetailScreen),
+  PlaceDetail: DetailScreen,
   NoteEditor: mapNavigationStateParamsToProps(NoteEditorScreen),
-  PathDetail: PathDetailScreen
+  RouteDetail: mapNavigationStateParamsToProps(RouteDetailScreen),
 });
 
 const AppNavigator = createSwitchNavigator(

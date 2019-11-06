@@ -193,47 +193,6 @@ const searchStyles = StyleSheet.create({
   }
 });
 
-const detailStyles = StyleSheet.create({
-  container: {
-    flex: 1
-  },
-  scrollViewContainer: {
-    alignItems: 'center'
-  },
-  imageScrollView: {
-    height: 300,
-    width: width
-  },
-  image: {
-    height: 300,
-    width: width
-  },
-  textContainer: {
-    padding: 10
-  },
-  mainText: {
-    fontSize: 24,
-    marginBottom: 3
-  },
-  secondaryText: {
-    color: DARKER_GREY
-  },
-  sectionHeader: {
-    fontSize: 12,
-    marginBottom: 5,
-    marginTop: 25,
-    color: PRIMARY
-  },
-  buttonStyle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    borderBottomWidth: 1,
-    borderBottomColor: GREY,
-    padding: 10
-  }
-});
-
 const noteEditorStyles = StyleSheet.create({
   container: {
     flex: 1,
@@ -376,59 +335,6 @@ function SearchItem(props) {
       </View>
     </TouchableOpacity>
   );
-}
-
-class PlaceDetail extends Component {
-
-  componentWillMount() {
-    this.scrollValue = new Animated.Value(0);
-  }
-
-  render() {
-    const place = this.props.markers[this.props.selected];
-
-    const photos = place.properties.photoRefs ?
-      place.properties.photoRefs.map(ref =>
-        <Image
-          source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
-          style={detailStyles.image}
-        />
-      ) : [<Image
-        source={{uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`}}
-        style={detailStyles.image}
-      />];
-
-    return (
-      <View style={detailStyles.container}>
-        <ImageCarousel
-          width={width}
-          scrollValue={this.scrollValue}
-          containerStyle={detailStyles.scrollViewContainer}
-          scrollViewStyle={detailStyles.imageScrollView}
-        >
-          {photos}
-        </ImageCarousel>
-        <View style={detailStyles.textContainer}>
-          <Text style={detailStyles.mainText}>{place.properties.mainText}</Text>
-          <Text style={detailStyles.secondaryText}>{place.properties.secondaryText}</Text>
-          <Text style={detailStyles.sectionHeader}>NOTES</Text>
-          {place.properties.note ? <View>
-            <Text>{place.properties.note}</Text>
-            <Text style={{color: DARKER_GREY, fontSize: 10, marginTop: 2}}>Last edited 10/18/2019</Text>
-          </View> : <Text style={{color: 'grey'}}>
-            Write interesting facts, things to do, or anything you want to record about this place.
-          </Text>}
-          <LongButton
-            icon='create'
-            title='Edit notes'
-            style={detailStyles.buttonStyle}
-            textStyle={{marginLeft: 40}}
-            onPress={() => this.props.navigation.navigate('NoteEditor')}
-          />
-        </View>
-      </View>
-    );
-  }
 }
 
 class NoteEditor extends Component {
@@ -821,7 +727,7 @@ class MapScreen extends Component {
           marker={marker}
           onPress={() => {
             this.props.viewDetail(index);
-            this.props.navigation.navigate('PlaceDetail');
+            this.props.navigation.navigate('PlaceDetail', {editable: true});
           }}
           onRemove={() => this.props.removeMarker(marker.properties.placeId)}
         />
@@ -1002,7 +908,6 @@ const mapDispatchToProps = dispatch => {
 }
 
 export const SearchScreen = connect(mapStateToProps)(MapSearch);
-export const DetailScreen = connect(mapStateToProps)(PlaceDetail);
 export const NoteEditorScreen = connect(mapStateToProps, mapDispatchToProps)(NoteEditor);
 
 export default connect(mapStateToProps, mapDispatchToProps)(MapScreen);
