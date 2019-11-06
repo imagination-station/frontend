@@ -12,6 +12,17 @@ export const INIT_LOCATION = {
   longitude: -84.38798
 };
 
+// hardcoded tags
+export const TAGS = [
+  'Budget',
+  'Walkable',
+  'Historical',
+  'Art & Architecture',
+  'Local Approved',
+  'Iconic',
+  'Foodie'
+];
+
 export const PLACE_ID = 'ChIJjQmTaV0E9YgRC2MLmS_e_mY';
 export const NAME = 'Atlanta';
 export const PHOTO_REFERENCE = 'CmRaAAAAAVviIuc41ZmCjyzYAJibjYiPifxWGaLU-8iNHOF8wUcdOa-TF55F0BxshomvVU-2jk0EOQqJPdbvIFoUPuckVvJIQlpJp4clRM7mbzO7J8BngxE6eJmb2V_UUmQB5YhtEhDDgv53QSflPG5pwDz1zuYiGhRtmMNGRb9ft_1n0YyY_MFmiO9hcA';

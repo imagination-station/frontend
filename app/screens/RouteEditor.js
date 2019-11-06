@@ -9,7 +9,8 @@ import {
   Animated,
   Dimensions,
   Image,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  Picker
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
@@ -19,12 +20,13 @@ import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
 
 import Button from '../components/Buttons.js';
-import globalStyles, { GREY, DARKER_GREY, PRIMARY } from '../config/styles.js';
+import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
 import {
   MAPS_API_KEY,
   SERVER_ADDR,
   INIT_LOCATION,
-  PLACE_ID
+  PLACE_ID,
+  TAGS
 } from '../config/settings.js';
 
 // dimensions of the screen
@@ -463,7 +465,19 @@ function DrawerButton(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
       <View style={mapStyles.drawerButton}/>
+      
     </TouchableOpacity>
+  );
+}
+
+function Tag(props) {
+  return (
+    <View style={{flexDirection: 'row', backgroundColor: ACCENT, height: 30, width: 'auto', padding: 3, alignItems: 'center', borderRadius: 5, marginLeft: 10, marginBottom: 10}}>
+      <Text style={{color: 'white', paddingRight: 5}} numberOfLines={1} ellipsizeMode='tail'>{props.title}</Text>
+      <TouchableOpacity onPress={props.onClear}>
+        <Icon name='clear' size={17} color='white' />
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -478,7 +492,9 @@ class MapScreen extends Component {
     searchInput: '',
     drawerCollapsed: false,
     focused: null,
+    // route metadata
     name: '',
+    tags: []
   };
 
   componentWillMount() {
@@ -707,7 +723,8 @@ class MapScreen extends Component {
           name: this.state.name,
           creator: this.state.userId,
           city: PLACE_ID,
-          pins: this.props.markers
+          pins: this.props.markers,
+          tags: this.state.tags
         })
       })
     )
@@ -716,6 +733,12 @@ class MapScreen extends Component {
         this.props.navigation.goBack();
       })
       .catch(error => console.error(error));
+  }
+
+  clearTag = value => {
+    this.setState({
+      tags: this.state.tags.filter(tag => tag != value)
+    });
   }
 
   render() {
@@ -868,6 +891,23 @@ class MapScreen extends Component {
                   onChangeText={text => this.setState({name: text})}
                   value={this.state.name}
                 />
+                <Picker
+                  style={{height: 50, width: 150, alignSelf: 'flex-start', marginLeft: '5%', marginBottom: 10, borderWidth: 1}}
+                  selectedValue='Add Tags'
+                  onValueChange={value => {
+                    if (value != 'Add Tags' && !this.state.tags.includes(value)) {
+                      this.setState({
+                        tags: [...this.state.tags, value]
+                      });
+                    }
+                  }}
+                >
+                  <Picker.Item label='Add Tags' value={'Add Tags'} />
+                  {TAGS.map(tag => <Picker.Item label={tag} value={tag}/>)}
+                </Picker>
+                <View style={{flexDirection: 'row', alignSelf: 'flex-start', marginLeft: '5%', marginBottom: 20, flexWrap: 'wrap'}}>
+                  {this.state.tags.map(tag => <Tag title={tag} onClear={() => this.clearTag(tag)} />)}
+                </View>
                 <Button title={'DONE'} onPress={this.onComplete} />
               </View>
             }

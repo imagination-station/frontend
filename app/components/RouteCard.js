@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-import { ACCENT } from '../config/styles.js';
+import { PRIMARY } from '../config/styles.js';
 
 const styles = StyleSheet.create({
   card: {
@@ -60,7 +60,7 @@ export default function PathCard(props) {
             <Icon
               name={props.bookmarked ? 'bookmark' : 'bookmark-border'}
               size={25}
-              color={props.bookmarked ? ACCENT : 'rgba(0, 0, 0, 0.5)'}
+              color={props.bookmarked ? PRIMARY : 'rgba(0, 0, 0, 0.5)'}
             />
           </TouchableWithoutFeedback>
         </View>
