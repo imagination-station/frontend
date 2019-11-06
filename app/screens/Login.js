@@ -3,19 +3,28 @@ import {
   View,
   StyleSheet,
   Text,
-  TextInput
+  TextInput,
+  TouchableOpacity,
+  Image,
+  StatusBar
 } from 'react-native';
 import * as firebase from 'firebase';
+import * as Facebook from 'expo-facebook';
 
-import Button from '../components/Button.js';
-import globalStyles, { GREY } from '../config/styles.js';
+import { GREY, DARKER_GREY, ACCENT, FACEBOOK } from '../config/styles.js';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingTop: 75
+    padding: StatusBar.currentHeight
+  },
+  logo: {
+    height: 125,
+    marginTop: 100,
+    marginBottom: 100,
+    resizeMode: 'contain'
   },
   textInput: {
     height: 50,
@@ -23,14 +32,36 @@ const styles = StyleSheet.create({
     width: 350,
     marginBottom: 10,
     borderColor: GREY,
-    borderWidth: 1
+    borderWidth: 2,
+    borderRadius: 20
   },
-  logo: {
-    top: 20,
-    marginBottom: 50,
-    fontSize: 25
-  }
+  logInButtton: {
+    color: 'white',
+    fontSize: 16,
+    width: 275,
+    fontWeight: 'bold',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    textAlign: 'center',
+  },
 });
+
+function LogInButton(props) {
+  return (
+    <TouchableOpacity onPress={props.onPress} style={{alignItems: 'center', marginVertical: 5}}>
+      <Text style={props.textStyle}>{props.title}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function SignUpButton(props) {
+  return (
+    <TouchableOpacity onPress={props.onPress}>
+      <Text style={props.textStyle}>{props.title}</Text>
+    </TouchableOpacity>
+  );
+}
 
 class LoginScreen extends Component {
 
@@ -39,18 +70,41 @@ class LoginScreen extends Component {
     password: ''
   };
 
-  componentDidMount() {
-    firebase.auth().onAuthStateChanged(user => {
-      if (user != null) {
-        this.props.navigation.navigate('Home');
-      }
-    });
-  }
-
-  login = () => {
+  logInWithEmail = () => {
     firebase.auth()
       .signInWithEmailAndPassword(this.state.email, this.state.password)
       .catch(error => console.log(error));
+  }
+
+  logInWithFacebook = async () => {
+    try {
+      const {
+        type,
+        token
+      } = await Facebook.logInWithReadPermissionsAsync('2873476886029892', {
+        permissions: ['public_profile'],
+      });
+
+      switch (type) {
+        case 'success':
+          await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+          const credential = firebase.auth.FacebookAuthProvider.credential(token);
+          firebase.auth().signInAndRetrieveDataWithCredential(credential)
+            .then(cred => {
+              console.log('logged in with facebook!');
+              console.log('is new user:', cred.additionalUserInfo.isNewUser);
+            }
+          ); 
+
+          return Promise.resolve({type: 'success'});
+        case 'cancel':
+          return Promise.reject({type: 'cancel'});
+        default:
+          return Promise.reject({type: 'cancel'});
+      }
+    } catch ({ message }) {
+      alert(`Facebook Login Error: ${message}`);
+    }
   }
 
   onPressSignup = () => {
@@ -60,7 +114,11 @@ class LoginScreen extends Component {
   render() {
     return (
       <View style={styles.container}>
-        <Text style={{...globalStyles.text, fontSize: 24, marginBottom: 50}}>A Travel App</Text>
+        {/* don't worry, this is just a temporary logo. */}
+        <Image
+          style={styles.logo}
+          source={require('../assets/logo.jpg')}
+        />
         <TextInput
           style={styles.textInput}
           placeholder={'Email'}
@@ -75,14 +133,24 @@ class LoginScreen extends Component {
           textContentType={'password'}
           secureTextEntry
         />
-        <Button
+        <LogInButton 
           title='Log In'
-          onPress={this.login}
+          onPress={this.logInWithEmail}
+          textStyle={{...styles.logInButtton, marginTop: 20, borderWidth: 2, borderColor: ACCENT, color: ACCENT}}
         />
-        <Button
-          title='Sign Up for an account'
-          onPress={this.onPressSignup}
+        <LogInButton 
+          title='Continue with Facebook'
+          onPress={this.logInWithFacebook}
+          textStyle={{...styles.logInButtton, backgroundColor: FACEBOOK}}
         />
+        <View style={{marginTop: 40, flexDirection: 'row', alignItems: 'center'}}>
+          <Text style={{color: DARKER_GREY}}>{"Don't have an account? "}</Text>
+          <SignUpButton
+            title='Sign up.'
+            onPress={this.onPressSignup}
+            textStyle={{color: ACCENT, textDecorationLine: 'underline'}}
+          />
+        </View>
       </View>
     );
   }

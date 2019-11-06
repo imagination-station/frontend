@@ -8,7 +8,7 @@ import {
 import * as firebase from 'firebase';
 import { SERVER_ADDR, PLACE_ID, MAPS_API_KEY } from '../config/settings.js';
 
-import Button from '../components/Button.js';
+import Button from '../components/Buttons.js';
 import globalStyles, { GREY } from '../config/styles.js';
 
 const styles = StyleSheet.create({

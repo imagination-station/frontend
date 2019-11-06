@@ -4,26 +4,21 @@ import {
   Text,
   View,
   StyleSheet,
-  Dimensions,
   TouchableWithoutFeedback,
   TouchableOpacity
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-
-import { ACCENT, ACCENT_GREEN } from '../config/styles.js';
-
-const {width, height} = Dimensions.get('window');
-const CARD_HEIGHT = height / 4;
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: 'white',
     marginHorizontal: 10,
     marginVertical: 15,
-    height: CARD_HEIGHT * 1.4,
-    width: 350,
+    height: 200,
+    width: 250,
     overflow: 'hidden',
-    elevation: 0.5
+    elevation: 0.5,
+    borderRadius: 10
   },
   cardImage: {
     flex: 3,
@@ -38,9 +33,8 @@ const styles = StyleSheet.create({
     flex: 1
   },
   cardtitle: {
-    fontSize: 12,
+    fontSize: 16,
     marginTop: 5,
-    fontWeight: 'bold'
   },
   iconButtonBar: {
     flexDirection: 'row',
@@ -54,27 +48,20 @@ const styles = StyleSheet.create({
 
 export default function PathCard(props) {
   let pic = {
-    uri: props.photoReference
+    uri: props.photoRef
   };
 
   return (
-    <TouchableOpacity onPress={props.onPress}>
+    <TouchableWithoutFeedback onPress={props.onPress}>
       <View style={styles.card}>
         <View style={styles.iconButtonBar}>
-          <TouchableWithoutFeedback onPress={props.onBookmark}>
+          <TouchableOpacity onPress={props.onBookmark}>
             <Icon
               name={props.bookmarked ? 'bookmark' : 'bookmark-border'}
               size={25}
-              color={props.bookmarked ? ACCENT_GREEN : 'rgba(0, 0, 0, 0.5)'}
+              color={props.bookmarked ? '#f1c236': 'rgba(0, 0, 0, 0.5)'}
             />
-          </TouchableWithoutFeedback>
-          <TouchableWithoutFeedback onPress={props.onLike}>
-            <Icon
-              name={props.liked ? 'favorite' : 'favorite-border'}
-              size={25}
-              color={props.liked ? ACCENT : 'rgba(0, 0, 0, 0.5)'}
-            />
-          </TouchableWithoutFeedback>
+          </TouchableOpacity>
         </View>
         <Image source={pic} style={styles.cardImage} resizeMode='cover' />
         <View style={styles.textContent}>
@@ -83,6 +70,6 @@ export default function PathCard(props) {
           </Text>
         </View>
       </View>
-    </TouchableOpacity>
+    </TouchableWithoutFeedback>
   );
 }
