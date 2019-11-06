@@ -31,7 +31,7 @@ class SplashScreen extends Component {
   componentDidMount() {
     firebase.auth().onAuthStateChanged(user => {
       if (user != null) {
-        console.log('logged in!');
+        console.log(firebase.auth().currentUser.email, 'logged in!');
         // // check if user logged in through facebook
         // console.log('auth provider', firebase.auth().currentUser.providerData[0].providerId);
         // // can use this in Facebook Graph API
@@ -49,6 +49,7 @@ class SplashScreen extends Component {
           })
           .then(response => response.json())
           .then(responseJson => {
+            console.log('uid', responseJson._id);
             this.props.logIn(responseJson._id);
             this.props.navigation.navigate('Home');
           });

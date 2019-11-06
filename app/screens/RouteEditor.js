@@ -9,7 +9,8 @@ import {
   Animated,
   Dimensions,
   Image,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  Picker
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
@@ -19,12 +20,14 @@ import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
 
 import Button from '../components/Buttons.js';
-import globalStyles, { GREY, DARKER_GREY, PRIMARY } from '../config/styles.js';
+import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
 import {
   MAPS_API_KEY,
   SERVER_ADDR,
   INIT_LOCATION,
-  PLACE_ID
+  PLACE_ID,
+  TAGS,
+  PLACEHOLDER_IMG
 } from '../config/settings.js';
 
 // dimensions of the screen
@@ -139,14 +142,14 @@ const mapStyles = StyleSheet.create({
     borderRadius: 15,
     marginBottom: 10
   },
-  doneContainer: {
+  infoContainer: {
     flex: 2.4,
     width: width,
     alignItems: 'center'
   },
   nameBox: {
     borderWidth: 1,
-    borderColor: GREY,
+    borderColor: DARKER_GREY,
     height: 46,
     paddingHorizontal: 10,
     width: '90%',
@@ -314,7 +317,7 @@ class MapSearch extends Component {
             data={this.state.results}
             renderItem={({ item }) => <SearchItem
               item={item}
-              // navigation passed in to pop from current page
+              // navigation passed in to pop from search page
               onPress={() => this.props.onPressItem(item, this.props.navigation)}
             />}
             keyExtractor={item => item.place_id}
@@ -378,7 +381,7 @@ class NoteEditor extends Component {
 function Card(props) {
   const source = props.marker.properties.photoRefs ?
     {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoRefs[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`} :
-    {uri: `https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg`};
+    {uri: PLACEHOLDER_IMG};
   return (
     <TouchableWithoutFeedback onPress={props.onPress}>
       <View style={mapStyles.card}>
@@ -402,7 +405,7 @@ function Card(props) {
 function FocusedCard(props) {
   const source = props.marker.properties.photoRefs ?
     {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoRefs[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`} :
-    {uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg'};
+    {uri: PLACEHOLDER_IMG};
 
   return (
     <View style={mapStyles.focusedCard}>
@@ -432,19 +435,19 @@ function ActionCard(props) {
     );
   } else {
     content = [
-      <Text style={{color: DARKER_GREY}}>
+      <Text style={{color: DARKER_GREY}} key='num_places'>
         {`${props.length} places`}
       </Text>,
-      <Text style={{color: DARKER_GREY}}>
+      <Text style={{color: DARKER_GREY}} key='distance'>
         {`${props.distance} m`}
       </Text>,
-      <Text style={{color: DARKER_GREY}}>
+      <Text style={{color: DARKER_GREY}} key='time'>
         {`${Math.floor(props.duration / 60)} mins`}
       </Text>,
-      !props.isDone && 
-        <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}}>
+      props.view != 'info' && 
+        <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}} key='buttons'>
           <Button title={'View All'} onPress={props.viewAll} small />
-          <Button title={`Create Route`} onPress={props.done} small />
+          <Button title={`Create Route`} onPress={props.showRouteInfo} small />
         </View>
     ];
   }
@@ -463,7 +466,19 @@ function DrawerButton(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
       <View style={mapStyles.drawerButton}/>
+      
     </TouchableOpacity>
+  );
+}
+
+function Tag(props) {
+  return (
+    <View style={{flexDirection: 'row', backgroundColor: ACCENT, height: 30, width: 'auto', padding: 3, alignItems: 'center', borderRadius: 5, marginRight: 10, marginBottom: 10}}>
+      <Text style={{color: 'white', paddingRight: 5}} numberOfLines={1} ellipsizeMode='tail'>{props.title}</Text>
+      <TouchableOpacity onPress={props.onClear}>
+        <Icon name='clear' size={17} color='white' />
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -478,7 +493,9 @@ class MapScreen extends Component {
     searchInput: '',
     drawerCollapsed: false,
     focused: null,
+    // route metadata
     name: '',
+    tags: []
   };
 
   componentWillMount() {
@@ -662,8 +679,8 @@ class MapScreen extends Component {
     ).start(() => this.setState({drawerCollapsed: true}));
   }
 
-  showDoneScreen = () => {
-    this.setState({view: 'done'}, () => {
+  showRouteInfo = () => {
+    this.setState({view: 'info'}, () => {
       Animated.timing(
         this.collapseValue,
         {
@@ -705,36 +722,45 @@ class MapScreen extends Component {
         },
         body: JSON.stringify({
           name: this.state.name,
-          creator: this.state.userId,
+          creator: this.props.userId,
           city: PLACE_ID,
-          pins: this.props.markers
+          pins: this.props.markers,
+          tags: this.state.tags
         })
       })
     )
       .then(response => {
-        console.log(response);
         this.props.navigation.goBack();
       })
       .catch(error => console.error(error));
+  }
+
+  clearTag = value => {
+    this.setState({
+      tags: this.state.tags.filter(tag => tag != value)
+    });
   }
 
   render() {
     const reducer = (res, marker, index) => {
       res.push(
         <Card
-          key={marker.placeId}
           marker={marker}
           onPress={() => {
             this.props.viewDetail(index);
             this.props.navigation.navigate('PlaceDetail', {editable: true});
           }}
           onRemove={() => this.props.removeMarker(marker.properties.placeId)}
+          key={marker.properties.placeId}
         />
       );
 
       if (this.props.steps[index]) {
         res.push(
-          <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
+          <View
+            style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}
+            key={`${marker.properties.placeId}_leg`}
+          >
             <Icon name='directions-walk' size={30} color={DARKER_GREY} />
             <Text style={{color: DARKER_GREY}}>{this.props.steps[index].distance.text}</Text>
             <Text style={{color: DARKER_GREY}}>{this.props.steps[index].duration.text}</Text>
@@ -793,6 +819,7 @@ class MapScreen extends Component {
                 strokeColor={DARKER_GREY}
                 strokeWidth={6}
                 lineDashPattern={[5, 30]}
+                key={marker.properties.placeId}
               />
             );
           })}
@@ -853,21 +880,38 @@ class MapScreen extends Component {
                     }
                   );
                 }}
-                done={this.showDoneScreen}
-                isDone={this.state.view === 'done'}
+                showRouteInfo={this.showRouteInfo}
+                view={this.state.view}
                 distance={this.props.steps.reduce((res, cur) => res + cur.distance.value, 0)}
                 duration={this.props.steps.reduce((res, cur) => res + cur.duration.value, 0)}
               />
               <View style={mapStyles.filler} />
             </Animated.ScrollView>
-            {this.state.view === 'done' &&
-              <View style={mapStyles.doneContainer}>
+            {this.state.view === 'info' &&
+              <View style={mapStyles.infoContainer}>
                 <TextInput
                   style={{...mapStyles.nameBox, marginBottom: 10}}
                   placeholder={'Name your route'}
                   onChangeText={text => this.setState({name: text})}
                   value={this.state.name}
                 />
+                <Picker
+                  style={{height: 50, width: 150, alignSelf: 'flex-start', marginLeft: '5%', marginBottom: 10, borderWidth: 1}}
+                  selectedValue='Add Tags'
+                  onValueChange={value => {
+                    if (value != 'Add Tags' && !this.state.tags.includes(value)) {
+                      this.setState({
+                        tags: [...this.state.tags, value]
+                      });
+                    }
+                  }}
+                >
+                  <Picker.Item label='Add Tags' value={'Add Tags'} />
+                  {TAGS.map(tag => <Picker.Item label={tag} value={tag} key={tag}/>)}
+                </Picker>
+                <View style={{flexDirection: 'row', alignSelf: 'flex-start', marginLeft: '5%', flexWrap: 'wrap'}}>
+                  {this.state.tags.map(tag => <Tag title={tag} onClear={() => this.clearTag(tag)} key={tag} />)}
+                </View>
                 <Button title={'DONE'} onPress={this.onComplete} />
               </View>
             }

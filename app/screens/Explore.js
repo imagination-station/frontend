@@ -10,11 +10,12 @@ import {
   ScrollView
 } from 'react-native';
 import * as firebase from 'firebase';
+import { connect } from 'react-redux';
 
 import RouteCard from '../components/RouteCard.js';
 
 import { DARKER_GREY, PRIMARY } from '../config/styles.js';
-import { SERVER_ADDR, PLACE_ID, MAPS_API_KEY, UID } from '../config/settings.js';
+import { SERVER_ADDR, PLACE_ID, MAPS_API_KEY } from '../config/settings.js';
 
 const {width, height} = Dimensions.get('window');
 
@@ -120,6 +121,7 @@ class ExploreScreen extends Component {
                 let photoRef = item.pins[0].properties.photoRefs[0];
                 return (
                   <RouteCard
+                    key={item._id}
                     title={item.name}
                     photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
                     onPress={() => this.props.navigation.navigate('RouteDetail', {
@@ -136,7 +138,7 @@ class ExploreScreen extends Component {
                       console.log(bookmarks);
                       if (bookmarks[index]) {
                         firebase.auth().currentUser.getIdToken().then(token =>
-                          fetch(`${SERVER_ADDR}/users/${UID}/forks`, {
+                          fetch(`${SERVER_ADDR}/users/${this.props.userId}/forks`, {
                             method: 'POST',
                             headers: {
                               Accept: 'application/json',
@@ -185,4 +187,10 @@ class ExploreScreen extends Component {
   }
 }
 
-export default ExploreScreen;
+const mapStateToProps = state => {
+  return {
+    userId: state.userId
+  };
+}
+
+export default connect(mapStateToProps, null)(ExploreScreen);
