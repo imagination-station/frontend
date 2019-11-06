@@ -14,7 +14,7 @@ import * as firebase from 'firebase';
 import RouteCard from '../components/RouteCard.js';
 
 import { DARKER_GREY, PRIMARY } from '../config/styles.js';
-import { SERVER_ADDR, PLACE_ID, MAPS_API_KEY } from '../config/settings.js';
+import { SERVER_ADDR, PLACE_ID, MAPS_API_KEY, UID } from '../config/settings.js';
 
 const {width, height} = Dimensions.get('window');
 
@@ -66,6 +66,7 @@ class ExploreScreen extends Component {
     routes: [],
     // simulate bookmarks
     bookmarks: [],
+    bookmarks_id: [],
     // hardcoded for Atlanta for now
     photoUri: 'https://d13k13wj6adfdf.cloudfront.net/urban_areas/atlanta-9e33744cb4.jpg',
   };
@@ -86,13 +87,14 @@ class ExploreScreen extends Component {
       .then(responseJson => this.setState({
         routes: responseJson,
         bookmarks: new Array(responseJson.length),
+        bookmarks_id: new Array(responseJson.length)
       }))
       .catch(error => console.error(error));
   }
 
   render() {
     return (
-    <View style={styles.container}> 
+    <View style={styles.container}>
         <ScrollView style={{flex: 1}}>
           <CityImage title='Atlanta' uri={this.state.photoUri} />
           <View style={styles.sectionContainer}>
@@ -128,7 +130,49 @@ class ExploreScreen extends Component {
                       let bookmarks = [...this.state.bookmarks];
                       bookmarks[index] = !this.state.bookmarks[index];
                       this.setState({bookmarks: bookmarks});
-                    }}
+                      let bookmarks_id = [...this.state.bookmarks_id];
+                      let routeId = this.state.routes[index]._id;
+                      console.log(`Route ID: ${routeId}`);
+                      console.log(bookmarks);
+                      if (bookmarks[index]) {
+                        firebase.auth().currentUser.getIdToken().then(token =>
+                          fetch(`${SERVER_ADDR}/users/${UID}/forks`, {
+                            method: 'POST',
+                            headers: {
+                              Accept: 'application/json',
+                              'Content-type': 'application/json',
+                              Authorization: `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                              routeId: routeId,
+                            })
+                          })
+                        )
+                        .then(response => response.json())
+                        .then(responseJson => {
+                          let tempID = responseJson["Mongo ObjectID"];
+                          bookmarks_id[index] = tempID;
+                          this.setState({bookmarks_id: bookmarks_id});
+                        })
+                       } else {
+                         let route_id = this.state.bookmarks_id[index];
+                         console.log(`Deleting ${route_id}`);
+                         firebase.auth().currentUser.getIdToken().then(token =>
+                           fetch(`${SERVER_ADDR}/cities/routes/${route_id}`, {
+                             method: 'DELETE',
+                             headers: {
+                               Accept: 'application/json',
+                               'Content-type': 'application/json',
+                               Authorization: `Bearer ${token}`
+                             }
+                           }))
+                           .then(response => response.json())
+                           .then(responseJson => {
+                             console.log(responseJson);
+                           })
+                       }
+                    }
+                  }
                   />
                 );
               })}
