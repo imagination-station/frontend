@@ -8,10 +8,10 @@ import { createStore } from 'redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import LoginScreen from './app/screens/Login.js';
-import ExploreScreen from './app/screens/Explore.js';
+import ExploreScreen, { CitySearchScreen } from './app/screens/Explore.js';
 import CollectionsScreen from './app/screens/Collections.js';
 import ProfileScreen from './app/screens/Profile.js';
-import MapScreen, { SearchScreen, NoteEditorScreen } from './app/screens/RouteEditor.js';
+import MapScreen, { MapSearchScreen, NoteEditorScreen } from './app/screens/RouteEditor.js';
 import PlaceDetailScreen from './app/screens/PlaceDetail.js';
 import RouteDetailScreen from './app/screens/RouteDetail.js';
 import SignUpScreen from './app/screens/SignUp.js';
@@ -72,8 +72,9 @@ const HomeStack = createStackNavigator({
       header: null
     }
   },
+  CitySearch: mapNavigationStateParamsToProps(CitySearchScreen),
   Map: MapScreen,
-  MapSearch: mapNavigationStateParamsToProps(SearchScreen),
+  MapSearch: mapNavigationStateParamsToProps(MapSearchScreen),
   PlaceDetail: mapNavigationStateParamsToProps(PlaceDetailScreen),
   NoteEditor: mapNavigationStateParamsToProps(NoteEditorScreen),
   RouteDetail: RouteDetailScreen,

@@ -11,7 +11,7 @@ import {
 import * as firebase from 'firebase';
 import * as Facebook from 'expo-facebook';
 
-import { GREY, DARKER_GREY, ACCENT, FACEBOOK } from '../config/styles.js';
+import { GREY, DARKER_GREY, ACCENT, PRIMARY, FACEBOOK } from '../config/styles.js';
 
 const styles = StyleSheet.create({
   container: {
@@ -117,7 +117,7 @@ class LoginScreen extends Component {
         {/* don't worry, this is just a temporary logo. */}
         <Image
           style={styles.logo}
-          source={require('../assets/logo.jpg')}
+          source={require('../assets/logo.png')}
         />
         <TextInput
           style={styles.textInput}
@@ -136,7 +136,7 @@ class LoginScreen extends Component {
         <LogInButton 
           title='Log In'
           onPress={this.logInWithEmail}
-          textStyle={{...styles.logInButtton, marginTop: 20, borderWidth: 2, borderColor: ACCENT, color: ACCENT}}
+          textStyle={{...styles.logInButtton, marginTop: 20, borderWidth: 2, borderColor: PRIMARY, color: PRIMARY}}
         />
         <LogInButton 
           title='Continue with Facebook'

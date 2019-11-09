@@ -950,7 +950,7 @@ const mapDispatchToProps = dispatch => {
   };
 }
 
-export const SearchScreen = connect(mapStateToProps)(MapSearch);
+export const MapSearchScreen = connect(mapStateToProps)(MapSearch);
 export const NoteEditorScreen = connect(mapStateToProps, mapDispatchToProps)(NoteEditor);
 
 export default connect(mapStateToProps, mapDispatchToProps)(MapScreen);
