@@ -17,6 +17,8 @@ import RouteDetailScreen from './app/screens/RouteDetail.js';
 import SignUpScreen from './app/screens/SignUp.js';
 import SplashScreen from './app/screens/Splash.js';
 
+import Playground from './app/screens/Playground.js';
+
 import routeReducer from './app/reducers/RouteReducer.js';
 
 import { FIREBASE_CONFIG } from './app/config/settings.js';
@@ -109,6 +111,7 @@ export default function App() {
   return (
     <Provider store={store}>
       <AppContainer />
+      {/* <Playground /> */}
     </Provider>
   );
 }
