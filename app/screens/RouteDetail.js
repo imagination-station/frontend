@@ -7,7 +7,8 @@ import {
   Animated,
   Dimensions,
   Image,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  PixelRatio
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
@@ -15,6 +16,7 @@ import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
+import resolveAssetSource from 'resolveAssetSource';
 
 import Button from '../components/Buttons.js';
 import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
@@ -29,6 +31,12 @@ const {width, height} = Dimensions.get('window');
 
 const CARD_HEIGHT = height / 4;
 const CARD_WIDTH = Math.floor(width / 1.5);
+
+const pin =  require('../assets/pin.png'); 
+
+const PIN_WIDTH = resolveAssetSource(pin).width;
+const PIN_HEIGHT = resolveAssetSource(pin).width;
+const PIXEL_RATIO = PixelRatio.get();
 
 const mapStyles = StyleSheet.create({
   searchBoxContainer: {
@@ -148,6 +156,13 @@ const mapStyles = StyleSheet.create({
     paddingHorizontal: 10,
     width: '90%',
     borderRadius: 5
+  },
+  pin: {
+    position: 'absolute',
+    width: Math.floor(PIN_WIDTH / PIXEL_RATIO),
+    height: Math.floor(PIN_HEIGHT / PIXEL_RATIO),
+    justifyContent: 'center',
+    alignItems: 'center'
   }
 });
 
@@ -156,9 +171,12 @@ function Card(props) {
     {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoRefs[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`} :
     {uri: PLACEHOLDER_IMG};
   return (
-    <TouchableWithoutFeedback onPress={props.onPress}>
+    <TouchableWithoutFeedback onPress={props.onMore}>
       <View style={mapStyles.card}>
         <Image source={source} style={mapStyles.cardImage} resizeMode='cover' />
+        <View style={{position: 'absolute', top: 10, left: 10, width: 25, height: 25, borderRadius: 25 / 2, backgroundColor: ACCENT, justifyContent: 'center', alignItems: 'center'}}>
+          <Text style={{color: 'white'}}>{props.index + 1}</Text>
+        </View>
         <View style={mapStyles.textContent}>
           <Text numberOfLines={1} style={mapStyles.cardtitle}>
             {props.marker.properties.mainText}
@@ -168,7 +186,7 @@ function Card(props) {
           </Text>
         </View>
         <View style={mapStyles.cardButtonBar}>
-          <Button title={'More'} onPress={props.onMore} small />
+          <Button title={'Focus'} onPress={props.onPress} small />
         </View>
       </View>
     </TouchableWithoutFeedback>
@@ -341,6 +359,7 @@ class RouteDetailScreen extends Component {
             this.props.viewDetail(index);
             this.props.navigation.navigate('PlaceDetail');
           }}
+          index={index}
         />
       );
 
@@ -399,14 +418,19 @@ class RouteDetailScreen extends Component {
           }}
           ref={ref => this.mapRef = ref}
         >
-          {this.props.markers.map(marker => 
+          {this.props.markers.map((marker, index) => 
             <Marker
               key={marker.properties.placeId}
               identifier={marker.properties.placeId}
               coordinate={{latitude: marker.geometry.coordinates[0], longitude: marker.geometry.coordinates[1]}}
               title={marker.properties.mainText}
               description={marker.properties.secondaryText}
-            />
+              icon={pin}
+            >
+              <View style={mapStyles.pin}>
+                <Text style={{color: 'white'}}>{index+1}</Text>
+              </View>
+            </Marker>
           )}
           {this.props.showRoute !== null ? <MapViewDirections
             origin={`place_id:${this.props.markers[this.props.showRoute].properties.placeId}`}

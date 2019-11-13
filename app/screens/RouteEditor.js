@@ -10,7 +10,8 @@ import {
   Dimensions,
   Image,
   TouchableWithoutFeedback,
-  Picker
+  Picker,
+  PixelRatio
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
@@ -18,6 +19,13 @@ import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
+import resolveAssetSource from 'resolveAssetSource';
+
+const pin =  require('../assets/pin.png'); 
+
+const PIN_WIDTH = resolveAssetSource(pin).width;
+const PIN_HEIGHT = resolveAssetSource(pin).width;
+const PIXEL_RATIO = PixelRatio.get();
 
 import Button from '../components/Buttons.js';
 import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
@@ -154,6 +162,13 @@ const mapStyles = StyleSheet.create({
     paddingHorizontal: 10,
     width: '90%',
     borderRadius: 5
+  },
+  pin: {
+    position: 'absolute',
+    width: Math.floor(PIN_WIDTH / PIXEL_RATIO),
+    height: Math.floor(PIN_HEIGHT / PIXEL_RATIO),
+    justifyContent: 'center',
+    alignItems: 'center'
   }
 });
 
@@ -386,6 +401,9 @@ function Card(props) {
     <TouchableWithoutFeedback onPress={props.onPress}>
       <View style={mapStyles.card}>
         <Image source={source} style={mapStyles.cardImage} resizeMode='cover' />
+        <View style={{position: 'absolute', top: 10, left: 10, width: 25, height: 25, borderRadius: 25 / 2, backgroundColor: ACCENT, justifyContent: 'center', alignItems: 'center'}}>
+          <Text style={{color: 'white'}}>{props.index + 1}</Text>
+        </View>
         <View style={mapStyles.textContent}>
           <Text numberOfLines={1} style={mapStyles.cardtitle}>
             {props.marker.properties.mainText}
@@ -752,19 +770,44 @@ class MapScreen extends Component {
           }}
           onRemove={() => this.props.removeMarker(marker.properties.placeId)}
           key={marker.properties.placeId}
+          index={index}
         />
       );
 
       if (this.props.steps[index]) {
         res.push(
-          <View
-            style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}
+          <TouchableOpacity
+            onPress={() => {
+              if (index === this.props.showRoute) {
+                this.props.clearRoute();
+              } else {
+                this.props.selectRoute(index);
+                this.mapRef.fitToSuppliedMarkers(
+                  [this.props.markers[index], this.props.markers[index+1]].map(marker => marker.properties.placeId),
+                  {
+                    edgePadding: {
+                      top: 500,
+                      left: 500,
+                      bottom: 800,
+                      right: 500
+                    },
+                    animated: true
+                  }
+                );
+              }
+            }}
             key={`${marker.properties.placeId}_leg`}
           >
-            <Icon name='directions-walk' size={30} color={DARKER_GREY} />
-            <Text style={{color: DARKER_GREY}}>{this.props.steps[index].distance.text}</Text>
-            <Text style={{color: DARKER_GREY}}>{this.props.steps[index].duration.text}</Text>
-          </View>
+            <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
+              <Icon name='directions-walk' size={30} color={index === this.props.showRoute ? PRIMARY : DARKER_GREY} />
+              <Text style={{color: index === this.props.showRoute ? PRIMARY : DARKER_GREY}}>
+                {this.props.steps[index].distance.text}
+              </Text>
+              <Text style={{color: index === this.props.showRoute ? PRIMARY : DARKER_GREY}}>
+                {this.props.steps[index].duration.text}
+              </Text>
+            </View>
+          </TouchableOpacity>
         );
       }
 
@@ -788,14 +831,19 @@ class MapScreen extends Component {
           }}
           ref={ref => this.mapRef = ref}
         >
-          {this.props.markers.map(marker => 
+          {this.props.markers.map((marker, index) => 
             <Marker
               key={marker.properties.placeId}
               identifier={marker.properties.placeId}
               coordinate={{latitude: marker.geometry.coordinates[0], longitude: marker.geometry.coordinates[1]}}
               title={marker.properties.mainText}
               description={marker.properties.secondaryText}
-            />
+              icon={pin}
+            >
+              <View style={mapStyles.pin}>
+                <Text style={{color: 'white'}}>{index+1}</Text>
+              </View>
+            </Marker>
           )}
           {this.state.focused &&
             <Marker
@@ -804,25 +852,17 @@ class MapScreen extends Component {
               coordinate={{latitude: this.state.focused.geometry.coordinates[0], longitude: this.state.focused.geometry.coordinates[1]}}
               title={this.state.focused.properties.mainText}
               description={this.state.focused.properties.secondaryText}
+              icon={pin}
             />
           }
-          {this.props.markers.map((marker, index) => {
-            if (index == this.props.markers.length - 1) {
-              return null;
-            }
-
-            return (
-              <MapViewDirections
-                origin={`place_id:${marker.properties.placeId}`}
-                destination={`place_id:${this.props.markers[index+1].properties.placeId}`}
-                apikey={MAPS_API_KEY}
-                strokeColor={DARKER_GREY}
-                strokeWidth={6}
-                lineDashPattern={[5, 30]}
-                key={marker.properties.placeId}
-              />
-            );
-          })}
+          { this.props.showRoute !== null ? <MapViewDirections
+            origin={`place_id:${this.props.markers[this.props.showRoute].properties.placeId}`}
+            destination={`place_id:${this.props.markers[this.props.showRoute+1].properties.placeId}`}
+            apikey={MAPS_API_KEY}
+            strokeColor={PRIMARY}
+            strokeWidth={6}
+            // lineDashPattern={[5, 30]}
+          /> : null}
         </MapView>
         <View style={mapStyles.searchBoxContainer}>
           <TextInput
@@ -927,7 +967,8 @@ const mapStateToProps = state => {
     markers: state.markers,
     steps: state.steps,
     selected: state.selected,
-    userId: state.userId
+    userId: state.userId,
+    showRoute: state.showRoute
   };
 }
 
@@ -947,6 +988,10 @@ const mapDispatchToProps = dispatch => {
       note: note
     }}),
     clear: () => dispatch({type: 'CLEAR'}),
+    selectRoute: index => dispatch({type: 'SELECT_ROUTE', payload: {
+      selectedIndex: index
+    }}),
+    clearRoute: () => dispatch({type: 'CLEAR_ROUTE'})
   };
 }
 
