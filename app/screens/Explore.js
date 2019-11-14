@@ -97,7 +97,8 @@ class ExploreScreen extends Component {
     .then(responseJson => this.setState({
       routes: responseJson,
       bookmarks: new Array(responseJson.length),
-      bookmarks_id: new Array(responseJson.length)
+      bookmarks_id: new Array(responseJson.length),
+      likes: new Array(responseJson.length)
     }))
     .catch(error => console.error(error));
   }
@@ -124,7 +125,7 @@ class ExploreScreen extends Component {
       routes: responseJson,
       bookmarks: new Array(responseJson.length),
       bookmarks_id: new Array(responseJson.length),
-      likes: new Array(responseJson.length);
+      likes: new Array(responseJson.length)
     }))
     .catch(error => console.error(error));
     this.setState({refreshing: false});
