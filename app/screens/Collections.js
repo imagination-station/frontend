@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
     width: '100%'
   },
   headerFocused: {
-    fontSize: 34,
+    fontSize: 28,
     paddingLeft: 12
   },
   headerBlurred: {
@@ -38,14 +38,17 @@ const styles = StyleSheet.create({
 
 const screens = {
   MYTRIPS: 'm',
-  SAVED: 's'
+  SAVED: 's',
+  LIKED: 'l'
 }
 
 class CollectionsScreen extends Component {
 
   state = {
+    current: [],
     routes: [],
-    tempRoutes: [],
+    bookmarks: [],
+    liked: [],
     screen: screens.MYTRIPS
   };
 
@@ -61,6 +64,7 @@ class CollectionsScreen extends Component {
       }))
       .then(response => response.json())
       .then(responseJson => this.setState({
+        current: responseJson,
         routes: responseJson
       }))
       .catch(error => console.error(error));
@@ -76,8 +80,25 @@ class CollectionsScreen extends Component {
       }))
       .then(response => response.json())
       .then(responseJson => this.setState({
-        tempRoutes: responseJson
+        bookmarks: responseJson
       }))
+      .catch(error => console.error(error));
+
+    firebase.auth().currentUser.getIdToken()
+      .then(token => fetch(`${SERVER_ADDR}/users/${this.props.userId}/likes`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      }))
+      .then(response => response.json())
+      .then(responseJson => {
+        this.setState({
+          liked: responseJson
+        });
+      })
       .catch(error => console.error(error));
   }
 
@@ -98,36 +119,36 @@ class CollectionsScreen extends Component {
             <View style={styles.sectionContainer}>
               <View style={{flexDirection: 'row', paddingTop: 30, paddingLeft: 7, alignItems: 'flex-end'}}>
                 <TouchableOpacity onPress={() => {
-                  let temp = this.state.routes;
-                  if (this.state.screen == screens.SAVED) {
-                    this.setState({
-                      routes: this.state.tempRoutes,
-                      tempRoutes: temp,
-                      screen: screens.MYTRIPS
-                    })
-                  }
+                  this.setState({
+                    current: this.state.routes,
+                    screen: screens.MYTRIPS
+                  })
                 }}>
                   <Text style={this.currentStyle(screens.MYTRIPS)}>My Trips</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => {
-                  let temp = this.state.routes;
-                  if (this.state.screen == screens.MYTRIPS) {
-                    this.setState({
-                      routes: this.state.tempRoutes,
-                      tempRoutes: temp,
-                      screen: screens.SAVED
-                    })
-                  }
+                  this.setState({
+                    current: this.state.bookmarks,
+                    screen: screens.SAVED
+                  })
                 }}>
                   <Text style={this.currentStyle(screens.SAVED)}>Saved</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => {
+                  this.setState({
+                    current: this.state.liked,
+                    screen: screens.LIKED
+                  })
+                }}>
+                  <Text style={this.currentStyle(screens.LIKED)}>Liked</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => this.props.navigation.navigate('Map')}>
                   <Text style={styles.headerBlurred}>New</Text>
                 </TouchableOpacity>
               </View>
-              {this.state.routes.length != 0 ?
+              {this.state.current.length != 0 ?
               <FlatList
-                data={this.state.routes}
+                data={this.state.current}
                 renderItem={({ item }) => {
                   const photoRef = item.pins[0].properties.photoRefs[0];
                   return (

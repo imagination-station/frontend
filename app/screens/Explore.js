@@ -68,6 +68,7 @@ class ExploreScreen extends Component {
     // simulate bookmarks
     bookmarks: [],
     bookmarks_id: [],
+    likes: [],
     // hardcoded for Atlanta for now
     photoUri: 'https://d13k13wj6adfdf.cloudfront.net/urban_areas/atlanta-9e33744cb4.jpg',
   };
@@ -128,6 +129,7 @@ class ExploreScreen extends Component {
                       route: item
                     })}
                     bookmarked={this.state.bookmarks[index]}
+                    liked={this.state.likes[index]}
                     onBookmark = {() => {
                       let bookmarks = [...this.state.bookmarks];
                       bookmarks[index] = !this.state.bookmarks[index];
@@ -172,9 +174,36 @@ class ExploreScreen extends Component {
                            .then(responseJson => {
                              console.log(responseJson);
                            })
-                       }
-                    }
-                  }
+                      }
+                    }}
+                    onLike = {() => {
+                      let likes = [...this.state.likes];
+                      likes[index] = !this.state.likes[index];
+                      this.setState({likes: likes});
+                      let routeId = this.state.routes[index]._id;
+                      console.log(`Route ID: ${routeId}`);
+                      console.log(likes);
+                      like = likes[index] ? "like" : "unlike";
+                      console.log(like);
+                      firebase.auth().currentUser.getIdToken().then(token =>
+                        fetch(`${SERVER_ADDR}/cities/routes/${routeId}/likes`, {
+                          method: 'PATCH',
+                          headers: {
+                            Accept: 'application/json',
+                            'Content-type': 'application/json',
+                            Authorization: `Bearer ${token}`
+                          },
+                          body: JSON.stringify({
+                            type: like,
+                            userId: this.props.userId
+                          })
+                        })
+                      )
+                      .then(response => response.text())
+                      .then(responseText => {
+                        console.log(responseText);
+                      })
+                    }}
                   />
                 );
               })}
