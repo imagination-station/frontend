@@ -7,7 +7,8 @@ import {
   Animated,
   Image,
   Dimensions,
-  ScrollView
+  ScrollView,
+  RefreshControl
 } from 'react-native';
 import * as firebase from 'firebase';
 import { connect } from 'react-redux';
@@ -47,6 +48,12 @@ const styles = StyleSheet.create({
   endPadding: {
     flexGrow: 1
   },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 
 function CityImage(props) {
@@ -69,6 +76,7 @@ class ExploreScreen extends Component {
     bookmarks: [],
     bookmarks_id: [],
     likes: [],
+    refreshing: false,
     // hardcoded for Atlanta for now
     photoUri: 'https://d13k13wj6adfdf.cloudfront.net/urban_areas/atlanta-9e33744cb4.jpg',
   };
@@ -85,18 +93,52 @@ class ExploreScreen extends Component {
         }
       })
     )
-      .then(response => response.json())
-      .then(responseJson => this.setState({
-        routes: responseJson,
-        bookmarks: new Array(responseJson.length),
-        bookmarks_id: new Array(responseJson.length)
-      }))
-      .catch(error => console.error(error));
+    .then(response => response.json())
+    .then(responseJson => this.setState({
+      routes: responseJson,
+      bookmarks: new Array(responseJson.length),
+      bookmarks_id: new Array(responseJson.length)
+    }))
+    .catch(error => console.error(error));
+  }
+
+  getData = () => {
+    console.log('getting data');
+    console.log(this.props.userId);
+    console.log(this.props);
+    if (this.props.userId == undefined) {
+      return;
+    }
+    firebase.auth().currentUser.getIdToken().then(token =>
+      fetch(`${SERVER_ADDR}/cities/${PLACE_ID}/routes`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      })
+    )
+    .then(response => response.json())
+    .then(responseJson => this.setState({
+      routes: responseJson,
+      bookmarks: new Array(responseJson.length),
+      bookmarks_id: new Array(responseJson.length),
+      likes: new Array(responseJson.length);
+    }))
+    .catch(error => console.error(error));
+    this.setState({refreshing: false});
+  }
+
+  onRefresh() {
+      console.log('refreshing');
+      this.getData();
   }
 
   render() {
     return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.scrollView} refreshControl={<RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh.bind(this)} />}>
+      <View style={styles.container}>
         <ScrollView style={{flex: 1}}>
           <CityImage title='Atlanta' uri={this.state.photoUri} />
           <View style={styles.sectionContainer}>
@@ -212,6 +254,7 @@ class ExploreScreen extends Component {
           </View>
         </ScrollView>
       </View>
+    </ScrollView>
     );
   }
 }

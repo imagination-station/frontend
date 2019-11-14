@@ -1,5 +1,5 @@
 import React, { Component, Fragment } from 'react';
-import { View, StyleSheet, FlatList, Text, StatusBar, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, StyleSheet, FlatList, Text, StatusBar, TouchableOpacity, SafeAreaView, ScrollView, RefreshControl } from 'react-native';
 import * as firebase from 'firebase';
 import { connect } from 'react-redux';
 
@@ -33,6 +33,12 @@ const styles = StyleSheet.create({
   safeStatusArea: {
     flex: 0,
     backgroundColor: '#fff'
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
   }
 });
 
@@ -49,7 +55,8 @@ class CollectionsScreen extends Component {
     routes: [],
     bookmarks: [],
     liked: [],
-    screen: screens.MYTRIPS
+    screen: screens.MYTRIPS,
+    refreshing: false
   };
 
   componentDidMount() {
@@ -110,64 +117,140 @@ class CollectionsScreen extends Component {
     }
   }
 
+  getData = () => {
+    console.log('getting data');
+    console.log(this.props.userId);
+    console.log(this.props);
+    if (this.props.userId == undefined) {
+      return;
+    }
+    firebase.auth().currentUser.getIdToken()
+      .then(token => fetch(`${SERVER_ADDR}/users/${this.props.userId}/routes`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      }))
+      .then(response => response.json())
+      .then(responseJson => this.setState({
+        routes: responseJson
+      }))
+      .catch(error => console.error(error));
+
+    firebase.auth().currentUser.getIdToken()
+      .then(token => fetch(`${SERVER_ADDR}/users/${this.props.userId}/forks`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      }))
+      .then(response => response.json())
+      .then(responseJson => this.setState({
+        bookmarks: responseJson
+      }))
+      .catch(error => console.error(error));
+
+    firebase.auth().currentUser.getIdToken()
+      .then(token => fetch(`${SERVER_ADDR}/users/${this.props.userId}/likes`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      }))
+      .then(response => response.json())
+      .then(responseJson => {
+        this.setState({
+          liked: responseJson
+        });
+      })
+      .catch(error => console.error(error));
+
+      console.log(this.state.screen);
+      switch(this.state.screen) {
+        case screens.MYTRIPS:
+          this.setState({current: this.state.routes});
+          break;
+        case screens.SAVED:
+          this.setState({current: this.state.bookmarks});
+          break;
+        case screens.LIKED:
+          this.setState({current: this.state.liked});
+          break;
+      }
+      this.setState({refreshing: false});
+  }
+
+  onRefresh() {
+      console.log('refreshing');
+      this.getData();
+  }
+
   render() {
     return (
       <Fragment>
         <SafeAreaView style={styles.safeStatusArea} />
         <SafeAreaView style={styles.safeArea}>
-          <View style={styles.container}>
-            <View style={styles.sectionContainer}>
-              <View style={{flexDirection: 'row', paddingTop: 30, paddingLeft: 7, alignItems: 'flex-end'}}>
-                <TouchableOpacity onPress={() => {
-                  this.setState({
-                    current: this.state.routes,
-                    screen: screens.MYTRIPS
-                  })
-                }}>
-                  <Text style={this.currentStyle(screens.MYTRIPS)}>My Trips</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => {
-                  this.setState({
-                    current: this.state.bookmarks,
-                    screen: screens.SAVED
-                  })
-                }}>
-                  <Text style={this.currentStyle(screens.SAVED)}>Saved</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => {
-                  this.setState({
-                    current: this.state.liked,
-                    screen: screens.LIKED
-                  })
-                }}>
-                  <Text style={this.currentStyle(screens.LIKED)}>Liked</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => this.props.navigation.navigate('Map')}>
-                  <Text style={styles.headerBlurred}>New</Text>
-                </TouchableOpacity>
+          <ScrollView contentContainerStyle={styles.scrollView} refreshControl={<RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh.bind(this)} />}>
+            <View style={styles.container}>
+              <View style={styles.sectionContainer}>
+                <View style={{flexDirection: 'row', paddingTop: 30, paddingLeft: 7, alignItems: 'flex-end'}}>
+                  <TouchableOpacity onPress={() => {
+                    this.setState({
+                      current: this.state.routes,
+                      screen: screens.MYTRIPS
+                    })
+                  }}>
+                    <Text style={this.currentStyle(screens.MYTRIPS)}>My Trips</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => {
+                    this.setState({
+                      current: this.state.bookmarks,
+                      screen: screens.SAVED
+                    })
+                  }}>
+                    <Text style={this.currentStyle(screens.SAVED)}>Saved</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => {
+                    this.setState({
+                      current: this.state.liked,
+                      screen: screens.LIKED
+                    })
+                  }}>
+                    <Text style={this.currentStyle(screens.LIKED)}>Liked</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => this.props.navigation.navigate('Map')}>
+                    <Text style={styles.headerBlurred}>New</Text>
+                  </TouchableOpacity>
+                </View>
+                {this.state.current.length != 0 ?
+                <FlatList
+                  data={this.state.current}
+                  renderItem={({ item }) => {
+                    const photoRef = item.pins[0].properties.photoRefs[0];
+                    return (
+                      <RouteCard
+                        key={item._id}
+                        title={item.name}
+                        photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
+                        onPress={() => this.props.navigation.navigate('RouteDetail', {
+                          route: item
+                        })}
+                      />
+                    );
+                  }}
+                  keyExtractor={item => item._id}
+                  extraData={this.state.screen}
+                  contentContainerStyle={{alignItems: 'center', width: '100%', backgroundColor: 'transparent'}}/> :
+                  <Text style={{padding: 30, alignSelf: 'center', color: DARKER_GREY}}>Wow, so empty :)</Text>}
               </View>
-              {this.state.current.length != 0 ?
-              <FlatList
-                data={this.state.current}
-                renderItem={({ item }) => {
-                  const photoRef = item.pins[0].properties.photoRefs[0];
-                  return (
-                    <RouteCard
-                      key={item._id}
-                      title={item.name}
-                      photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
-                      onPress={() => this.props.navigation.navigate('RouteDetail', {
-                        route: item
-                      })}
-                    />
-                  );
-                }}
-                keyExtractor={item => item._id}
-                extraData={this.state.screen}
-                contentContainerStyle={{alignItems: 'center', width: '100%', backgroundColor: 'transparent'}}/> :
-                <Text style={{padding: 30, alignSelf: 'center', color: DARKER_GREY}}>Wow, so empty :)</Text>}
             </View>
-          </View>
+          </ScrollView>
         </SafeAreaView>
       </Fragment>
     );
