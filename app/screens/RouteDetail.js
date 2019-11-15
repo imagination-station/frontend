@@ -9,6 +9,7 @@ import {
   Dimensions,
   Image,
   TouchableWithoutFeedback,
+  Platform,
   StatusBar,
   PixelRatio,
   BackHandler
@@ -34,11 +35,12 @@ const CARD_HEIGHT = height / 4;
 const CARD_WIDTH = Math.floor(width / 1.5);
 const OFFSET_DIV = CARD_WIDTH * (5/4);
 
-const DRAWER_OPEN = height - (Header.HEIGHT + StatusBar.currentHeight) - (CARD_HEIGHT + 35);
-const DRAWER_CLOSED = height - Header.HEIGHT - 35;
+const OSVAL = Platform.OS === 'ios' ? 0 : StatusBar.currentHeight;
+const DRAWER_OPEN = Platform.OS === 'ios' ? height - (Header.HEIGHT) - (CARD_HEIGHT + 80) : height - (Header.HEIGHT + StatusBar.currentHeight) - (CARD_HEIGHT + 35);
+const DRAWER_CLOSED = Platform.OS === 'ios' ? height - Header.HEIGHT - 80 : height - Header.HEIGHT - 35;
 const DRAWER_EXPANDED = 0;
 
-const pin =  require('../assets/pin.png'); 
+const pin =  require('../assets/pin.png');
 
 const PIN_WIDTH = resolveAssetSource(pin).width;
 const PIN_HEIGHT = resolveAssetSource(pin).width;
@@ -387,10 +389,10 @@ class RouteDetailScreen extends Component {
                   [this.props.markers[index], this.props.markers[index+1]].map(marker => marker.properties.placeId),
                   {
                     edgePadding: {
-                      top: 500,
-                      left: 500,
-                      bottom: 800,
-                      right: 500
+                      top: 100,
+                      left: 100,
+                      bottom: 300,
+                      right: 100
                     },
                     animated: true
                   }
@@ -472,9 +474,9 @@ class RouteDetailScreen extends Component {
                     {
                       edgePadding: {
                         top: 100,
-                        left: 75,
-                        bottom: 500,
-                        right: 75
+                        left: 100,
+                        bottom: 300,
+                        right: 100
                       },
                       animated: true
                     }
@@ -506,9 +508,11 @@ class RouteDetailScreen extends Component {
                 <Text style={{alignSelf: 'flex-start', margin: 15, fontSize: 20, fontWeight: 'bold', width: 300}}>
                   {this.props.navigation.getParam('route').name}
                 </Text>
+                {this.props.navigation.getParam('route').tags != undefined &&
                 <View style={{flexDirection: 'row', alignSelf: 'flex-start', marginLeft: 15, flexWrap: 'wrap'}}>
                   {this.props.navigation.getParam('route').tags.map(tag => <Tag title={tag} key={tag} />)}
                 </View>
+                }
               </View>
             }
           </View>

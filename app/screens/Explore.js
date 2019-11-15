@@ -8,6 +8,7 @@ import {
   Image,
   Dimensions,
   ScrollView,
+  RefreshControl,
   TextInput,
   TouchableOpacity,
   StatusBar,
@@ -52,6 +53,12 @@ const styles = StyleSheet.create({
   },
   endPadding: {
     flexGrow: 1
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchBoxContainer: {
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
@@ -213,6 +220,8 @@ class ExploreScreen extends Component {
     // simulate bookmarks
     bookmarks: [],
     bookmarks_id: [],
+    likes: [],
+    refreshing: false,
     // hardcoded for Atlanta for now
     geonameid: GEONAME_ID,
     city: null,
@@ -241,13 +250,47 @@ class ExploreScreen extends Component {
         }
       })
     )
-      .then(response => response.json())
-      .then(responseJson => this.setState({
-        routes: responseJson,
-        bookmarks: new Array(responseJson.length),
-        bookmarks_id: new Array(responseJson.length)
-      }))
-      .catch(error => console.error(error));
+    .then(response => response.json())
+    .then(responseJson => this.setState({
+      routes: responseJson,
+      bookmarks: new Array(responseJson.length),
+      bookmarks_id: new Array(responseJson.length),
+      likes: new Array(responseJson.length)
+    }))
+    .catch(error => console.error(error));
+  }
+
+  getData = () => {
+    console.log('getting data');
+    console.log(this.props.userId);
+    console.log(this.props);
+    if (this.props.userId == undefined) {
+      return;
+    }
+    firebase.auth().currentUser.getIdToken().then(token =>
+      fetch(`${SERVER_ADDR}/cities/${PLACE_ID}/routes`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      })
+    )
+    .then(response => response.json())
+    .then(responseJson => this.setState({
+      routes: responseJson,
+      bookmarks: new Array(responseJson.length),
+      bookmarks_id: new Array(responseJson.length),
+      likes: new Array(responseJson.length)
+    }))
+    .catch(error => console.error(error));
+    this.setState({refreshing: false});
+  }
+
+  onRefresh() {
+      console.log('refreshing');
+      this.getData();
   }
 
   onPressSearch = () => {
@@ -271,7 +314,8 @@ class ExploreScreen extends Component {
 
   render() {
     return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.scrollView} refreshControl={<RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh.bind(this)} />}>
+      <View style={styles.container}>
         <ScrollView style={{flex: 1}}>
           <CityImage title={this.state.city ? this.state.city.name : 'Loading...'} uri={this.state.photoUri} onPressSearchBox={this.onPressSearch} />
           <View style={styles.sectionContainer}>
@@ -304,6 +348,7 @@ class ExploreScreen extends Component {
                       route: item
                     })}
                     bookmarked={this.state.bookmarks[index]}
+                    liked={this.state.likes[index]}
                     onBookmark = {() => {
                       let bookmarks = [...this.state.bookmarks];
                       bookmarks[index] = !this.state.bookmarks[index];
@@ -348,9 +393,36 @@ class ExploreScreen extends Component {
                            .then(responseJson => {
                              console.log(responseJson);
                            })
-                       }
-                    }
-                  }
+                      }
+                    }}
+                    onLike = {() => {
+                      let likes = [...this.state.likes];
+                      likes[index] = !this.state.likes[index];
+                      this.setState({likes: likes});
+                      let routeId = this.state.routes[index]._id;
+                      console.log(`Route ID: ${routeId}`);
+                      console.log(likes);
+                      like = likes[index] ? "like" : "unlike";
+                      console.log(like);
+                      firebase.auth().currentUser.getIdToken().then(token =>
+                        fetch(`${SERVER_ADDR}/cities/routes/${routeId}/likes`, {
+                          method: 'PATCH',
+                          headers: {
+                            Accept: 'application/json',
+                            'Content-type': 'application/json',
+                            Authorization: `Bearer ${token}`
+                          },
+                          body: JSON.stringify({
+                            type: like,
+                            userId: this.props.userId
+                          })
+                        })
+                      )
+                      .then(response => response.text())
+                      .then(responseText => {
+                        console.log(responseText);
+                      })
+                    }}
                   />
                 );
               })}
@@ -359,6 +431,7 @@ class ExploreScreen extends Component {
           </View>
         </ScrollView>
       </View>
+    </ScrollView>
     );
   }
 }

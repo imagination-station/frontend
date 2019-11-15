@@ -11,6 +11,7 @@ import {
   Image,
   TouchableWithoutFeedback,
   Picker,
+  Platform,
   PixelRatio
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
@@ -675,8 +676,12 @@ class MapScreen extends Component {
     if (this.state.drawerCollapsed) {
       toValue = height - Header.HEIGHT - (55 + CARD_HEIGHT);
     } else {
-      toValue = height - Header.HEIGHT - 35;
-    }
+      if (Platform.OS === 'ios') {
+        toValue = height - Header.HEIGHT - 80;
+      } else {
+        toValue = height - Header.HEIGHT - 35;
+      }
+  }
 
     Animated.timing(
       this.collapseValue,
@@ -691,7 +696,7 @@ class MapScreen extends Component {
     Animated.timing(
       this.collapseValue,
       {
-        toValue: height - Header.HEIGHT - 35,
+        toValue: Platform.OS === 'ios' ? height - Header.HEIGHT - 80 : height - Header.HEIGHT - 35,
         duration: 200
       }
     ).start(() => this.setState({drawerCollapsed: true}));

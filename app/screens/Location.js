@@ -5,7 +5,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  StatusBar
+  StatusBar,
+  Platform
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -14,7 +15,7 @@ import { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: StatusBar.currentHeight
+    paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight
   },
 });
 
