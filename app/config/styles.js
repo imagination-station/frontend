@@ -1,10 +1,10 @@
 import { StyleSheet } from 'react-native';
 
 export const PRIMARY = '#eb8993';
-export const ACCENT = '#7477ad';
+export const ACCENT = '#577590';
 
 export const GREY = '#f2f2f2';
-export const DARKER_GREY = '#c2c2c2';
+export const DARKER_GREY = '#6D7380';
 
 export const FACEBOOK = '#4c69ba';
 

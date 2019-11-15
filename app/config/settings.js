@@ -10,6 +10,7 @@ export const INIT_LOCATION = {
 };
 
 export const PLACE_ID = 'ChIJjQmTaV0E9YgRC2MLmS_e_mY';
+export const GEONAME_ID = '4180439'; 
 export const NAME = 'Atlanta';
 
 export const PLACEHOLDER_IMG = 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg';
