@@ -11,7 +11,8 @@ import {
   TextInput,
   TouchableOpacity,
   StatusBar,
-  FlatList
+  FlatList,
+  Platform
 } from 'react-native';
 import * as firebase from 'firebase';
 import { connect } from 'react-redux';
@@ -58,7 +59,7 @@ const styles = StyleSheet.create({
     height: 46,
     borderRadius: 10,
     width: '95%',
-    top: 10 + StatusBar.currentHeight,
+    top: Platform.OS === 'ios' ? 45 : 10 + StatusBar.currentHeight,
     marginHorizontal: '2.5%',
     position: 'absolute',
     alignItems: 'center',

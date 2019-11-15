@@ -6,7 +6,8 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  StatusBar
+  StatusBar,
+  Platform
 } from 'react-native';
 import * as firebase from 'firebase';
 import * as Facebook from 'expo-facebook';
@@ -18,7 +19,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
-    padding: StatusBar.currentHeight
+    padding: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight
   },
   logo: {
     height: 125,
