@@ -35,11 +35,12 @@ const CARD_HEIGHT = height / 4;
 const CARD_WIDTH = Math.floor(width / 1.5);
 const OFFSET_DIV = CARD_WIDTH * (5/4);
 
-const DRAWER_OPEN = height - (Header.HEIGHT + StatusBar.currentHeight) - (CARD_HEIGHT + 35);
-const DRAWER_CLOSED = height - Header.HEIGHT - 35;
+const OSVAL = Platform.OS === 'ios' ? 0 : StatusBar.currentHeight;
+const DRAWER_OPEN = Platform.OS === 'ios' ? height - (Header.HEIGHT) - (CARD_HEIGHT + 80) : height - (Header.HEIGHT + StatusBar.currentHeight) - (CARD_HEIGHT + 35);
+const DRAWER_CLOSED = Platform.OS === 'ios' ? height - Header.HEIGHT - 80 : height - Header.HEIGHT - 35;
 const DRAWER_EXPANDED = 0;
 
-const pin =  require('../assets/pin.png'); 
+const pin =  require('../assets/pin.png');
 
 const PIN_WIDTH = resolveAssetSource(pin).width;
 const PIN_HEIGHT = resolveAssetSource(pin).width;
