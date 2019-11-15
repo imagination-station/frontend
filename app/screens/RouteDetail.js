@@ -508,9 +508,11 @@ class RouteDetailScreen extends Component {
                 <Text style={{alignSelf: 'flex-start', margin: 15, fontSize: 20, fontWeight: 'bold', width: 300}}>
                   {this.props.navigation.getParam('route').name}
                 </Text>
+                {this.props.navigation.getParam('route').tags != undefined &&
                 <View style={{flexDirection: 'row', alignSelf: 'flex-start', marginLeft: 15, flexWrap: 'wrap'}}>
                   {this.props.navigation.getParam('route').tags.map(tag => <Tag title={tag} key={tag} />)}
                 </View>
+                }
               </View>
             }
           </View>
