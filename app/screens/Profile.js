@@ -1,5 +1,5 @@
 import React, { Component, Fragment } from 'react';
-import { Text, View, Image, StyleSheet, TouchableOpacity, StatusBar, SafeAreaView } from 'react-native';
+import { Text, View, Image, StyleSheet, TouchableOpacity, StatusBar, SafeAreaView, Platform } from 'react-native';
 import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -9,7 +9,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: StatusBar.currentHeight
+    paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight
   },
   header: {
     flexDirection: 'row',

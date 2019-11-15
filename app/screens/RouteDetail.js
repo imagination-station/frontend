@@ -5,19 +5,22 @@ import {
   Text,
   TouchableOpacity,
   Animated,
+  ScrollView,
   Dimensions,
   Image,
   TouchableWithoutFeedback,
-  Platform
+  Platform,
+  StatusBar,
+  PixelRatio,
+  BackHandler
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
-import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
+import resolveAssetSource from 'resolveAssetSource';
 
-import Button from '../components/Buttons.js';
 import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
 import {
   MAPS_API_KEY,
@@ -30,26 +33,19 @@ const {width, height} = Dimensions.get('window');
 
 const CARD_HEIGHT = height / 4;
 const CARD_WIDTH = Math.floor(width / 1.5);
+const OFFSET_DIV = CARD_WIDTH * (5/4);
+
+const DRAWER_OPEN = height - (Header.HEIGHT + StatusBar.currentHeight) - (CARD_HEIGHT + 35);
+const DRAWER_CLOSED = height - Header.HEIGHT - 35;
+const DRAWER_EXPANDED = 0;
+
+const pin =  require('../assets/pin.png'); 
+
+const PIN_WIDTH = resolveAssetSource(pin).width;
+const PIN_HEIGHT = resolveAssetSource(pin).width;
+const PIXEL_RATIO = PixelRatio.get();
 
 const mapStyles = StyleSheet.create({
-  searchBoxContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    flexDirection: 'row',
-    height: 46,
-    borderRadius: 10,
-    width: '95%',
-    top: 10,
-    marginHorizontal: '2.5%',
-    position: 'absolute',
-    alignItems: 'center',
-  },
-  searchBox: {
-    backgroundColor: 'transparent',
-    height: 46,
-    paddingHorizontal: 10,
-    width: '90%',
-    color: 'grey'
-  },
   animated: {
     position: 'absolute',
     bottom: 0,
@@ -98,11 +94,16 @@ const mapStyles = StyleSheet.create({
     fontSize: 12,
     color: '#444'
   },
-  cardButtonBar: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 10,
-    padding: 10
+  cardNumber: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    width: 25,
+    height: 25,
+    borderRadius: 25 / 2,
+    backgroundColor: ACCENT,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   filler: {
     backgroundColor: 'transparent',
@@ -119,16 +120,6 @@ const mapStyles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center'
-  },
-  focusedCard: {
-    backgroundColor: 'white',
-    marginHorizontal: 10,
-    marginBottom: 5,
-    height: CARD_HEIGHT * 1.4,
-    width: '90%',
-    overflow: 'hidden',
-    borderRadius: 10,
-    marginBottom: 7
   },
   drawerButton: {
     width: 50,
@@ -149,6 +140,13 @@ const mapStyles = StyleSheet.create({
     paddingHorizontal: 10,
     width: '90%',
     borderRadius: 5
+  },
+  pin: {
+    position: 'absolute',
+    width: Math.floor(PIN_WIDTH / PIXEL_RATIO),
+    height: Math.floor(PIN_HEIGHT / PIXEL_RATIO),
+    justifyContent: 'center',
+    alignItems: 'center'
   }
 });
 
@@ -157,9 +155,12 @@ function Card(props) {
     {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoRefs[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`} :
     {uri: PLACEHOLDER_IMG};
   return (
-    <TouchableWithoutFeedback onPress={props.onPress}>
+    <TouchableWithoutFeedback onPress={props.onMore}>
       <View style={mapStyles.card}>
         <Image source={source} style={mapStyles.cardImage} resizeMode='cover' />
+        <View style={mapStyles.cardNumber}>
+          <Text style={{color: 'white'}}>{props.index + 1}</Text>
+        </View>
         <View style={mapStyles.textContent}>
           <Text numberOfLines={1} style={mapStyles.cardtitle}>
             {props.marker.properties.mainText}
@@ -168,9 +169,6 @@ function Card(props) {
             {props.marker.properties.secondaryText}
           </Text>
         </View>
-        <View style={mapStyles.cardButtonBar}>
-          <Button title={'More'} onPress={props.onMore} small />
-        </View>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -178,7 +176,7 @@ function Card(props) {
 
 function ActionCard(props) {
   let content;
-  if (props.length == 0) {
+  if (props.numPins == 0) {
     content = (
       <Text style={{color: DARKER_GREY, textAlign: 'center'}}>
         {'Loading...'}
@@ -186,8 +184,8 @@ function ActionCard(props) {
     );
   } else {
     content = [
-      <Text style={{color: DARKER_GREY}} key='num_places'>
-        {`${props.length} places`}
+      <Text style={{color: DARKER_GREY}} key='num_pins'>
+        {`${props.numPins} pins`}
       </Text>,
       <Text style={{color: DARKER_GREY}} key='distance'>
         {`${props.distance} m`}
@@ -197,8 +195,9 @@ function ActionCard(props) {
       </Text>,
       props.view != 'info' && 
         <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}} key='buttons'>
-          <Button title='View All' onPress={props.viewAll} small />
-          <Button title='Info' onPress={props.showRouteInfo} small />
+          <TouchableOpacity onPress={props.showRouteInfo} >
+            <Icon name='more-horiz' size={30} color={ACCENT} />
+          </TouchableOpacity>
         </View>
     ];
   }
@@ -211,7 +210,6 @@ function ActionCard(props) {
     </View>
   );
 }
-
 
 function DrawerButton(props) {
   return (
@@ -232,21 +230,28 @@ function Tag(props) {
 class RouteDetailScreen extends Component {
 
   static navigationOptions = {
-    tabBarVisible: false
+    tabBarVisible: false,
+    headerTitle: () => <Text style={{fontSize: 20}}>Route Details</Text>
   };
 
   state = {
     view: 'map',
-    drawerCollapsed: false
+    drawer: 'open'
   };
+
+  constructor(props) {
+    super(props);
+    this.didFocus = props.navigation.addListener('didFocus', payload => 
+      BackHandler.addEventListener('hardwareBackPress', this.onBack)
+    );
+  }
 
   componentWillMount() {
     this.mapRef = null;
-    this.scrollViewRef = null;
-
-    this.refreshToken = null;
-    this.collapseValue = new Animated.Value(height - Header.HEIGHT - (55 + CARD_HEIGHT));
-    this.scrollValue = new Animated.Value(0);
+    // for animating bottom drawer collapse
+    this.collapseValue = new Animated.Value(DRAWER_OPEN);
+    // for initially rendering map
+    this.initLocation = this.props.navigation.getParam('route').pins[0].geometry.coordinates;
   }
 
   componentDidMount() {
@@ -273,54 +278,75 @@ class RouteDetailScreen extends Component {
 
         this.props.loadRoute(this.props.navigation.getParam('route').pins, steps);
         if (this.props.navigation.getParam('route').pins.length > 1) {
-          // show first leg by default
+          // show first "leg" of route by default
           this.props.selectRoute(0);
         }
       }
+    );
+
+    this.willBlur = this.props.navigation.addListener('willBlur', payload => 
+      BackHandler.removeEventListener('hardwareBackPress', this.onBack)
     );
   }
 
   componentWillUnmount() {
     this.props.clear();
+    this.didFocus.remove();
+    this.willBlur.remove();
+  }
+
+  onBack = () => {
+    if (this.state.view == 'info') {
+      this.toggleDrawer();
+      return true;
+    } 
+
+    return false;
   }
 
   toggleDrawer = () => {
     let toValue;
-    if (this.state.drawerCollapsed) {
-      toValue = height - Header.HEIGHT - (55 + CARD_HEIGHT);
-    } else {
-      if (Platform.OS === 'ios') {
-        toValue = height - Header.HEIGHT - 80;
-      } else {
-        toValue = height - Header.HEIGHT - 35;
-      }
-  }
+    let nextState;
 
-    Animated.timing(
+    // if drawer expanded...
+    if (this.state.view == 'info') {
+      this.didEnterRouteInfo && this.didEnterRouteInfo.remove();
+      // drawer must have been open
+      toValue = DRAWER_OPEN;
+      nextState = 'open';
+    } else {
+      if (this.state.drawer == 'open') {
+        toValue = DRAWER_CLOSED;
+        nextState = 'closed';
+      } else {
+        toValue = DRAWER_OPEN;
+        nextState = 'open';
+      }
+    }
+
+    // update state first, then animate
+    this.setState({drawer: nextState, view: 'map'}, Animated.timing(
       this.collapseValue,
       {
         toValue: toValue,
         duration: 200
       }
-    ).start(() => this.setState({drawerCollapsed: !this.state.drawerCollapsed, view: 'map'}));
-  }
-
-  closeDrawer = () => {
-    Animated.timing(
-      this.collapseValue,
-      {
-        toValue: height - Header.HEIGHT - 35,
-        duration: 200
-      }
-    ).start(() => this.setState({drawerCollapsed: true}));
+    ).start);
   }
 
   showRouteInfo = () => {
     this.setState({view: 'info'}, () => {
+      this.didEnterRouteInfo = this.props.navigation.addListener(
+        'didFocus',
+        payload => BackHandler.addEventListener(
+          'hardwareBackPress',
+          this.toggleDrawer
+        )
+      );
       Animated.timing(
         this.collapseValue,
         {
-          toValue: 0,
+          toValue: DRAWER_EXPANDED,
           duration: 200
         }
       ).start();
@@ -346,6 +372,7 @@ class RouteDetailScreen extends Component {
             this.props.viewDetail(index);
             this.props.navigation.navigate('PlaceDetail');
           }}
+          index={index}
         />
       );
 
@@ -390,6 +417,7 @@ class RouteDetailScreen extends Component {
     }
 
     const cards = this.props.markers.reduce(reducer, []);
+    const initLocation = this.props.navigation.getParam('route').pins[0].geometry.coordinates;
 
     return (
       <View style={globalStyles.container}>
@@ -397,21 +425,26 @@ class RouteDetailScreen extends Component {
           provider={'google'}
           style={globalStyles.container}
           initialRegion={{
-            latitude: INIT_LOCATION.latitude,
-            longitude: INIT_LOCATION.longitude,
+            latitude: initLocation[0],
+            longitude: initLocation[1],
             latitudeDelta: 0.0922,
             longitudeDelta: 0.0421
           }}
           ref={ref => this.mapRef = ref}
         >
-          {this.props.markers.map(marker => 
+          {this.props.markers.map((marker, index) => 
             <Marker
               key={marker.properties.placeId}
               identifier={marker.properties.placeId}
               coordinate={{latitude: marker.geometry.coordinates[0], longitude: marker.geometry.coordinates[1]}}
               title={marker.properties.mainText}
               description={marker.properties.secondaryText}
-            />
+              icon={pin}
+            >
+              <View style={mapStyles.pin}>
+                <Text style={{color: 'white'}}>{index+1}</Text>
+              </View>
+            </Marker>
           )}
           {this.props.showRoute !== null ? <MapViewDirections
             origin={`place_id:${this.props.markers[this.props.showRoute].properties.placeId}`}
@@ -425,30 +458,16 @@ class RouteDetailScreen extends Component {
         <Animated.View style={{...mapStyles.animated, top: this.collapseValue}}>
           <View style={mapStyles.drawer} >
             <DrawerButton onPress={this.toggleDrawer} />
-            <Animated.ScrollView
+            <ScrollView
               style={{flex: 1}}
               scrollEnabled={this.props.markers.length > 0}
-              ref={ref => this.scrollViewRef = ref}
               contentContainerStyle={mapStyles.endPadding}
               horizontal
               scrollEventThrottle={1}
               showsHorizontalScrollIndicator={false}
-              onScroll={Animated.event([
-                {
-                  nativeEvent: {
-                    contentOffset: {
-                      x: this.scrollValue,
-                    },
-                  }
-                }
-              ], {useNativeDriver: true}
-              )}
-            >
-              <View style={mapStyles.filler} />
-              {cards}
-              <ActionCard
-                length={this.props.markers.length}
-                viewAll={() => {
+              onMomentumScrollEnd={event => {
+                const i = Math.round(event.nativeEvent.contentOffset.x / OFFSET_DIV);
+                if (i == this.props.markers.length) {
                   this.mapRef.fitToSuppliedMarkers(
                     this.props.markers.map(marker => marker.properties.placeId),
                     {
@@ -461,14 +480,28 @@ class RouteDetailScreen extends Component {
                       animated: true
                     }
                   );
-                }}
+                } else {
+                  this.mapRef.animateCamera({
+                    center: {
+                      latitude: this.props.markers[i].geometry.coordinates[0],
+                      longitude: this.props.markers[i].geometry.coordinates[1],
+                    },
+                    zoom: 15
+                  }, 30);
+                }
+              }}
+            >
+              <View style={mapStyles.filler} />
+              {cards}
+              <ActionCard
+                numPins={this.props.markers.length}
                 showRouteInfo={this.showRouteInfo}
                 view={this.state.view}
                 distance={this.props.steps.reduce((res, cur) => res + cur.distance.value, 0)}
                 duration={this.props.steps.reduce((res, cur) => res + cur.duration.value, 0)}
               />
               <View style={mapStyles.filler} />
-            </Animated.ScrollView>
+            </ScrollView>
             {this.state.view === 'info' &&
               <View style={mapStyles.infoContainer}>
                 <Text style={{alignSelf: 'flex-start', margin: 15, fontSize: 20, fontWeight: 'bold', width: 300}}>

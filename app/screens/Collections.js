@@ -1,5 +1,6 @@
 import React, { Component, Fragment } from 'react';
-import { View, StyleSheet, FlatList, Text, StatusBar, TouchableOpacity, SafeAreaView, ScrollView, RefreshControl } from 'react-native';
+import { View, StyleSheet, FlatList, Text, StatusBar, TouchableOpacity, SafeAreaView, ScrollView, RefreshControl, Platform } from 'react-native';
+
 import * as firebase from 'firebase';
 import { connect } from 'react-redux';
 
@@ -11,7 +12,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: StatusBar.currentHeight
+    paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight
   },
   sectionContainer: {
     backgroundColor: 'white',

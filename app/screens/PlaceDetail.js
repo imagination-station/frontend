@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
-import { View, StyleSheet, Text, Animated, Image, Dimensions } from 'react-native';
+import { View, StyleSheet, Text, Animated, Image, Dimensions, ScrollView } from 'react-native';
 import { connect } from 'react-redux';
 
 import { LongButton } from '../components/Buttons.js';
-import ImageCarousel from '../components/ImageCarousel.js';
+import ImageCollage from '../components/ImageCollage.js';
 import { GREY, DARKER_GREY, PRIMARY } from '../config/styles.js';
 import { MAPS_API_KEY, PLACEHOLDER_IMG } from '../config/settings.js';
 
@@ -59,14 +59,19 @@ class PlaceDetailScreen extends Component {
 
   render() {
     const place = this.props.markers[this.props.selected];
-    const photos = place.properties.photoRefs ?
-      place.properties.photoRefs.map(ref =>
-        <Image
-          source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
-          style={styles.image}
-          key={ref}
-        />
-      ) : <Image source={{uri: PLACEHOLDER_IMG}} style={styles.image} />;
+    // const photos = place.properties.photoRefs ?
+    //   place.properties.photoRefs.map(ref =>
+    //     <Image
+    //       source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
+    //       style={styles.image}
+    //       key={ref}
+    //     />
+    //   ) : <Image source={{uri: PLACEHOLDER_IMG}} style={styles.image} />;
+
+    const photoUris = place.properties.photoRefs
+        ? place.properties.photoRefs.map(ref => `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=1000`)
+        : [];
+      
 
     let placeholder;
     if (this.props.editable) {
@@ -76,15 +81,15 @@ class PlaceDetailScreen extends Component {
     }
 
     return (
-      <View style={styles.container}>
-        <ImageCarousel
+      <ScrollView style={styles.container}>
+        {/* <ImageCarousel
           width={width}
           scrollValue={this.scrollValue}
           containerStyle={styles.scrollViewContainer}
           scrollViewStyle={styles.imageScrollView}
         >
           {photos}
-        </ImageCarousel>
+        </ImageCarousel> */}
         <View style={styles.textContainer}>
           <Text style={styles.mainText}>{place.properties.mainText}</Text>
           <Text style={styles.secondaryText}>{place.properties.secondaryText}</Text>
@@ -103,7 +108,11 @@ class PlaceDetailScreen extends Component {
             onPress={() => this.props.navigation.navigate('NoteEditor')}
           /> : null}
         </View>
-      </View>
+        <ImageCollage
+          containerStyle={{marginTop: 30, marginLeft: 10}}
+          uris={photoUris}
+        />
+      </ScrollView>
     );
   }
 }

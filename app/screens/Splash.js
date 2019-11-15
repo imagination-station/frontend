@@ -3,7 +3,8 @@ import {
   View,
   StyleSheet,
   Image,
-  StatusBar
+  StatusBar,
+  Platform
 } from 'react-native';
 import * as firebase from 'firebase';
 import { connect } from 'react-redux';
@@ -15,7 +16,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    padding: StatusBar.currentHeight,
+    padding: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
     backgroundColor: PRIMARY,
   },
   logo: {

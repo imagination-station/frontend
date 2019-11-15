@@ -12,7 +12,7 @@ const routeReducer = (state = INITIAL_STATE, action) => {
       return {
         ...state,
         markers: [...state.markers, action.payload.marker],
-        steps: action.payload.routeInfo ? [...state.steps, action.payload.routeInfo] : state.steps,
+        steps: action.payload.routeInfo ? [...state.steps, action.payload.routeInfo] : state.steps
       };
     case 'REMOVE':
       let indexToRemove;
