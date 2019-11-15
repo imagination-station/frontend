@@ -7,7 +7,8 @@ import {
   Animated,
   Dimensions,
   Image,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  Platform
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
@@ -288,8 +289,12 @@ class RouteDetailScreen extends Component {
     if (this.state.drawerCollapsed) {
       toValue = height - Header.HEIGHT - (55 + CARD_HEIGHT);
     } else {
-      toValue = height - Header.HEIGHT - 35;
-    }
+      if (Platform.OS === 'ios') {
+        toValue = height - Header.HEIGHT - 80;
+      } else {
+        toValue = height - Header.HEIGHT - 35;
+      }
+  }
 
     Animated.timing(
       this.collapseValue,
@@ -356,10 +361,10 @@ class RouteDetailScreen extends Component {
                   [this.props.markers[index], this.props.markers[index+1]].map(marker => marker.properties.placeId),
                   {
                     edgePadding: {
-                      top: 500,
-                      left: 500,
-                      bottom: 800,
-                      right: 500
+                      top: 100,
+                      left: 100,
+                      bottom: 300,
+                      right: 100
                     },
                     animated: true
                   }
@@ -449,9 +454,9 @@ class RouteDetailScreen extends Component {
                     {
                       edgePadding: {
                         top: 100,
-                        left: 75,
-                        bottom: 500,
-                        right: 75
+                        left: 100,
+                        bottom: 300,
+                        right: 100
                       },
                       animated: true
                     }
