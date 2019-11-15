@@ -16,6 +16,7 @@ import PlaceDetailScreen from './app/screens/PlaceDetail.js';
 import RouteDetailScreen from './app/screens/RouteDetail.js';
 import SignUpScreen from './app/screens/SignUp.js';
 import SplashScreen from './app/screens/Splash.js';
+import LocationScreen from './app/screens/Location.js';
 
 import Playground from './app/screens/Playground.js';
 
@@ -112,6 +113,7 @@ export default function App() {
     <Provider store={store}>
       <AppContainer />
       {/* <Playground /> */}
+      {/* <LocationScreen /> */}
     </Provider>
   );
 }

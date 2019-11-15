@@ -132,7 +132,7 @@ class CitySearch extends Component {
 
   onChangeText = text => {
     this.setState({textInput: text});
-    if (!this.searchTimer) {
+    if (!this.searchTimer && text !== '') {
       this.searchTimer = setTimeout(() => {
         fetch(`https://api.teleport.org/api/cities/?search=${this.state.textInput.replace(' ', '%20')}`)
           .then(response => response.json())
@@ -177,8 +177,7 @@ function SearchItem(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
       <View style={searchStyles.autoCompleteItem}>
-        <Text style={searchStyles.mainText}>{!props.item.matching_alternate_names[0] ? 'None' : props.item.matching_alternate_names[0].name}</Text>
-        <Text style={searchStyles.secondaryText}>{props.item.matching_full_name}</Text>
+        <Text style={searchStyles.mainText}>{props.item.matching_full_name}</Text>
       </View>
     </TouchableOpacity>
   );
