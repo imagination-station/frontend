@@ -21,7 +21,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import RouteCard from '../components/RouteCard.js';
 
-import { GREY, DARKER_GREY, PRIMARY } from '../config/styles.js';
+import { GREY, DARKER_GREY, PRIMARY, MINT_CREAM } from '../config/styles.js';
 import { SERVER_ADDR, PLACE_ID, GEONAME_ID, MAPS_API_KEY } from '../config/settings.js';
 
 const {width, height} = Dimensions.get('window');
@@ -29,11 +29,11 @@ const {width, height} = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    color: 'white',
+    backgroundColor: MINT_CREAM,
     paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight
   },
   sectionContainer: {
-    backgroundColor: 'white',
+    backgroundColor: MINT_CREAM,
     width: '100%',
     paddingTop: 20
   },
@@ -50,12 +50,12 @@ const styles = StyleSheet.create({
     flexGrow: 1
   },
   searchBoxContainer: {
-    backgroundColor: 'white',
+    backgroundColor: '#f7fff7',
     flexDirection: 'row',
     height: 46,
     width: '100%',
     alignItems: 'center',
-    paddingTop: 20,
+    paddingVertical: 15,
     paddingLeft: 20,
   },
   searchBox: {
@@ -240,7 +240,7 @@ class ExploreScreen extends Component {
             <Text style={styles.searchBox}>Try "Barcelona"</Text>
           </View>
         </TouchableWithoutFeedback>
-        <View style={{backgroundColor: 'white', paddingLeft: 20, paddingTop: 50}}>
+        <View style={{backgroundColor: MINT_CREAM, paddingLeft: 20, paddingTop: 50}}>
           <Text style={{fontWeight: 'bold', color: PRIMARY}}>EXPLORE CITY</Text>
           <Text style={styles.imageText}>{this.state.city ? this.state.city.name : ''}</Text>
         </View>

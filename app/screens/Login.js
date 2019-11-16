@@ -19,7 +19,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
-    padding: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight
+    padding: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
+    backgroundColor: PRIMARY
   },
   logo: {
     height: 125,
@@ -29,12 +30,13 @@ const styles = StyleSheet.create({
   },
   textInput: {
     height: 50,
-    paddingHorizontal: 10,
+    paddingHorizontal: 10, 
     width: 350,
     marginBottom: 10,
-    borderColor: GREY,
+    borderColor: GREY, 
     borderWidth: 2,
-    borderRadius: 20
+    borderRadius: 20,
+    backgroundColor: 'white'
   },
   logInButtton: {
     color: 'white',
@@ -65,6 +67,10 @@ function SignUpButton(props) {
 }
 
 class LoginScreen extends Component {
+
+  static navigationOptions = {
+    header: null
+  };
 
   state = {
     email: '',

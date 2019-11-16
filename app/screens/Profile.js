@@ -81,7 +81,7 @@ class ProfileScreen extends Component {
   componentDidMount() {
     firebase.auth().onAuthStateChanged(user => {
       if (user == null) {
-        this.props.navigation.navigate('Login');
+        this.props.navigation.navigate('Auth');
       }
     });
   }

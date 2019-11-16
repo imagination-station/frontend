@@ -4,17 +4,18 @@ import {
   View,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
-  StatusBar
+  ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
+import Button from '../components/Buttons.js';
 import { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: StatusBar.currentHeight
   },
 });
 
@@ -25,11 +26,11 @@ const searchStyles = StyleSheet.create({
     flexWrap: 'wrap'
   },
   textBoxContainer: {
+    backgroundColor: GREY,
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
     paddingHorizontal: '2.5%',
-    paddingTop: 10
   },
   textBox: {
     height: 46,
@@ -57,68 +58,68 @@ const searchStyles = StyleSheet.create({
   }
 });
 
-// class CitySearch extends Component {
-//   state = {
-//     textInput: this.props.searchInput,
-//     results: null
-//   };
+class CitySearch extends Component {
+  state = {
+    textInput: this.props.searchInput,
+    results: null
+  };
 
-//   SEARCH_TIMEOUT = 100; // ms
+  SEARCH_TIMEOUT = 100; // ms
 
-//   componentWillMount() {
-//     this.searchTimer = null;
-//   }
+  componentWillMount() {
+    this.searchTimer = null;
+  }
 
-//   componentDidMount() {
-//     if (this.state.textInput) {
-//       fetch(`https://api.teleport.org/api/cities/?search=${this.state.textInput.replace(' ', '%20')}`)
-//         .then(response => response.json())
-//         .then(responseJson => this.setState({results: responseJson._embedded['city:search-results']}));
-//     }
-//   }
+  componentDidMount() {
+    if (this.state.textInput) {
+      fetch(`https://api.teleport.org/api/cities/?search=${this.state.textInput.replace(' ', '%20')}`)
+        .then(response => response.json())
+        .then(responseJson => this.setState({results: responseJson._embedded['city:search-results']}));
+    }
+  }
 
-//   onChangeText = text => {
-//     this.setState({textInput: text});
-//     if (!this.searchTimer && text !== '') {
-//       this.searchTimer = setTimeout(() => {
-//         fetch(`https://api.teleport.org/api/cities/?search=${this.state.textInput.replace(' ', '%20')}`)
-//           .then(response => response.json())
-//           .then(responseJson => this.setState({results: responseJson._embedded['city:search-results']}));
-//         this.searchTimer = null;
-//       }, this.SEARCH_TIMEOUT);
-//     }
-//   }
+  onChangeText = text => {
+    this.setState({textInput: text});
+    if (!this.searchTimer && text !== '') {
+      this.searchTimer = setTimeout(() => {
+        fetch(`https://api.teleport.org/api/cities/?search=${this.state.textInput.replace(' ', '%20')}`)
+          .then(response => response.json())
+          .then(responseJson => this.setState({results: responseJson._embedded['city:search-results']}));
+        this.searchTimer = null;
+      }, this.SEARCH_TIMEOUT);
+    }
+  }
 
-//   render() {
-//     return (
-//       <View style={searchStyles.container}>
-//         <View style={searchStyles.textBoxContainer}>
-//           <TextInput
-//             autoFocus
-//             style={searchStyles.textBox}
-//             placeholder='Search'
-//             value={this.state.textInput}
-//             onChangeText={this.onChangeText}
-//           />
-//           <TouchableOpacity onPress={() => this.setState({textInput: ''})}>
-//             <Icon name='clear' size={30} />
-//           </TouchableOpacity>
-//         </View>
-//         <View style={searchStyles.list}>
-//           <FlatList
-//             data={this.state.results}
-//             renderItem={({ item }) => <SearchItem
-//               item={item}
-//               // navigation passed in to pop from search page
-//               onPress={() => this.props.onPressItem(item, this.props.navigation)}
-//             />}
-//             keyExtractor={item => item._links['city:item'].href}
-//           />
-//         </View>
-//       </View>
-//     );
-//   }
-// }
+  render() {
+    return (
+      <View style={searchStyles.container}>
+        <View style={searchStyles.textBoxContainer}>
+          <TextInput
+            autoFocus
+            style={searchStyles.textBox}
+            placeholder='Search'
+            value={this.state.textInput}
+            onChangeText={this.onChangeText}
+          />
+          <TouchableOpacity onPress={() => this.setState({textInput: ''})}>
+            <Icon name='clear' size={30} />
+          </TouchableOpacity>
+        </View>
+        <View style={searchStyles.list}>
+          <FlatList
+            data={this.state.results}
+            renderItem={({ item }) => <SearchItem
+              item={item}
+              // navigation passed in to pop from search page
+              onPress={() => this.props.onPressItem(item, this.props.navigation)}
+            />}
+            keyExtractor={item => item._links['city:item'].href}
+          />
+        </View>
+      </View>
+    );
+  }
+}
 
 function SearchItem(props) {
   return (
@@ -133,9 +134,17 @@ function SearchItem(props) {
 
 class Location extends Component {
 
+  static navigationOptions = {
+    headerTitle: () => <Text style={{fontSize: 20, marginLeft: 10}}>Sign up</Text>,
+    headerRight: () => (
+      <Button title='Next' />
+    )
+  };
+
   state = {
     textInput: '',
-    location: null
+    location: null,
+    autoDetectionHandled: false
   }
 
   componentDidMount() {
@@ -143,11 +152,16 @@ class Location extends Component {
       position => {
         const latitude = JSON.stringify(position.coords.latitude);
         const longitude = JSON.stringify(position.coords.longitude);
+
         fetch(`https://api.teleport.org/api/locations/${latitude},${longitude}/`)
           .then(response => response.json())
           .then(responseJson => fetch(responseJson._embedded['location:nearest-cities'][0]._links['location:nearest-city'].href))
           .then(response => response.json())
-          .then(responseJson => this.setState({location: responseJson}));
+          .then(responseJson => this.setState({
+            location: responseJson,
+            autoDetectionHandled: true,
+            textInput: responseJson.full_name
+          }));
       },
       err => {
         console.log(err);
@@ -158,16 +172,23 @@ class Location extends Component {
   render() {
     return (
       <View style={styles.container}>
-        <View>
-    
+        <View style={searchStyles.textBoxContainer}>
+          <TextInput
+            style={searchStyles.textBox}
+            placeholder={this.state.autoDetectionHandled ? 'Search': 'Getting your city...'}
+            value={this.state.textInput}
+            onChangeText={this.onChangeText}
+            editable={this.state.autoDetectionHandled}
+          />
+          {this.state.autoDetectionHandled ? <TouchableOpacity onPress={() => this.setState({textInput: ''})}>
+            <Icon name='clear' size={30} />
+          </TouchableOpacity>
+          : <ActivityIndicator size='small' color='black' />}
         </View>
-        <Text style={{fontSize: 50, marginLeft: 10, marginTop: 20, color: ACCENT}}>Where do you live?</Text>
-        <Text style={{marginLeft: 10, fontSize: 16}}>Your content will receive priority in the city you live in.</Text>
-        {this.state.location &&
-          <View style={{alignSelf: 'center', marginTop: 50}}>
-            <Text>{this.state.location.full_name}</Text>
-          </View>
-        }
+        <View style={{flex: 1, alignItems: 'center'}}>
+          <Text style={{fontSize: 24, marginBottom: 5, marginTop: 100}}>Where do you live?</Text>
+          {/* <Text style={{fontSize: 16}}>Your content will receive priority in the city you live in.</Text> */}
+        </View>
       </View>
     );
   }
