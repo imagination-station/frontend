@@ -62,6 +62,13 @@ export default function PathCard(props) {
               color={props.bookmarked ? '#f1c236': 'rgba(0, 0, 0, 0.5)'}
             />
           </TouchableOpacity>
+          <TouchableOpacity onPress={props.onLike}>
+            <Icon
+              name={props.liked ? 'favorite' : 'favorite-border'}
+              size={25}
+              color={props.liked ? '#fd889c': 'rgba(0, 0, 0, 0.5)'}
+            />
+          </TouchableOpacity>
         </View>
         <Image source={pic} style={styles.cardImage} resizeMode='cover' />
         <View style={styles.textContent}>
