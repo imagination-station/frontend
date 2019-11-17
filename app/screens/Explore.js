@@ -13,18 +13,23 @@ import {
   TouchableOpacity,
   StatusBar,
   FlatList,
-  Platform
+  Platform,
+  Slider
 } from 'react-native';
 import * as firebase from 'firebase';
 import { connect } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import TimePicker from 'react-native-simple-time-picker';
 
 import RouteCard from '../components/RouteCard.js';
 
-import { GREY, DARKER_GREY, PRIMARY } from '../config/styles.js';
+import { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
 import { SERVER_ADDR, PLACE_ID, GEONAME_ID, MAPS_API_KEY } from '../config/settings.js';
 
 const {width, height} = Dimensions.get('window');
+
+const METERS_TO_MILES = 1609.34;
+const SECONDS_TO_MINUTES = 60;
 
 const styles = StyleSheet.create({
   container: {
@@ -75,7 +80,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     height: 46,
     paddingHorizontal: 10,
-    width: '90%',
+    width: '80%',
     color: 'grey'
   },
 });
@@ -115,6 +120,16 @@ const searchStyles = StyleSheet.create({
   secondaryText: {
     fontSize: 10,
     color: 'grey'
+  }
+});
+
+const filterStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 16
   }
 });
 
@@ -181,6 +196,54 @@ class CitySearch extends Component {
   }
 }
 
+class RouteFilter extends Component {
+  state = {
+    selectedHours: Math.floor(this.props.time / 60),
+    selectedMinutes: this.props.time - (60 * Math.floor(this.props.time / 60)),
+    selectedDistance: this.props.distance
+  };
+
+  componentWillMount() {
+    console.log('will mount');
+  }
+
+  componentDidMount() {
+    console.log('didMount');
+  }
+
+  render() {
+    const { selectedHours, selectedMinutes, selectedDistance } = this.state;
+    return(
+      <View style={filterStyles.container}>
+        <Text style={{fontWeight: 'bold'}}>Time Filter</Text>
+        <Text>{selectedHours} hr : {selectedMinutes} min</Text>
+        <TimePicker
+          selectedHours={selectedHours}
+          selectedMinutes={selectedMinutes}
+          onChange={(hours, minutes) => {
+            this.setState({ selectedHours: hours, selectedMinutes: minutes });
+            this.props.filterTime(hours * 60 + minutes);
+          }}
+        />
+        <Text style={{fontWeight: 'bold'}}>Distance Filter</Text>
+        <Slider
+          style={{width: 200, height: 40}}
+          minimumValue={0.5}
+          maximumValue={10}
+          minimumTrackTintColor='#eb8993'
+          maximumTrackTintColor='#577590'
+          step={0.05}
+          value={selectedDistance}
+          onValueChange={distance => {
+            this.setState({selectedDistance: distance});
+            this.props.filterDistance(distance);
+          }}
+        />
+      </View>
+    )
+  }
+}
+
 function SearchItem(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
@@ -204,6 +267,9 @@ function CityImage(props) {
           <TouchableOpacity onPress={this.onClearSearch}>
             <Icon name='clear' size={30} color='grey' />
           </TouchableOpacity>
+          <TouchableOpacity onPress={props.onPressFilter}>
+            <Icon name='menu' size={30} color='grey' />
+          </TouchableOpacity>
         </View>
         <View style={{paddingLeft: 10, position: 'absolute', bottom: 10}}>
           <Text style={{fontWeight: 'bold', color: PRIMARY}}>Welcome to</Text>
@@ -226,7 +292,14 @@ class ExploreScreen extends Component {
     geonameid: GEONAME_ID,
     city: null,
     photoUri: '',
-    searchInput: ''
+    searchInput: '',
+    // filtering
+    distance: [],
+    time: [],
+    filterByDistance: false,
+    filterByTime: false,
+    distanceFilterValue: 0,
+    timeFilterValue: 0
   };
 
   componentDidMount() {
@@ -239,7 +312,6 @@ class ExploreScreen extends Component {
       })
       .then(response => response.json())
       .then(responseJson => this.setState({photoUri: responseJson.photos[0].image.mobile}));
-
     firebase.auth().currentUser.getIdToken().then(token =>
       fetch(`${SERVER_ADDR}/cities/${PLACE_ID}/routes`, {
         method: 'GET',
@@ -251,12 +323,17 @@ class ExploreScreen extends Component {
       })
     )
     .then(response => response.json())
-    .then(responseJson => this.setState({
-      routes: responseJson,
-      bookmarks: new Array(responseJson.length),
-      bookmarks_id: new Array(responseJson.length),
-      likes: new Array(responseJson.length)
-    }))
+    .then(responseJson => {
+      this.setState({
+        routes: responseJson,
+        bookmarks: new Array(responseJson.length),
+        bookmarks_id: new Array(responseJson.length),
+        likes: new Array(responseJson.length),
+        distance: new Array(responseJson.length).fill(0),
+        time: new Array(responseJson.length).fill(0)
+      });
+      this.getDistanceAndTime();
+    })
     .catch(error => console.error(error));
   }
 
@@ -282,15 +359,74 @@ class ExploreScreen extends Component {
       routes: responseJson,
       bookmarks: new Array(responseJson.length),
       bookmarks_id: new Array(responseJson.length),
-      likes: new Array(responseJson.length)
+      likes: new Array(responseJson.length),
+      distance: new Array(responseJson.length).fill(0),
+      time: new Array(responseJson.length).fill(0)
     }))
     .catch(error => console.error(error));
     this.setState({refreshing: false});
   }
 
+  getDistanceAndTime = () => {
+    console.log('getting distance and time data');
+    let fetches = [];
+    for (let i = 0; i < this.state.routes.length; i++) {
+      fetches.push([]);
+      let markers = this.state.routes[i].pins;
+      for (let j = 0; j < markers.length - 1; j++) {
+        fetches[i].push(
+          fetch(`https://maps.googleapis.com/maps/api/directions/json?key=${MAPS_API_KEY}&origin=place_id:${markers[j].properties.placeId}&destination=place_id:${markers[j+1].properties.placeId}&mode=walking`)
+            .then(response => response.json())
+        );
+      }
+      Promise.all(fetches[i])
+        .then(responseJson => {
+          let distance = 0;
+          let time = 0;
+          for (let k = 0; k < responseJson.length; k++) {
+            distance += responseJson[k].routes[0].legs[0].distance.value;
+            time += responseJson[k].routes[0].legs[0].duration.value;
+          }
+          distance /= METERS_TO_MILES;
+          time /= SECONDS_TO_MINUTES;
+          let distanceArray = [...this.state.distance];
+          let timeArray = [...this.state.time];
+          distanceArray[i] = distance;
+          timeArray[i] = time;
+          this.setState({
+            distance: distanceArray,
+            time: timeArray
+          });
+        });
+    }
+  }
+
+  setDistanceLimit = (distance) => {
+    this.setState({
+      distanceFilterValue: distance,
+      filterByDistance: true
+    })
+  }
+
+  setTimeLimit = (time) => {
+    this.setState({
+      timeFilterValue: time,
+      filterByTime: true
+    })
+  }
+
   onRefresh() {
-      console.log('refreshing');
-      this.getData();
+    this.getData();
+  }
+
+  onPressFilter = () => {
+    console.log(this.state.distance);
+    this.props.navigation.navigate('RouteFilter', {
+      filterDistance: this.setDistanceLimit,
+      filterTime: this.setTimeLimit,
+      time: this.state.timeFilterValue,
+      distance: this.state.distanceFilterValue
+    });
   }
 
   onPressSearch = () => {
@@ -317,7 +453,7 @@ class ExploreScreen extends Component {
     <ScrollView contentContainerStyle={styles.scrollView} refreshControl={<RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh.bind(this)} />}>
       <View style={styles.container}>
         <ScrollView style={{flex: 1}}>
-          <CityImage title={this.state.city ? this.state.city.name : 'Loading...'} uri={this.state.photoUri} onPressSearchBox={this.onPressSearch} />
+          <CityImage title={this.state.city ? this.state.city.name : 'Loading...'} uri={this.state.photoUri} onPressSearchBox={this.onPressSearch} onPressFilter={this.onPressFilter} />
           <View style={styles.sectionContainer}>
             <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>Art and Architecture</Text>
             <Animated.ScrollView
@@ -338,93 +474,97 @@ class ExploreScreen extends Component {
               style={{width: '100%', backgroundColor: 'transparent', paddingLeft: 10, marginBottom: 25}}
             >
               {this.state.routes.map((item, index) => {
-                let photoRef = item.pins[0].properties.photoRefs[0];
-                return (
-                  <RouteCard
-                    key={item._id}
-                    title={item.name}
-                    photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
-                    onPress={() => this.props.navigation.navigate('RouteDetail', {
-                      route: item
-                    })}
-                    bookmarked={this.state.bookmarks[index]}
-                    liked={this.state.likes[index]}
-                    onBookmark = {() => {
-                      let bookmarks = [...this.state.bookmarks];
-                      bookmarks[index] = !this.state.bookmarks[index];
-                      this.setState({bookmarks: bookmarks});
-                      let bookmarks_id = [...this.state.bookmarks_id];
-                      let routeId = this.state.routes[index]._id;
-                      console.log(`Route ID: ${routeId}`);
-                      console.log(bookmarks);
-                      if (bookmarks[index]) {
+                const timeCondition = this.state.filterByTime && this.state.timeFilterValue != 0 ? this.state.time[index] <= this.state.timeFilterValue : true;
+                const distanceCondition = this.state.filterByDistance && this.state.distanceFilterValue != 0 ? this.state.distance[index] <= this.state.distanceFilterValue : true;
+                if (timeCondition && distanceCondition) {
+                  let photoRef = item.pins[0].properties.photoRefs[0];
+                  return (
+                    <RouteCard
+                      key={item._id}
+                      title={item.name}
+                      photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
+                      onPress={() => this.props.navigation.navigate('RouteDetail', {
+                        route: item
+                      })}
+                      bookmarked={this.state.bookmarks[index]}
+                      liked={this.state.likes[index]}
+                      onBookmark = {() => {
+                        let bookmarks = [...this.state.bookmarks];
+                        bookmarks[index] = !this.state.bookmarks[index];
+                        this.setState({bookmarks: bookmarks});
+                        let bookmarks_id = [...this.state.bookmarks_id];
+                        let routeId = this.state.routes[index]._id;
+                        console.log(`Route ID: ${routeId}`);
+                        console.log(bookmarks);
+                        if (bookmarks[index]) {
+                          firebase.auth().currentUser.getIdToken().then(token =>
+                            fetch(`${SERVER_ADDR}/users/${this.props.userId}/forks`, {
+                              method: 'POST',
+                              headers: {
+                                Accept: 'application/json',
+                                'Content-type': 'application/json',
+                                Authorization: `Bearer ${token}`
+                              },
+                              body: JSON.stringify({
+                                routeId: routeId,
+                              })
+                            })
+                          )
+                          .then(response => response.json())
+                          .then(responseJson => {
+                            let tempID = responseJson["Mongo ObjectID"];
+                            bookmarks_id[index] = tempID;
+                            this.setState({bookmarks_id: bookmarks_id});
+                          })
+                         } else {
+                           let route_id = this.state.bookmarks_id[index];
+                           console.log(`Deleting ${route_id}`);
+                           firebase.auth().currentUser.getIdToken().then(token =>
+                             fetch(`${SERVER_ADDR}/cities/routes/${route_id}`, {
+                               method: 'DELETE',
+                               headers: {
+                                 Accept: 'application/json',
+                                 'Content-type': 'application/json',
+                                 Authorization: `Bearer ${token}`
+                               }
+                             }))
+                             .then(response => response.json())
+                             .then(responseJson => {
+                               console.log(responseJson);
+                             })
+                        }
+                      }}
+                      onLike = {() => {
+                        let likes = [...this.state.likes];
+                        likes[index] = !this.state.likes[index];
+                        this.setState({likes: likes});
+                        let routeId = this.state.routes[index]._id;
+                        console.log(`Route ID: ${routeId}`);
+                        console.log(likes);
+                        like = likes[index] ? "like" : "unlike";
+                        console.log(like);
                         firebase.auth().currentUser.getIdToken().then(token =>
-                          fetch(`${SERVER_ADDR}/users/${this.props.userId}/forks`, {
-                            method: 'POST',
+                          fetch(`${SERVER_ADDR}/cities/routes/${routeId}/likes`, {
+                            method: 'PATCH',
                             headers: {
                               Accept: 'application/json',
                               'Content-type': 'application/json',
                               Authorization: `Bearer ${token}`
                             },
                             body: JSON.stringify({
-                              routeId: routeId,
+                              type: like,
+                              userId: this.props.userId
                             })
                           })
                         )
-                        .then(response => response.json())
-                        .then(responseJson => {
-                          let tempID = responseJson["Mongo ObjectID"];
-                          bookmarks_id[index] = tempID;
-                          this.setState({bookmarks_id: bookmarks_id});
+                        .then(response => response.text())
+                        .then(responseText => {
+                          console.log(responseText);
                         })
-                       } else {
-                         let route_id = this.state.bookmarks_id[index];
-                         console.log(`Deleting ${route_id}`);
-                         firebase.auth().currentUser.getIdToken().then(token =>
-                           fetch(`${SERVER_ADDR}/cities/routes/${route_id}`, {
-                             method: 'DELETE',
-                             headers: {
-                               Accept: 'application/json',
-                               'Content-type': 'application/json',
-                               Authorization: `Bearer ${token}`
-                             }
-                           }))
-                           .then(response => response.json())
-                           .then(responseJson => {
-                             console.log(responseJson);
-                           })
-                      }
-                    }}
-                    onLike = {() => {
-                      let likes = [...this.state.likes];
-                      likes[index] = !this.state.likes[index];
-                      this.setState({likes: likes});
-                      let routeId = this.state.routes[index]._id;
-                      console.log(`Route ID: ${routeId}`);
-                      console.log(likes);
-                      like = likes[index] ? "like" : "unlike";
-                      console.log(like);
-                      firebase.auth().currentUser.getIdToken().then(token =>
-                        fetch(`${SERVER_ADDR}/cities/routes/${routeId}/likes`, {
-                          method: 'PATCH',
-                          headers: {
-                            Accept: 'application/json',
-                            'Content-type': 'application/json',
-                            Authorization: `Bearer ${token}`
-                          },
-                          body: JSON.stringify({
-                            type: like,
-                            userId: this.props.userId
-                          })
-                        })
-                      )
-                      .then(response => response.text())
-                      .then(responseText => {
-                        console.log(responseText);
-                      })
-                    }}
-                  />
-                );
+                      }}
+                    />
+                  );
+                }
               })}
             </Animated.ScrollView>
             <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>Foodie</Text>
@@ -443,4 +583,5 @@ const mapStateToProps = state => {
 }
 
 export const CitySearchScreen = connect(mapStateToProps)(CitySearch);
+export const RouteFilterScreen = connect(mapStateToProps)(RouteFilter);
 export default connect(mapStateToProps)(ExploreScreen);
