@@ -130,6 +130,11 @@ const filterStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: 16
+  },
+  textCon: {
+    width: 320,
+    flexDirection: 'row',
+    justifyContent: 'space-between'
   }
 });
 
@@ -200,7 +205,9 @@ class RouteFilter extends Component {
   state = {
     selectedHours: Math.floor(this.props.time / 60),
     selectedMinutes: this.props.time - (60 * Math.floor(this.props.time / 60)),
-    selectedDistance: this.props.distance
+    selectedDistance: this.props.distance,
+    minimumDistance: this.props.minimumDistance,
+    maximumDistance: this.props.maximumDistance
   };
 
   componentWillMount() {
@@ -212,12 +219,14 @@ class RouteFilter extends Component {
   }
 
   render() {
-    const { selectedHours, selectedMinutes, selectedDistance } = this.state;
+    const { selectedHours, selectedMinutes } = this.state;
+    const left = this.state.selectedDistance * (width - 55)/21 - 75;
     return(
       <View style={filterStyles.container}>
         <Text style={{fontWeight: 'bold'}}>Time Filter</Text>
         <Text>{selectedHours} hr : {selectedMinutes} min</Text>
         <TimePicker
+          style={{height: 50}}
           selectedHours={selectedHours}
           selectedMinutes={selectedMinutes}
           onChange={(hours, minutes) => {
@@ -227,18 +236,22 @@ class RouteFilter extends Component {
         />
         <Text style={{fontWeight: 'bold'}}>Distance Filter</Text>
         <Slider
-          style={{width: 200, height: 40}}
-          minimumValue={0.5}
-          maximumValue={10}
+          style={{width: 200, height: 50}}
+          minimumValue={this.state.minimumDistance}
+          maximumValue={this.state.maximumDistance}
           minimumTrackTintColor='#eb8993'
           maximumTrackTintColor='#577590'
-          step={0.05}
-          value={selectedDistance}
+          step={0.25}
+          value={this.state.selectedDistance}
           onValueChange={distance => {
-            this.setState({selectedDistance: distance});
-            this.props.filterDistance(distance);
+            let dist = distance.toFixed(2);
+            this.setState({selectedDistance: dist});
+            this.props.filterDistance(dist);
           }}
         />
+        <View style={styles.textCon}>
+          <Text style={{color: '#eb8993', left: left}}>{this.state.selectedDistance + ' mi'}</Text>
+        </View>
       </View>
     )
   }
@@ -299,7 +312,9 @@ class ExploreScreen extends Component {
     filterByDistance: false,
     filterByTime: false,
     distanceFilterValue: 0,
-    timeFilterValue: 0
+    timeFilterValue: 0,
+    minimumDistance: 0,
+    maximumDistance: 10
   };
 
   componentDidMount() {
@@ -425,7 +440,9 @@ class ExploreScreen extends Component {
       filterDistance: this.setDistanceLimit,
       filterTime: this.setTimeLimit,
       time: this.state.timeFilterValue,
-      distance: this.state.distanceFilterValue
+      distance: this.state.distanceFilterValue,
+      minimumDistance: this.state.minimumDistance,
+      maximumDistance: this.state.maximumDistance
     });
   }
 
@@ -475,7 +492,7 @@ class ExploreScreen extends Component {
             >
               {this.state.routes.map((item, index) => {
                 const timeCondition = this.state.filterByTime && this.state.timeFilterValue != 0 ? this.state.time[index] <= this.state.timeFilterValue : true;
-                const distanceCondition = this.state.filterByDistance && this.state.distanceFilterValue != 0 ? this.state.distance[index] <= this.state.distanceFilterValue : true;
+                const distanceCondition = this.state.distanceFilterValue != this.state.maximumDistance && this.state.distanceFilterValue != this.state.minimumDistance ? this.state.distance[index] <= this.state.distanceFilterValue : true;
                 if (timeCondition && distanceCondition) {
                   let photoRef = item.pins[0].properties.photoRefs[0];
                   return (
