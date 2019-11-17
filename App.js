@@ -4,7 +4,7 @@ import { createStackNavigator } from 'react-navigation-stack';
 import { createMaterialBottomTabNavigator } from 'react-navigation-material-bottom-tabs';
 import * as firebase from 'firebase';
 import { Provider } from 'react-redux';
-import { createStore } from 'redux'; 
+import { createStore } from 'redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import LoginScreen from './app/screens/Login.js';
@@ -16,6 +16,7 @@ import PlaceDetailScreen from './app/screens/PlaceDetail.js';
 import RouteDetailScreen from './app/screens/RouteDetail.js';
 import SignUpScreen from './app/screens/SignUp.js';
 import SplashScreen from './app/screens/Splash.js';
+import TutorialScreen from './app/screens/Tutorial.js';
 import LocationScreen from './app/screens/Location.js';
 
 import Playground from './app/screens/Playground.js';
@@ -81,6 +82,7 @@ const HomeStack = createStackNavigator({
   PlaceDetail: mapNavigationStateParamsToProps(PlaceDetailScreen),
   NoteEditor: mapNavigationStateParamsToProps(NoteEditorScreen),
   RouteDetail: RouteDetailScreen,
+  Tutorial: TutorialScreen
 });
 
 const AppNavigator = createSwitchNavigator(
@@ -117,4 +119,3 @@ export default function App() {
     </Provider>
   );
 }
-
