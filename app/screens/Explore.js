@@ -309,8 +309,6 @@ class ExploreScreen extends Component {
     // filtering
     distance: [],
     time: [],
-    filterByDistance: false,
-    filterByTime: false,
     distanceFilterValue: 0,
     timeFilterValue: 0,
     minimumDistance: 0,
@@ -419,14 +417,12 @@ class ExploreScreen extends Component {
   setDistanceLimit = (distance) => {
     this.setState({
       distanceFilterValue: distance,
-      filterByDistance: true
     })
   }
 
   setTimeLimit = (time) => {
     this.setState({
       timeFilterValue: time,
-      filterByTime: true
     })
   }
 
@@ -439,7 +435,7 @@ class ExploreScreen extends Component {
     this.props.navigation.navigate('RouteFilter', {
       filterDistance: this.setDistanceLimit,
       filterTime: this.setTimeLimit,
-      time: this.state.timeFilterValue,
+      time: this.state.timeFilterValue == 1500 ? 0 : this.state.timeFilterValue,
       distance: this.state.distanceFilterValue,
       minimumDistance: this.state.minimumDistance,
       maximumDistance: this.state.maximumDistance
@@ -491,7 +487,7 @@ class ExploreScreen extends Component {
               style={{width: '100%', backgroundColor: 'transparent', paddingLeft: 10, marginBottom: 25}}
             >
               {this.state.routes.map((item, index) => {
-                const timeCondition = this.state.filterByTime && this.state.timeFilterValue != 0 ? this.state.time[index] <= this.state.timeFilterValue : true;
+                const timeCondition = this.state.timeFilterValue != 0 && this.state.timeFilterValue != 1500 ? this.state.time[index] <= this.state.timeFilterValue : true;
                 const distanceCondition = this.state.distanceFilterValue != this.state.maximumDistance && this.state.distanceFilterValue != this.state.minimumDistance ? this.state.distance[index] <= this.state.distanceFilterValue : true;
                 if (timeCondition && distanceCondition) {
                   let photoRef = item.pins[0].properties.photoRefs[0];
