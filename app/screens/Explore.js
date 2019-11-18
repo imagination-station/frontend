@@ -11,6 +11,7 @@ import {
   RefreshControl,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   StatusBar,
   FlatList,
   Platform
@@ -21,17 +22,19 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import RouteCard from '../components/RouteCard.js';
 
-import { GREY, DARKER_GREY, PRIMARY } from '../config/styles.js';
+import { GREY, DARKER_GREY, PRIMARY, MINT_CREAM } from '../config/styles.js';
 import { SERVER_ADDR, PLACE_ID, GEONAME_ID, MAPS_API_KEY } from '../config/settings.js';
 
 const {width, height} = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
+    backgroundColor: MINT_CREAM,
+    paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight
   },
   sectionContainer: {
-    backgroundColor: 'white',
+    backgroundColor: MINT_CREAM,
     width: '100%',
     paddingTop: 20
   },
@@ -40,16 +43,9 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     color: DARKER_GREY
   },
-  imageContainer: {
-    height: Math.floor(height / 2)
-  },
   imageText: {
-    color: 'white',
-    fontSize: 48,
-  },
-  image: {
-    height: Math.floor(height / 2),
-    resizeMode: 'cover'
+    color: 'black',
+    fontSize: 40,
   },
   endPadding: {
     flexGrow: 1
@@ -61,29 +57,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   searchBoxContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'white',
     flexDirection: 'row',
     height: 46,
-    borderRadius: 10,
-    width: '95%',
-    top: Platform.OS === 'ios' ? 45 : 10 + StatusBar.currentHeight,
-    marginHorizontal: '2.5%',
-    position: 'absolute',
+    width: '100%',
     alignItems: 'center',
+    paddingVertical: 15,
+    paddingLeft: 20,
   },
   searchBox: {
-    backgroundColor: 'transparent',
-    height: 46,
-    paddingHorizontal: 10,
-    width: '90%',
-    color: 'grey'
+    color: 'grey',
+    marginLeft: 10,
+    fontSize: 15
   },
 });
 
 const searchStyles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   textBoxContainer: {
     flexDirection: 'row',
@@ -162,7 +154,7 @@ class CitySearch extends Component {
             onChangeText={this.onChangeText}
           />
           <TouchableOpacity onPress={() => this.setState({textInput: ''})}>
-            <Icon name='clear' size={30} />
+            <Icon name='search' size={30} />
           </TouchableOpacity>
         </View>
         <View style={searchStyles.list}>
@@ -191,33 +183,10 @@ function SearchItem(props) {
   );
 }
 
-function CityImage(props) {
-  return (
-    <View style={styles.imageContainer}>
-      <Image source={{uri: props.uri}} style={styles.image} />
-        <View style={styles.searchBoxContainer}>
-          <TextInput
-            style={styles.searchBox}
-            placeholder='Try "Barcelona"'
-            onTouchEnd={props.onPressSearchBox}
-          />
-          <TouchableOpacity onPress={this.onClearSearch}>
-            <Icon name='clear' size={30} color='grey' />
-          </TouchableOpacity>
-        </View>
-        <View style={{paddingLeft: 10, position: 'absolute', bottom: 10}}>
-          <Text style={{fontWeight: 'bold', color: PRIMARY}}>Welcome to</Text>
-          <Text style={styles.imageText}>{props.title}</Text>
-        </View>
-    </View>
-  );
-}
-
 class ExploreScreen extends Component {
 
   state = {
     routes: [],
-    // simulate bookmarks
     bookmarks: [],
     bookmarks_id: [],
     likes: [],
@@ -225,7 +194,6 @@ class ExploreScreen extends Component {
     // hardcoded for Atlanta for now
     geonameid: GEONAME_ID,
     city: null,
-    photoUri: '',
     searchInput: ''
   };
 
@@ -235,10 +203,10 @@ class ExploreScreen extends Component {
       .then(response => response.json())
       .then(responseJson => {
         this.setState({city: responseJson});
-        return fetch(responseJson._links['city:urban_area'].href + 'images/');
       })
-      .then(response => response.json())
-      .then(responseJson => this.setState({photoUri: responseJson.photos[0].image.mobile}));
+      .catch(err => {
+        console.log(error);
+      });
 
     firebase.auth().currentUser.getIdToken().then(token =>
       fetch(`${SERVER_ADDR}/cities/${PLACE_ID}/routes`, {
@@ -301,25 +269,29 @@ class ExploreScreen extends Component {
   }
 
   onPressSearchItem = (item, navigation) => {
-    navigation.goBack();
     fetch(item._links['city:item'].href)
       .then(response => response.json())
       .then(responseJson => {
-        this.setState({city: responseJson});
-        return fetch(responseJson._links['city:urban_area'].href + 'images/');
-      })
-      .then(response => response.json())
-      .then(responseJson => this.setState({photoUri: responseJson.photos[0].image.mobile}));
+        this.setState({city: responseJson}, navigation.goBack);
+      });
   }
 
   render() {
     return (
-    <ScrollView contentContainerStyle={styles.scrollView} refreshControl={<RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh.bind(this)} />}>
       <View style={styles.container}>
         <ScrollView style={{flex: 1}}>
-          <CityImage title={this.state.city ? this.state.city.name : 'Loading...'} uri={this.state.photoUri} onPressSearchBox={this.onPressSearch} />
+          <TouchableWithoutFeedback onPress={this.onPressSearch}>
+            <View style={styles.searchBoxContainer}>
+              <Icon name='search' size={30} color='grey' />
+              <Text style={styles.searchBox}>Try "Barcelona"</Text>
+            </View>
+          </TouchableWithoutFeedback>
+          <View style={{backgroundColor: MINT_CREAM, paddingLeft: 20, paddingTop: 50}}>
+            <Text style={{fontWeight: 'bold', color: PRIMARY}}>EXPLORE CITY</Text>
+            <Text style={styles.imageText}>{this.state.city ? this.state.city.name : ''}</Text>
+          </View>
           <View style={styles.sectionContainer}>
-            <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>Art and Architecture</Text>
+            <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>Nearby</Text>
             <Animated.ScrollView
               contentContainerStyle={styles.endPadding}
               horizontal
@@ -344,11 +316,11 @@ class ExploreScreen extends Component {
                     key={item._id}
                     title={item.name}
                     photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
+                    numLikes={item.numLikes}
                     onPress={() => this.props.navigation.navigate('RouteDetail', {
                       route: item
                     })}
                     bookmarked={this.state.bookmarks[index]}
-                    liked={this.state.likes[index]}
                     onBookmark = {() => {
                       let bookmarks = [...this.state.bookmarks];
                       bookmarks[index] = !this.state.bookmarks[index];
@@ -377,61 +349,32 @@ class ExploreScreen extends Component {
                           bookmarks_id[index] = tempID;
                           this.setState({bookmarks_id: bookmarks_id});
                         })
-                       } else {
-                         let route_id = this.state.bookmarks_id[index];
-                         console.log(`Deleting ${route_id}`);
-                         firebase.auth().currentUser.getIdToken().then(token =>
-                           fetch(`${SERVER_ADDR}/cities/routes/${route_id}`, {
-                             method: 'DELETE',
-                             headers: {
-                               Accept: 'application/json',
-                               'Content-type': 'application/json',
-                               Authorization: `Bearer ${token}`
-                             }
-                           }))
-                           .then(response => response.json())
-                           .then(responseJson => {
-                             console.log(responseJson);
-                           })
-                      }
-                    }}
-                    onLike = {() => {
-                      let likes = [...this.state.likes];
-                      likes[index] = !this.state.likes[index];
-                      this.setState({likes: likes});
-                      let routeId = this.state.routes[index]._id;
-                      console.log(`Route ID: ${routeId}`);
-                      console.log(likes);
-                      like = likes[index] ? "like" : "unlike";
-                      console.log(like);
-                      firebase.auth().currentUser.getIdToken().then(token =>
-                        fetch(`${SERVER_ADDR}/cities/routes/${routeId}/likes`, {
-                          method: 'PATCH',
-                          headers: {
-                            Accept: 'application/json',
-                            'Content-type': 'application/json',
-                            Authorization: `Bearer ${token}`
-                          },
-                          body: JSON.stringify({
-                            type: like,
-                            userId: this.props.userId
-                          })
-                        })
-                      )
-                      .then(response => response.text())
-                      .then(responseText => {
-                        console.log(responseText);
-                      })
-                    }}
+                        } else {
+                          let route_id = this.state.bookmarks_id[index];
+                          console.log(`Deleting ${route_id}`);
+                          firebase.auth().currentUser.getIdToken().then(token =>
+                            fetch(`${SERVER_ADDR}/cities/routes/${route_id}`, {
+                              method: 'DELETE',
+                              headers: {
+                                Accept: 'application/json',
+                                'Content-type': 'application/json',
+                                Authorization: `Bearer ${token}`
+                              }
+                            }))
+                            .then(response => response.json())
+                            .then(responseJson => {
+                              console.log(responseJson);
+                            })
+                        }
+                    }
+                  }
                   />
                 );
               })}
             </Animated.ScrollView>
-            <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>Foodie</Text>
           </View>
         </ScrollView>
       </View>
-    </ScrollView>
     );
   }
 }
