@@ -76,6 +76,8 @@ class SplashScreen extends Component {
           .then(responseJson => {
             console.log('uid', responseJson._id);
             this.props.logIn(responseJson._id);
+            this.props.setLatitude(this.state.latitude);
+            this.props.setLongitude(this.state.longitude);
             this.props.navigation.navigate('Home');
           });
       } else {
