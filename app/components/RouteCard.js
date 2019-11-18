@@ -43,6 +43,10 @@ const styles = StyleSheet.create({
     top: 5,
     right: 5,
     zIndex: 5
+  },
+  cityTitle: {
+    fontSize: 10,
+    marginTop: 5,
   }
 });
 
@@ -75,6 +79,9 @@ export default function PathCard(props) {
           <Text numberOfLines={1} style={styles.cardtitle}>
             {props.title}
           </Text>
+          {props.city && <Text numberOfLines={1} style={styles.cityTitle}>
+            {props.city}
+          </Text>}
         </View>
       </View>
     </TouchableWithoutFeedback>

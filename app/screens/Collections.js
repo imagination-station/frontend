@@ -238,6 +238,7 @@ class CollectionsScreen extends Component {
                       <RouteCard
                         key={item._id}
                         title={item.name}
+                        city ={item.city.name}
                         photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
                         onPress={() => this.props.navigation.navigate('RouteDetail', {
                           route: item
