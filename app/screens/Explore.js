@@ -210,14 +210,6 @@ class RouteFilter extends Component {
     maximumDistance: this.props.maximumDistance
   };
 
-  componentWillMount() {
-    console.log('will mount');
-  }
-
-  componentDidMount() {
-    console.log('didMount');
-  }
-
   render() {
     const { selectedHours, selectedMinutes } = this.state;
     const left = this.state.selectedDistance * (width - 55)/21 - 75;
@@ -312,11 +304,43 @@ class ExploreScreen extends Component {
     distanceFilterValue: 0,
     timeFilterValue: 0,
     minimumDistance: 0,
-    maximumDistance: 10
+    maximumDistance: 10,
+    place_id: PLACE_ID
   };
 
   componentDidMount() {
     this.scrollValue = new Animated.Value(0);
+    if (this.props.latitude && this.props.longitude) {
+      fetch(`https://api.teleport.org/api/locations/${this.props.latitude},${this.props.longitude}`)
+        .then(response => response.json())
+        .then(responseJson => {
+          let link = responseJson._embedded['location:nearest-cities'][0]._links['location:nearest-city'].href;
+          let geonameid = link.substring(link.indexOf('geonameid:') + 10);
+          geonameid = geonameid.substring(0, geonameid.length - 1);
+          this.setState({geonameid: geonameid});
+          return fetch(link)
+        })
+        .then(response => response.json())
+        .then(responseJson => {
+          let fullName = responseJson.full_name.split(' ').join('+');
+          let name = responseJson.name;
+          this.setState({city: name});
+          return fullName;
+        })
+        .then(fullName => fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${fullName}&key=${MAPS_API_KEY}`))
+        .then(response => response.json())
+        .then(responseJson => {
+          let place_id = responseJson.results[0].place_id
+          this.setState({place_id: place_id});
+          console.log(responseJson.results[0].place_id);
+          this.mount();
+        })
+    } else {
+      this.mount();
+    }
+  }
+
+  mount = () => {
     fetch(`https://api.teleport.org/api/cities/geonameid:${this.state.geonameid}/`)
       .then(response => response.json())
       .then(responseJson => {
@@ -326,7 +350,7 @@ class ExploreScreen extends Component {
       .then(response => response.json())
       .then(responseJson => this.setState({photoUri: responseJson.photos[0].image.mobile}));
     firebase.auth().currentUser.getIdToken().then(token =>
-      fetch(`${SERVER_ADDR}/cities/${PLACE_ID}/routes`, {
+      fetch(`${SERVER_ADDR}/cities/${this.state.place_id}/routes`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -358,7 +382,7 @@ class ExploreScreen extends Component {
       return;
     }
     firebase.auth().currentUser.getIdToken().then(token =>
-      fetch(`${SERVER_ADDR}/cities/${PLACE_ID}/routes`, {
+      fetch(`${SERVER_ADDR}/cities/${this.state.place_id}/routes`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -381,7 +405,6 @@ class ExploreScreen extends Component {
   }
 
   getDistanceAndTime = () => {
-    console.log('getting distance and time data');
     let fetches = [];
     for (let i = 0; i < this.state.routes.length; i++) {
       fetches.push([]);
@@ -431,7 +454,6 @@ class ExploreScreen extends Component {
   }
 
   onPressFilter = () => {
-    console.log(this.state.distance);
     this.props.navigation.navigate('RouteFilter', {
       filterDistance: this.setDistanceLimit,
       filterTime: this.setTimeLimit,
@@ -553,7 +575,6 @@ class ExploreScreen extends Component {
                         this.setState({likes: likes});
                         let routeId = this.state.routes[index]._id;
                         console.log(`Route ID: ${routeId}`);
-                        console.log(likes);
                         like = likes[index] ? "like" : "unlike";
                         console.log(like);
                         firebase.auth().currentUser.getIdToken().then(token =>
@@ -591,7 +612,9 @@ class ExploreScreen extends Component {
 
 const mapStateToProps = state => {
   return {
-    userId: state.userId
+    userId: state.userId,
+    latitude: state.latitude,
+    longitude: state.longitude
   };
 }
 
