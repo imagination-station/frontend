@@ -55,14 +55,14 @@ export default function PathCard(props) {
     <TouchableWithoutFeedback onPress={props.onPress}>
       <View style={styles.card}>
         <View style={styles.iconButtonBar}>
-          {props.bookmarked != undefined && <TouchableOpacity onPress={props.onBookmark}>
+          {'bookmarked' in props && <TouchableOpacity onPress={props.onBookmark}>
             <Icon
               name={props.bookmarked ? 'bookmark' : 'bookmark-border'}
               size={25}
               color={props.bookmarked ? '#f1c236': 'rgba(0, 0, 0, 0.5)'}
             />
           </TouchableOpacity>}
-          {props.liked != undefined && <TouchableOpacity onPress={props.onLike}>
+          {'liked' in props && <TouchableOpacity onPress={props.onLike}>
             <Icon
               name={props.liked ? 'favorite' : 'favorite-border'}
               size={25}

@@ -472,6 +472,7 @@ class ExploreScreen extends Component {
   }
 
   onPressSearchItem = (item, navigation) => {
+    let fullName;
     navigation.goBack();
     fetch(item._links['city:item'].href)
       .then(response => response.json())
@@ -480,7 +481,17 @@ class ExploreScreen extends Component {
         return fetch(responseJson._links['city:urban_area'].href + 'images/');
       })
       .then(response => response.json())
-      .then(responseJson => this.setState({photoUri: responseJson.photos[0].image.mobile}));
+      .then(responseJson => {
+        this.setState({photoUri: responseJson.photos[0].image.mobile});
+        return fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${item.matching_full_name.split(' ').join('+')}&key=${MAPS_API_KEY}`)
+      })
+      .then(response => response.json())
+      .then(responseJson => {
+        let place_id = responseJson.results[0].place_id
+        this.setState({place_id: place_id});
+        console.log(responseJson.results[0].place_id);
+        this.getData();
+      });
   }
 
   render() {
