@@ -33,7 +33,8 @@ const SECONDS_TO_MINUTES = 60;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
+    width: '100%'
   },
   sectionContainer: {
     backgroundColor: 'white',
@@ -370,6 +371,14 @@ class ExploreScreen extends Component {
 
   getData = () => {
     if (this.props.userId == undefined) {
+      this.setState({
+        routes: [],
+        bookmarks: new Array(0),
+        bookmarks_id: new Array(0),
+        likes: new Array(0),
+        distance: new Array(0).fill(0),
+        time: new Array(0).fill(0)
+      });
       return;
     }
     firebase.auth().currentUser.getIdToken().then(token =>
