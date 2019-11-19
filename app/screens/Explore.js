@@ -305,7 +305,8 @@ class ExploreScreen extends Component {
     timeFilterValue: 0,
     minimumDistance: 0,
     maximumDistance: 10,
-    place_id: PLACE_ID
+    place_id: PLACE_ID,
+    cityFullName: ''
   };
 
   componentDidMount() {
@@ -324,7 +325,10 @@ class ExploreScreen extends Component {
         .then(responseJson => {
           let fullName = responseJson.full_name.split(' ').join('+');
           let name = responseJson.name;
-          this.setState({city: name});
+          this.setState({
+            city: responseJson,
+            cityFullName: responseJson.full_name
+          });
           return fullName;
         })
         .then(fullName => fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${fullName}&key=${MAPS_API_KEY}`))
@@ -332,7 +336,6 @@ class ExploreScreen extends Component {
         .then(responseJson => {
           let place_id = responseJson.results[0].place_id
           this.setState({place_id: place_id});
-          console.log(responseJson.results[0].place_id);
           this.mount();
         })
     } else {
@@ -348,36 +351,13 @@ class ExploreScreen extends Component {
         return fetch(responseJson._links['city:urban_area'].href + 'images/');
       })
       .then(response => response.json())
-      .then(responseJson => this.setState({photoUri: responseJson.photos[0].image.mobile}));
-    firebase.auth().currentUser.getIdToken().then(token =>
-      fetch(`${SERVER_ADDR}/cities/${this.state.place_id}/routes`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-type': 'application/json',
-          Authorization: `Bearer ${token}`
-        }
-      })
-    )
-    .then(response => response.json())
-    .then(responseJson => {
-      this.setState({
-        routes: responseJson,
-        bookmarks: new Array(responseJson.length),
-        bookmarks_id: new Array(responseJson.length),
-        likes: new Array(responseJson.length),
-        distance: new Array(responseJson.length).fill(0),
-        time: new Array(responseJson.length).fill(0)
+      .then(responseJson => {
+        this.setState({photoUri: responseJson.photos[0].image.mobile})
       });
-      this.getDistanceAndTime();
-    })
-    .catch(error => console.error(error));
+    this.getData();
   }
 
   getData = () => {
-    console.log('getting data');
-    console.log(this.props.userId);
-    console.log(this.props);
     if (this.props.userId == undefined) {
       return;
     }
@@ -392,14 +372,47 @@ class ExploreScreen extends Component {
       })
     )
     .then(response => response.json())
-    .then(responseJson => this.setState({
-      routes: responseJson,
-      bookmarks: new Array(responseJson.length),
-      bookmarks_id: new Array(responseJson.length),
-      likes: new Array(responseJson.length),
-      distance: new Array(responseJson.length).fill(0),
-      time: new Array(responseJson.length).fill(0)
-    }))
+    .then(responseJson => {
+      if (responseJson.err == "City not found") {
+        firebase.auth().currentUser.getIdToken().then(token =>
+          fetch(`${SERVER_ADDR}/cities/`, {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              name: this.state.cityFullName,
+              placeId: this.state.place_id,
+              photoRef: ''
+            })
+          })
+        )
+        .then(response => response.text())
+        .then(responseText => {
+          console.log(responseText);
+        });
+        this.setState({
+          routes: [],
+          bookmarks: new Array(0),
+          bookmarks_id: new Array(0),
+          likes: new Array(0),
+          distance: new Array(0).fill(0),
+          time: new Array(0).fill(0)
+        });
+      } else {
+        this.setState({
+          routes: responseJson,
+          bookmarks: new Array(responseJson.length),
+          bookmarks_id: new Array(responseJson.length),
+          likes: new Array(responseJson.length),
+          distance: new Array(responseJson.length).fill(0),
+          time: new Array(responseJson.length).fill(0)
+        });
+        this.getDistanceAndTime();
+      }
+    })
     .catch(error => console.error(error));
     this.setState({refreshing: false});
   }
@@ -472,12 +485,14 @@ class ExploreScreen extends Component {
   }
 
   onPressSearchItem = (item, navigation) => {
-    let fullName;
     navigation.goBack();
     fetch(item._links['city:item'].href)
       .then(response => response.json())
       .then(responseJson => {
-        this.setState({city: responseJson});
+        this.setState({
+          city: responseJson,
+          cityFullName: responseJson.full_name
+        });
         return fetch(responseJson._links['city:urban_area'].href + 'images/');
       })
       .then(response => response.json())
@@ -489,7 +504,6 @@ class ExploreScreen extends Component {
       .then(responseJson => {
         let place_id = responseJson.results[0].place_id
         this.setState({place_id: place_id});
-        console.log(responseJson.results[0].place_id);
         this.getData();
       });
   }
