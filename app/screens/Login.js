@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
     padding: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
-    backgroundColor: PRIMARY
+    backgroundColor: 'white',
   },
   logo: {
     height: 125,
@@ -96,10 +96,15 @@ class LoginScreen extends Component {
         case 'success':
           await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
           const credential = firebase.auth.FacebookAuthProvider.credential(token);
-          firebase.auth().signInAndRetrieveDataWithCredential(credential)
+          firebase.auth().signInWithCredential(credential)
             .then(cred => {
               console.log('logged in with facebook!');
-              console.log('is new user:', cred.additionalUserInfo.isNewUser);
+              if (!cred.additionalUserInfo.isNewUser) {
+                this.props.navigation.navigate('Home');
+              } else {
+                console.log('new user!');
+                this.props.navigation.navigate('Location');
+              }
             }
           ); 
 

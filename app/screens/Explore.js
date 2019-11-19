@@ -30,11 +30,11 @@ const {width, height} = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: MINT_CREAM,
+    backgroundColor: 'white',
     paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight
   },
   sectionContainer: {
-    backgroundColor: MINT_CREAM,
+    backgroundColor: 'white',
     width: '100%',
     paddingTop: 20
   },
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    backgroundColor: '#fff',
+    // backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },

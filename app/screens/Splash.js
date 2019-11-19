@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
 class SplashScreen extends Component {
 
   componentDidMount() {
-    firebase.auth().onAuthStateChanged(user => {
+    this.firebaseListener = firebase.auth().onAuthStateChanged(user => {
       if (user != null) {
         console.log(firebase.auth().currentUser.email, 'logged in!');
         // // check if user logged in through facebook
@@ -58,6 +58,10 @@ class SplashScreen extends Component {
         this.props.navigation.navigate('Auth');
       }
     });
+  }
+
+  componentWillUnmount() {
+    this.firebaseListener && this.firebaseListener();
   }
 
   render() {

@@ -9,12 +9,14 @@ export const DARKER_GREY = '#6D7380';
 
 export const FACEBOOK = '#4c69ba'; 
 
+export const AQUAMARINE = '#60d394';
+
 const styles = StyleSheet.create({
   container: {  
     flex: 1
   },
   button: { 
-    color: ACCENT,
+    color: AQUAMARINE,
     fontSize: 18,
     paddingHorizontal: 7
   }
