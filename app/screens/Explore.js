@@ -263,29 +263,32 @@ function SearchItem(props) {
 
 function CityImage(props) {
   return (
-    <View style={styles.imageContainer}>
-      <Image source={{uri: props.uri}} style={styles.image} />
-        <View style={styles.searchBoxContainer}>
-          <TextInput
-            style={styles.searchBox}
-            placeholderTextColor = 'rgba(0, 0, 0, 0.3)'
-            placeholder='Try "Barcelona"'
-            onTouchEnd={props.onPressSearchBox}
-          />
-          <TouchableOpacity onPress={props.onPressFilter}>
-            <Icon name='menu' size={30} color='rgba(0, 0, 0, 0.3)' />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => props.navigation.navigate('Map', {
-            lat: props.lat,
-            lng: props.lng,
-            place_id: props.place_id
-          })}>
-            <Icon name='add' size={30} color='dodgerblue' />
-          </TouchableOpacity>
-        </View>
-        <View style={{paddingLeft: 10, position: 'absolute', bottom: 10}}>
-          <Text style={styles.imageText}>{props.title}</Text>
-        </View>
+    <View style={props.uri != undefined ? styles.imageContainer : {height: 170}}>
+      {props.uri != undefined && <Image
+        source={{uri: props.uri}}
+        style={styles.image}
+      />}
+      <View style={styles.searchBoxContainer}>
+        <TextInput
+          style={styles.searchBox}
+          placeholderTextColor = 'rgba(0, 0, 0, 0.3)'
+          placeholder='Try "Barcelona"'
+          onTouchEnd={props.onPressSearchBox}
+        />
+        <TouchableOpacity onPress={props.onPressFilter}>
+          <Icon name='menu' size={30} color='rgba(0, 0, 0, 0.3)' />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => props.navigation.navigate('Map', {
+          lat: props.lat,
+          lng: props.lng,
+          place_id: props.place_id
+        })}>
+          <Icon name='add' size={30} color='dodgerblue' />
+        </TouchableOpacity>
+      </View>
+      <View style={{paddingLeft: 10, position: 'absolute', bottom: 10}}>
+        <Text style={props.uri != undefined? styles.imageText: {color: 'rgba(0, 0, 0, 1)', fontWeight: 'bold',fontSize: 48}}>{props.title}</Text>
+      </View>
     </View>
   );
 }
@@ -515,11 +518,6 @@ class ExploreScreen extends Component {
           latitude: responseJson.location.latlon.latitude,
           longitude: responseJson.location.latlon.longitude
         });
-        return fetch(responseJson._links['city:urban_area'].href + 'images/');
-      })
-      .then(response => response.json())
-      .then(responseJson => {
-        this.setState({photoUri: responseJson.photos[0].image.mobile});
         return fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${item.matching_full_name.split(' ').join('+')}&key=${MAPS_API_KEY}`)
       })
       .then(response => response.json())
@@ -527,7 +525,15 @@ class ExploreScreen extends Component {
         let place_id = responseJson.results[0].place_id;
         this.setState({place_id: place_id});
         this.getData();
-      });
+        return fetch(responseJson._links['city:urban_area'].href + 'images/');
+      })
+      .then(response => response.json())
+      .then(responseJson => {
+        this.setState({photoUri: responseJson.photos[0].image.mobile});
+      })
+      .catch(error => {
+        this.setState({photoUri: undefined});
+      })
   }
 
   render() {
