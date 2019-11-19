@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   searchBoxContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     flexDirection: 'row',
     height: 46,
     borderRadius: 10,
@@ -266,14 +266,15 @@ function CityImage(props) {
         <View style={styles.searchBoxContainer}>
           <TextInput
             style={styles.searchBox}
+            placeholderTextColor = 'rgba(0, 0, 0, 0.3)'
             placeholder='Try "Barcelona"'
             onTouchEnd={props.onPressSearchBox}
           />
-          <TouchableOpacity onPress={this.onClearSearch}>
-            <Icon name='clear' size={30} color='grey' />
-          </TouchableOpacity>
           <TouchableOpacity onPress={props.onPressFilter}>
             <Icon name='menu' size={30} color='grey' />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => props.navigation.navigate('Map')}>
+            <Icon name='add' size={30} color='dodgerblue' />
           </TouchableOpacity>
         </View>
         <View style={{paddingLeft: 10, position: 'absolute', bottom: 10}}>
@@ -513,7 +514,7 @@ class ExploreScreen extends Component {
     <ScrollView contentContainerStyle={styles.scrollView} refreshControl={<RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh.bind(this)} />}>
       <View style={styles.container}>
         <ScrollView style={{flex: 1}}>
-          <CityImage title={this.state.city ? this.state.city.name : 'Loading...'} uri={this.state.photoUri} onPressSearchBox={this.onPressSearch} onPressFilter={this.onPressFilter} />
+          <CityImage title={this.state.city ? this.state.city.name : 'Loading...'} uri={this.state.photoUri} onPressSearchBox={this.onPressSearch} onPressFilter={this.onPressFilter} navigation={this.props.navigation}/>
           <View style={styles.sectionContainer}>
             <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>Art and Architecture</Text>
             <Animated.ScrollView

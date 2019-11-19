@@ -225,9 +225,6 @@ class CollectionsScreen extends Component {
                   }}>
                     <Text style={this.currentStyle(screens.LIKED)}>Liked</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => this.props.navigation.navigate('Map')}>
-                    <Text style={styles.headerBlurred}>New</Text>
-                  </TouchableOpacity>
                 </View>
                 {this.state.current.length != 0 ?
                 <FlatList
