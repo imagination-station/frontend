@@ -50,7 +50,8 @@ const styles = StyleSheet.create({
     height: Math.floor(height / 2)
   },
   imageText: {
-    color: 'white',
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontWeight: 'bold',
     fontSize: 48,
   },
   image: {
@@ -283,7 +284,6 @@ function CityImage(props) {
           </TouchableOpacity>
         </View>
         <View style={{paddingLeft: 10, position: 'absolute', bottom: 10}}>
-          <Text style={{fontWeight: 'bold', color: PRIMARY}}>Welcome to</Text>
           <Text style={styles.imageText}>{props.title}</Text>
         </View>
     </View>
