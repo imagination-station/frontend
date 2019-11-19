@@ -22,7 +22,7 @@ import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
 import resolveAssetSource from 'resolveAssetSource';
 
-const pin =  require('../assets/pin.png'); 
+const pin =  require('../assets/pin.png');
 
 const PIN_WIDTH = resolveAssetSource(pin).width;
 const PIN_HEIGHT = resolveAssetSource(pin).width;
@@ -357,7 +357,7 @@ function SearchItem(props) {
 
 class NoteEditor extends Component {
   state = {
-    note: this.props.markers[this.props.selected].properties.note 
+    note: this.props.markers[this.props.selected].properties.note
   };
 
   MAX_LENGTH = 280; // same as Twitter
@@ -463,7 +463,7 @@ function ActionCard(props) {
       <Text style={{color: DARKER_GREY}} key='time'>
         {`${Math.floor(props.duration / 60)} mins`}
       </Text>,
-      props.view != 'info' && 
+      props.view != 'info' &&
         <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}} key='buttons'>
           <Button title={'View All'} onPress={props.viewAll} small />
           <Button title={`Create Route`} onPress={props.showRouteInfo} small />
@@ -485,7 +485,7 @@ function DrawerButton(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
       <View style={mapStyles.drawerButton}/>
-      
+
     </TouchableOpacity>
   );
 }
@@ -666,7 +666,7 @@ class MapScreen extends Component {
                 },
                 zoom: 18
               }, 30);
-            });            
+            });
           }
       });
   }
@@ -746,7 +746,7 @@ class MapScreen extends Component {
         body: JSON.stringify({
           name: this.state.name,
           creator: this.props.userId,
-          city: PLACE_ID,
+          city: this.props.navigation.state.params.place_id,
           pins: this.props.markers,
           tags: this.state.tags
         })
@@ -843,7 +843,7 @@ class MapScreen extends Component {
               coordinate={{latitude: marker.geometry.coordinates[0], longitude: marker.geometry.coordinates[1]}}
               title={marker.properties.mainText}
               description={marker.properties.secondaryText}
-              icon={pin}
+              image={pin}
             >
               <View style={mapStyles.pin}>
                 <Text style={{color: 'white'}}>{index+1}</Text>
@@ -884,7 +884,7 @@ class MapScreen extends Component {
           {/* show focused card */}
           {this.state.focused && <FocusedCard
             marker={this.state.focused}
-            onAdd={this.onAddItem} 
+            onAdd={this.onAddItem}
           />}
           <View style={mapStyles.drawer} >
             <DrawerButton onPress={this.toggleDrawer} />

@@ -275,7 +275,8 @@ function CityImage(props) {
           </TouchableOpacity>
           <TouchableOpacity onPress={() => props.navigation.navigate('Map', {
             lat: props.lat,
-            lng: props.lng
+            lng: props.lng,
+            place_id: props.place_id
           })}>
             <Icon name='add' size={30} color='dodgerblue' />
           </TouchableOpacity>
@@ -514,7 +515,7 @@ class ExploreScreen extends Component {
       })
       .then(response => response.json())
       .then(responseJson => {
-        let place_id = responseJson.results[0].place_id
+        let place_id = responseJson.results[0].place_id;
         this.setState({place_id: place_id});
         this.getData();
       });
@@ -532,7 +533,9 @@ class ExploreScreen extends Component {
             onPressFilter={this.onPressFilter}
             navigation={this.props.navigation}
             lat={this.state.latitude}
-            lng={this.state.longitude}/>
+            lng={this.state.longitude}
+            place_id={this.state.place_id}
+            />
           <View style={styles.sectionContainer}>
             <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>Art and Architecture</Text>
             <Animated.ScrollView
