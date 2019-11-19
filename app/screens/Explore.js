@@ -271,9 +271,12 @@ function CityImage(props) {
             onTouchEnd={props.onPressSearchBox}
           />
           <TouchableOpacity onPress={props.onPressFilter}>
-            <Icon name='menu' size={30} color='grey' />
+            <Icon name='menu' size={30} color='rgba(0, 0, 0, 0.3)' />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => props.navigation.navigate('Map')}>
+          <TouchableOpacity onPress={() => props.navigation.navigate('Map', {
+            lat: props.lat,
+            lng: props.lng
+          })}>
             <Icon name='add' size={30} color='dodgerblue' />
           </TouchableOpacity>
         </View>
@@ -307,12 +310,18 @@ class ExploreScreen extends Component {
     minimumDistance: 0,
     maximumDistance: 10,
     place_id: PLACE_ID,
-    cityFullName: ''
+    cityFullName: '',
+    latitude: null,
+    longitude: null
   };
 
   componentDidMount() {
     this.scrollValue = new Animated.Value(0);
     if (this.props.latitude && this.props.longitude) {
+      this.setState({
+        latitude: this.props.latitude,
+        longitude: this.props.longitude
+      })
       fetch(`https://api.teleport.org/api/locations/${this.props.latitude},${this.props.longitude}`)
         .then(response => response.json())
         .then(responseJson => {
@@ -492,7 +501,9 @@ class ExploreScreen extends Component {
       .then(responseJson => {
         this.setState({
           city: responseJson,
-          cityFullName: responseJson.full_name
+          cityFullName: responseJson.full_name,
+          latitude: responseJson.location.latlon.latitude,
+          longitude: responseJson.location.latlon.longitude
         });
         return fetch(responseJson._links['city:urban_area'].href + 'images/');
       })
@@ -514,7 +525,14 @@ class ExploreScreen extends Component {
     <ScrollView contentContainerStyle={styles.scrollView} refreshControl={<RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh.bind(this)} />}>
       <View style={styles.container}>
         <ScrollView style={{flex: 1}}>
-          <CityImage title={this.state.city ? this.state.city.name : 'Loading...'} uri={this.state.photoUri} onPressSearchBox={this.onPressSearch} onPressFilter={this.onPressFilter} navigation={this.props.navigation}/>
+          <CityImage
+            title={this.state.city ? this.state.city.name : 'Loading...'}
+            uri={this.state.photoUri}
+            onPressSearchBox={this.onPressSearch}
+            onPressFilter={this.onPressFilter}
+            navigation={this.props.navigation}
+            lat={this.state.latitude}
+            lng={this.state.longitude}/>
           <View style={styles.sectionContainer}>
             <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>Art and Architecture</Text>
             <Animated.ScrollView

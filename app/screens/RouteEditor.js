@@ -829,14 +829,14 @@ class MapScreen extends Component {
           onPoiClick={this.onPoiClick}
           onLongPress={this.onLongPress}
           initialRegion={{
-            latitude: INIT_LOCATION.latitude,
-            longitude: INIT_LOCATION.longitude,
+            latitude: this.props.navigation.state.params.lat,
+            longitude: this.props.navigation.state.params.lng,
             latitudeDelta: 0.0922,
             longitudeDelta: 0.0421
           }}
           ref={ref => this.mapRef = ref}
         >
-          {this.props.markers.map((marker, index) => 
+          {this.props.markers.map((marker, index) =>
             <Marker
               key={marker.properties.placeId}
               identifier={marker.properties.placeId}

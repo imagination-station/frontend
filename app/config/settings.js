@@ -3,10 +3,10 @@ import env from './.env.json';
 export const MAPS_API_KEY = env.MAPS_API_KEY;
 export const SERVER_ADDR = env.API_SERVER_ADDR;
 
-// hardcoded values for Atlanta; replace later
+// hardcoded values for Providence; replace later
 export const INIT_LOCATION = {
-  latitude: 33.749,
-  longitude: -84.38798
+  latitude: 41.8239891,
+  longitude: -71.4128343
 };
 
 // export const PLACE_ID = 'ChIJjQmTaV0E9YgRC2MLmS_e_mY';
