@@ -28,6 +28,9 @@ const PIN_WIDTH = resolveAssetSource(pin).width;
 const PIN_HEIGHT = resolveAssetSource(pin).width;
 const PIXEL_RATIO = PixelRatio.get();
 
+const METERS_TO_MILES = 1609.34;
+const SECONDS_TO_MINUTES = 60;
+
 import Button from '../components/Buttons.js';
 import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
 import {
@@ -446,6 +449,18 @@ function FocusedCard(props) {
 
 function ActionCard(props) {
   let content;
+  let mins = Math.floor(props.duration / 60);
+  let hours = Math.floor(mins / SECONDS_TO_MINUTES);
+  mins = mins % 60;
+  let timeString;
+  if (hours == 0) {
+    timeString = `${mins} mins`;
+  } else if (hours == 1) {
+    timeString = `${hours} hour ${mins} mins`;
+  } else {
+    timeString = `${hours} hours ${mins} mins`;
+  }
+  let miles = (props.distance / METERS_TO_MILES).toFixed(2);
   if (props.length == 0) {
     content = (
       <Text style={{color: DARKER_GREY, textAlign: 'center'}}>
@@ -458,10 +473,10 @@ function ActionCard(props) {
         {`${props.length} places`}
       </Text>,
       <Text style={{color: DARKER_GREY}} key='distance'>
-        {`${props.distance} m`}
+        {`${miles} mi`}
       </Text>,
       <Text style={{color: DARKER_GREY}} key='time'>
-        {`${Math.floor(props.duration / 60)} mins`}
+        {`${timeString}`}
       </Text>,
       props.view != 'info' &&
         <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}} key='buttons'>
