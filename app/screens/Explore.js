@@ -317,7 +317,8 @@ class ExploreScreen extends Component {
     place_id: PLACE_ID,
     cityFullName: '',
     latitude: null,
-    longitude: null
+    longitude: null,
+    currentCityByGPS: ''
   };
 
   componentDidMount() {
@@ -342,7 +343,8 @@ class ExploreScreen extends Component {
           let name = responseJson.name;
           this.setState({
             city: responseJson,
-            cityFullName: responseJson.full_name
+            cityFullName: responseJson.full_name,
+            currentCityByGPS: responseJson.full_name
           });
           return fullName;
         })
@@ -384,16 +386,27 @@ class ExploreScreen extends Component {
       });
       return;
     }
-    firebase.auth().currentUser.getIdToken().then(token =>
-      fetch(`${SERVER_ADDR}/cities/${this.state.place_id}/routes`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-type': 'application/json',
-          Authorization: `Bearer ${token}`
-        }
-      })
-    )
+    firebase.auth().currentUser.getIdToken().then(token =>{
+      if (this.state.currentCityByGPS === this.state.cityFullName) {
+        return fetch(`${SERVER_ADDR}/cities/routes/?lat=${this.state.latitude}&lng=${this.state.longitude}&page=0`, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        })
+      } else {
+        return fetch(`${SERVER_ADDR}/cities/${this.state.place_id}/routes`, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        })
+      }
+    })
     .then(response => response.json())
     .then(responseJson => {
       if (responseJson.err == "City not found") {
