@@ -509,9 +509,16 @@ class ExploreScreen extends Component {
 
   onPressSearchItem = (item, navigation) => {
     navigation.goBack();
+    let link;
     fetch(item._links['city:item'].href)
       .then(response => response.json())
       .then(responseJson => {
+        try {
+          link = responseJson._links['city:urban_area'].href + 'images/';
+        } catch (error) {
+          link = undefined;
+        }
+        console.log(link);
         this.setState({
           city: responseJson,
           cityFullName: responseJson.full_name,
@@ -525,7 +532,7 @@ class ExploreScreen extends Component {
         let place_id = responseJson.results[0].place_id;
         this.setState({place_id: place_id});
         this.getData();
-        return fetch(responseJson._links['city:urban_area'].href + 'images/');
+        return fetch(link);
       })
       .then(response => response.json())
       .then(responseJson => {
