@@ -388,7 +388,7 @@ class ExploreScreen extends Component {
     }
     firebase.auth().currentUser.getIdToken().then(token =>{
       if (this.state.currentCityByGPS === this.state.cityFullName) {
-        return fetch(`${SERVER_ADDR}/cities/routes/?lat=${this.state.latitude}&lng=${this.state.longitude}&page=0`, {
+        return fetch(`${SERVER_ADDR}/cities/routes/?lat=${this.state.longitude}&lng=${this.state.latitude}&page=0`, {
           method: 'GET',
           headers: {
             Accept: 'application/json',
