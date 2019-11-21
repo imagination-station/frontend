@@ -318,7 +318,8 @@ class ExploreScreen extends Component {
     cityFullName: '',
     latitude: null,
     longitude: null,
-    currentCityByGPS: ''
+    currentCityByGPS: '',
+    tags: []
   };
 
   componentDidMount() {
@@ -438,13 +439,28 @@ class ExploreScreen extends Component {
           time: new Array(0).fill(0)
         });
       } else {
+        let tags = [];
+        responseJson.forEach((item, index) => {
+          item.tags.forEach((item_, index_) => {
+            tags.push(item_);
+          })
+        })
+
+        var uniqueTags = tags.map((name) => {
+          return {count: 1, name: name}
+        }).reduce((a, b) => {
+          a[b.name] = (a[b.name] || 0) + b.count
+          return a
+        }, {})
+
         this.setState({
           routes: responseJson,
           bookmarks: new Array(responseJson.length),
           bookmarks_id: new Array(responseJson.length),
           likes: new Array(responseJson.length),
           distance: new Array(responseJson.length).fill(0),
-          time: new Array(responseJson.length).fill(0)
+          time: new Array(responseJson.length).fill(0),
+          tags: Object.keys(uniqueTags)
         });
         this.getDistanceAndTime();
       }
@@ -571,7 +587,7 @@ class ExploreScreen extends Component {
             lng={this.state.longitude}
             place_id={this.state.place_id}
           />
-          {TAGS.map((tag, index) => {
+          {this.state.tags.map((tag, index) => {
             return(
               <View style={styles.sectionContainer}>
                 <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>{tag}</Text>
