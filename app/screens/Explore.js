@@ -24,7 +24,7 @@ import TimePicker from 'react-native-simple-time-picker';
 import RouteCard from '../components/RouteCard.js';
 
 import { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
-import { SERVER_ADDR, PLACE_ID, GEONAME_ID, MAPS_API_KEY } from '../config/settings.js';
+import { SERVER_ADDR, PLACE_ID, GEONAME_ID, MAPS_API_KEY, TAGS } from '../config/settings.js';
 
 const {width, height} = Dimensions.get('window');
 
@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
   sectionContainer: {
     backgroundColor: 'white',
     width: '100%',
-    paddingTop: 20
+    paddingTop: 7
   },
   sectionHeader: {
     fontSize: 12,
@@ -570,121 +570,113 @@ class ExploreScreen extends Component {
             lat={this.state.latitude}
             lng={this.state.longitude}
             place_id={this.state.place_id}
-            />
-          <View style={styles.sectionContainer}>
-            <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>Art and Architecture</Text>
-            <Animated.ScrollView
-              contentContainerStyle={styles.endPadding}
-              horizontal
-              scrollEventThrottle={1}
-              showsHorizontalScrollIndicator={false}
-              onScroll={Animated.event([
-                {
-                  nativeEvent: {
-                    contentOffset: {
-                      x: this.scrollValue,
-                    },
-                  }
-                }
-              ], {useNativeDriver: true}
-              )}
-              style={{width: '100%', backgroundColor: 'transparent', paddingLeft: 10, marginBottom: 25}}
-            >
-              {this.state.routes.map((item, index) => {
-                const timeCondition = this.state.timeFilterValue != 0 && this.state.timeFilterValue != 1500 ? this.state.time[index] <= this.state.timeFilterValue : true;
-                const distanceCondition = this.state.distanceFilterValue != this.state.maximumDistance && this.state.distanceFilterValue != this.state.minimumDistance ? this.state.distance[index] <= this.state.distanceFilterValue : true;
-                if (timeCondition && distanceCondition) {
-                  let photoRef = item.pins[0].properties.photoRefs[0];
-                  return (
-                    <RouteCard
-                      key={item._id}
-                      title={item.name}
-                      photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
-                      onPress={() => this.props.navigation.navigate('RouteDetail', {
-                        route: item
-                      })}
-                      bookmarked={this.state.bookmarks[index]}
-                      liked={this.state.likes[index]}
-                      onBookmark = {() => {
-                        let bookmarks = [...this.state.bookmarks];
-                        bookmarks[index] = !this.state.bookmarks[index];
-                        this.setState({bookmarks: bookmarks});
-                        let bookmarks_id = [...this.state.bookmarks_id];
-                        let routeId = this.state.routes[index]._id;
-                        console.log(`Route ID: ${routeId}`);
-                        console.log(bookmarks);
-                        if (bookmarks[index]) {
+          />
+          {TAGS.map((tag, index) => {
+            return(
+              <View style={styles.sectionContainer}>
+                <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>{tag}</Text>
+                <Animated.ScrollView
+                  contentContainerStyle={styles.endPadding}
+                  horizontal
+                  scrollEventThrottle={1}
+                  showsHorizontalScrollIndicator={false}
+                  onScroll={Animated.event([{nativeEvent: {contentOffset: {x: this.scrollValue}}}], {useNativeDriver: true})}
+                  style={{width: '100%', backgroundColor: 'transparent', paddingLeft: 10, marginBottom: 0}}
+                >
+                {this.state.routes.map((item, index) => {
+                  const timeCondition = this.state.timeFilterValue != 0 && this.state.timeFilterValue != 1500 ? this.state.time[index] <= this.state.timeFilterValue : true;
+                  const distanceCondition = this.state.distanceFilterValue != this.state.maximumDistance && this.state.distanceFilterValue != this.state.minimumDistance ? this.state.distance[index] <= this.state.distanceFilterValue : true;
+                  if (timeCondition && distanceCondition && item.tags.includes(tag)) {
+                    let photoRef = item.pins[0].properties.photoRefs[0];
+                    return (
+                      <RouteCard
+                        key={item._id}
+                        title={item.name}
+                        photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
+                        onPress={() => this.props.navigation.navigate('RouteDetail', {
+                          route: item
+                        })}
+                        bookmarked={this.state.bookmarks[index]}
+                        liked={this.state.likes[index]}
+                        onBookmark = {() => {
+                          let bookmarks = [...this.state.bookmarks];
+                          bookmarks[index] = !this.state.bookmarks[index];
+                          this.setState({bookmarks: bookmarks});
+                          let bookmarks_id = [...this.state.bookmarks_id];
+                          let routeId = this.state.routes[index]._id;
+                          console.log(`Route ID: ${routeId}`);
+                          console.log(bookmarks);
+                          if (bookmarks[index]) {
+                            firebase.auth().currentUser.getIdToken().then(token =>
+                              fetch(`${SERVER_ADDR}/users/${this.props.userId}/forks`, {
+                                method: 'POST',
+                                headers: {
+                                  Accept: 'application/json',
+                                  'Content-type': 'application/json',
+                                  Authorization: `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                  routeId: routeId,
+                                })
+                              })
+                            )
+                            .then(response => response.json())
+                            .then(responseJson => {
+                              let tempID = responseJson["Mongo ObjectID"];
+                              bookmarks_id[index] = tempID;
+                              this.setState({bookmarks_id: bookmarks_id});
+                            })
+                           } else {
+                             let route_id = this.state.bookmarks_id[index];
+                             console.log(`Deleting ${route_id}`);
+                             firebase.auth().currentUser.getIdToken().then(token =>
+                               fetch(`${SERVER_ADDR}/cities/routes/${route_id}`, {
+                                 method: 'DELETE',
+                                 headers: {
+                                   Accept: 'application/json',
+                                   'Content-type': 'application/json',
+                                   Authorization: `Bearer ${token}`
+                                 }
+                               }))
+                               .then(response => response.json())
+                               .then(responseJson => {
+                                 console.log(responseJson);
+                               })
+                          }
+                        }}
+                        onLike = {() => {
+                          let likes = [...this.state.likes];
+                          likes[index] = !this.state.likes[index];
+                          this.setState({likes: likes});
+                          let routeId = this.state.routes[index]._id;
+                          console.log(`Route ID: ${routeId}`);
+                          like = likes[index] ? "like" : "unlike";
+                          console.log(like);
                           firebase.auth().currentUser.getIdToken().then(token =>
-                            fetch(`${SERVER_ADDR}/users/${this.props.userId}/forks`, {
-                              method: 'POST',
+                            fetch(`${SERVER_ADDR}/cities/routes/${routeId}/likes`, {
+                              method: 'PATCH',
                               headers: {
                                 Accept: 'application/json',
                                 'Content-type': 'application/json',
                                 Authorization: `Bearer ${token}`
                               },
                               body: JSON.stringify({
-                                routeId: routeId,
+                                type: like,
+                                userId: this.props.userId
                               })
                             })
                           )
-                          .then(response => response.json())
-                          .then(responseJson => {
-                            let tempID = responseJson["Mongo ObjectID"];
-                            bookmarks_id[index] = tempID;
-                            this.setState({bookmarks_id: bookmarks_id});
+                          .then(response => response.text())
+                          .then(responseText => {
+                            console.log(responseText);
                           })
-                         } else {
-                           let route_id = this.state.bookmarks_id[index];
-                           console.log(`Deleting ${route_id}`);
-                           firebase.auth().currentUser.getIdToken().then(token =>
-                             fetch(`${SERVER_ADDR}/cities/routes/${route_id}`, {
-                               method: 'DELETE',
-                               headers: {
-                                 Accept: 'application/json',
-                                 'Content-type': 'application/json',
-                                 Authorization: `Bearer ${token}`
-                               }
-                             }))
-                             .then(response => response.json())
-                             .then(responseJson => {
-                               console.log(responseJson);
-                             })
-                        }
-                      }}
-                      onLike = {() => {
-                        let likes = [...this.state.likes];
-                        likes[index] = !this.state.likes[index];
-                        this.setState({likes: likes});
-                        let routeId = this.state.routes[index]._id;
-                        console.log(`Route ID: ${routeId}`);
-                        like = likes[index] ? "like" : "unlike";
-                        console.log(like);
-                        firebase.auth().currentUser.getIdToken().then(token =>
-                          fetch(`${SERVER_ADDR}/cities/routes/${routeId}/likes`, {
-                            method: 'PATCH',
-                            headers: {
-                              Accept: 'application/json',
-                              'Content-type': 'application/json',
-                              Authorization: `Bearer ${token}`
-                            },
-                            body: JSON.stringify({
-                              type: like,
-                              userId: this.props.userId
-                            })
-                          })
-                        )
-                        .then(response => response.text())
-                        .then(responseText => {
-                          console.log(responseText);
-                        })
-                      }}
-                    />
-                  );
-                }
+                        }}
+                      />
+                    );
+                  }
               })}
             </Animated.ScrollView>
-            <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>Foodie</Text>
-          </View>
+          </View>)})}
         </ScrollView>
       </View>
     </ScrollView>
