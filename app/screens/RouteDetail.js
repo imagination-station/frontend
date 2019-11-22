@@ -46,6 +46,9 @@ const PIN_WIDTH = resolveAssetSource(pin).width;
 const PIN_HEIGHT = resolveAssetSource(pin).width;
 const PIXEL_RATIO = PixelRatio.get();
 
+const METERS_TO_MILES = 1609.34;
+const SECONDS_TO_MINUTES = 60;
+
 const mapStyles = StyleSheet.create({
   animated: {
     position: 'absolute',
@@ -147,7 +150,7 @@ const mapStyles = StyleSheet.create({
     width: Math.floor(PIN_WIDTH / PIXEL_RATIO),
     height: Math.floor(PIN_HEIGHT / PIXEL_RATIO),
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   }
 });
 
@@ -177,6 +180,18 @@ function Card(props) {
 
 function ActionCard(props) {
   let content;
+  let mins = Math.floor(props.duration / 60);
+  let hours = Math.floor(mins / SECONDS_TO_MINUTES);
+  mins = mins % 60;
+  let timeString;
+  if (hours == 0) {
+    timeString = `${mins} mins`;
+  } else if (hours == 1) {
+    timeString = `${hours} hour ${mins} mins`;
+  } else {
+    timeString = `${hours} hours ${mins} mins`;
+  }
+  let miles = (props.distance / METERS_TO_MILES).toFixed(2);
   if (props.numPins == 0) {
     content = (
       <Text style={{color: DARKER_GREY, textAlign: 'center'}}>
@@ -189,12 +204,12 @@ function ActionCard(props) {
         {`${props.numPins} pins`}
       </Text>,
       <Text style={{color: DARKER_GREY}} key='distance'>
-        {`${props.distance} m`}
+        {`${miles} mi`}
       </Text>,
       <Text style={{color: DARKER_GREY}} key='time'>
-        {`${Math.floor(props.duration / 60)} mins`}
+        {`${timeString}`}
       </Text>,
-      props.view != 'info' && 
+      props.view != 'info' &&
         <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}} key='buttons'>
           <TouchableOpacity onPress={props.showRouteInfo} >
             <Icon name='more-horiz' size={30} color={ACCENT} />
@@ -242,7 +257,7 @@ class RouteDetailScreen extends Component {
 
   constructor(props) {
     super(props);
-    this.didFocus = props.navigation.addListener('didFocus', payload => 
+    this.didFocus = props.navigation.addListener('didFocus', payload =>
       BackHandler.addEventListener('hardwareBackPress', this.onBack)
     );
   }
@@ -272,7 +287,7 @@ class RouteDetailScreen extends Component {
         const steps = responsesJson.map(responseJson => {
           const info = {
             distance: responseJson.routes[0].legs[0].distance,
-            duration: responseJson.routes[0].legs[0].duration 
+            duration: responseJson.routes[0].legs[0].duration
           };
           return info;
         });
@@ -285,7 +300,7 @@ class RouteDetailScreen extends Component {
       }
     );
 
-    this.willBlur = this.props.navigation.addListener('willBlur', payload => 
+    this.willBlur = this.props.navigation.addListener('willBlur', payload =>
       BackHandler.removeEventListener('hardwareBackPress', this.onBack)
     );
   }
@@ -300,7 +315,7 @@ class RouteDetailScreen extends Component {
     if (this.state.view == 'info') {
       this.toggleDrawer();
       return true;
-    } 
+    }
 
     return false;
   }
@@ -431,16 +446,17 @@ class RouteDetailScreen extends Component {
             latitudeDelta: 0.0922,
             longitudeDelta: 0.0421
           }}
+          showsUserLocation={true}
           ref={ref => this.mapRef = ref}
         >
-          {this.props.markers.map((marker, index) => 
+          {this.props.markers.map((marker, index) =>
             <Marker
               key={marker.properties.placeId}
               identifier={marker.properties.placeId}
               coordinate={{latitude: marker.geometry.coordinates[0], longitude: marker.geometry.coordinates[1]}}
               title={marker.properties.mainText}
               description={marker.properties.secondaryText}
-              icon={pin}
+              image={pin}
             >
               <View style={mapStyles.pin}>
                 <Text style={{color: 'white'}}>{index+1}</Text>

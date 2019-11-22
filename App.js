@@ -4,11 +4,11 @@ import { createStackNavigator } from 'react-navigation-stack';
 import { createMaterialBottomTabNavigator } from 'react-navigation-material-bottom-tabs';
 import * as firebase from 'firebase';
 import { Provider } from 'react-redux';
-import { createStore } from 'redux'; 
+import { createStore } from 'redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import LoginScreen from './app/screens/Login.js';
-import ExploreScreen, { CitySearchScreen } from './app/screens/Explore.js';
+import ExploreScreen, { CitySearchScreen, RouteFilterScreen } from './app/screens/Explore.js';
 import CollectionsScreen from './app/screens/Collections.js';
 import ProfileScreen from './app/screens/Profile.js';
 import MapScreen, { MapSearchScreen, NoteEditorScreen } from './app/screens/RouteEditor.js';
@@ -76,6 +76,7 @@ const HomeStack = createStackNavigator({
     }
   },
   CitySearch: mapNavigationStateParamsToProps(CitySearchScreen),
+  RouteFilter: mapNavigationStateParamsToProps(RouteFilterScreen),
   Map: MapScreen,
   MapSearch: mapNavigationStateParamsToProps(MapSearchScreen),
   PlaceDetail: mapNavigationStateParamsToProps(PlaceDetailScreen),
@@ -117,4 +118,3 @@ export default function App() {
     </Provider>
   );
 }
-

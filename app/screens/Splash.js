@@ -29,7 +29,31 @@ const styles = StyleSheet.create({
 
 class SplashScreen extends Component {
 
+  state = {
+    latitude: undefined,
+    longitude: undefined
+  }
+
   componentDidMount() {
+    navigator.geolocation.getCurrentPosition(() => {
+      console.log('Location Granted');
+      navigator.geolocation.getCurrentPosition((position) => {
+        this.setState({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        });
+        this.goToExplore();
+      });
+    },() => {
+      console.log('Location Denied');
+      this.goToExplore();
+    });
+  }
+
+  goToExplore = () => {
+    console.log('Explore');
+    console.log(this.state.latitude);
+    console.log(this.state.longitude);
     firebase.auth().onAuthStateChanged(user => {
       if (user != null) {
         console.log(firebase.auth().currentUser.email, 'logged in!');
@@ -52,6 +76,8 @@ class SplashScreen extends Component {
           .then(responseJson => {
             console.log('uid', responseJson._id);
             this.props.logIn(responseJson._id);
+            this.props.setLatitude(this.state.latitude);
+            this.props.setLongitude(this.state.longitude);
             this.props.navigation.navigate('Home');
           });
       } else {
@@ -75,9 +101,21 @@ class SplashScreen extends Component {
 
 const mapDispatchToProps = dispatch => {
   return {
-    logIn: id => dispatch({type: 'LOG_IN', payload: {
-      userId: id
-    }}),
+    logIn: (id) => {
+      dispatch({type: 'LOG_IN', payload: {
+        userId: id,
+      }});
+    },
+    setLatitude: (latitude) => {
+      dispatch({type: 'SET_LATITUDE', payload: {
+        latitude: latitude,
+      }});
+    },
+    setLongitude: (longitude) => {
+      dispatch({type: 'SET_LONGITUDE', payload: {
+        longitude: longitude,
+      }});
+    }
   };
 }
 

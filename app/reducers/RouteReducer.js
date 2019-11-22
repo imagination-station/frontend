@@ -3,7 +3,9 @@ const INITIAL_STATE = {
   steps: [],
   selected: null,
   showRoute: null,
-  userId: null
+  userId: null,
+  latitude: null,
+  longitude: null
 };
 
 const routeReducer = (state = INITIAL_STATE, action) => {
@@ -77,6 +79,16 @@ const routeReducer = (state = INITIAL_STATE, action) => {
       return {
         ...state,
         showRoute: null
+      };
+    case 'SET_LATITUDE':
+      return {
+        ...state,
+        latitude: action.payload.latitude
+      };
+    case 'SET_LONGITUDE':
+      return {
+        ...state,
+        longitude: action.payload.longitude
       }
     default:
       return state;

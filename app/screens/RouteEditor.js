@@ -22,11 +22,14 @@ import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
 import resolveAssetSource from 'resolveAssetSource';
 
-const pin =  require('../assets/pin.png'); 
+const pin =  require('../assets/pin.png');
 
 const PIN_WIDTH = resolveAssetSource(pin).width;
 const PIN_HEIGHT = resolveAssetSource(pin).width;
 const PIXEL_RATIO = PixelRatio.get();
+
+const METERS_TO_MILES = 1609.34;
+const SECONDS_TO_MINUTES = 60;
 
 import Button from '../components/Buttons.js';
 import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
@@ -357,7 +360,7 @@ function SearchItem(props) {
 
 class NoteEditor extends Component {
   state = {
-    note: this.props.markers[this.props.selected].properties.note 
+    note: this.props.markers[this.props.selected].properties.note
   };
 
   MAX_LENGTH = 280; // same as Twitter
@@ -446,6 +449,18 @@ function FocusedCard(props) {
 
 function ActionCard(props) {
   let content;
+  let mins = Math.floor(props.duration / 60);
+  let hours = Math.floor(mins / SECONDS_TO_MINUTES);
+  mins = mins % 60;
+  let timeString;
+  if (hours == 0) {
+    timeString = `${mins} mins`;
+  } else if (hours == 1) {
+    timeString = `${hours} hour ${mins} mins`;
+  } else {
+    timeString = `${hours} hours ${mins} mins`;
+  }
+  let miles = (props.distance / METERS_TO_MILES).toFixed(2);
   if (props.length == 0) {
     content = (
       <Text style={{color: DARKER_GREY, textAlign: 'center'}}>
@@ -458,12 +473,12 @@ function ActionCard(props) {
         {`${props.length} places`}
       </Text>,
       <Text style={{color: DARKER_GREY}} key='distance'>
-        {`${props.distance} m`}
+        {`${miles} mi`}
       </Text>,
       <Text style={{color: DARKER_GREY}} key='time'>
-        {`${Math.floor(props.duration / 60)} mins`}
+        {`${timeString}`}
       </Text>,
-      props.view != 'info' && 
+      props.view != 'info' &&
         <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}} key='buttons'>
           <Button title={'View All'} onPress={props.viewAll} small />
           <Button title={`Create Route`} onPress={props.showRouteInfo} small />
@@ -485,7 +500,7 @@ function DrawerButton(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
       <View style={mapStyles.drawerButton}/>
-      
+
     </TouchableOpacity>
   );
 }
@@ -514,10 +529,12 @@ class MapScreen extends Component {
     focused: null,
     // route metadata
     name: '',
-    tags: []
+    tags: [],
+    userId: null
   };
 
   componentWillMount() {
+    this.setState({userId: this.props.userId});
     this.mapRef = null;
     this.scrollViewRef = null;
     this.searchBoxRef = null;
@@ -666,7 +683,7 @@ class MapScreen extends Component {
                 },
                 zoom: 18
               }, 30);
-            });            
+            });
           }
       });
   }
@@ -746,7 +763,7 @@ class MapScreen extends Component {
         body: JSON.stringify({
           name: this.state.name,
           creator: this.props.userId,
-          city: PLACE_ID,
+          city: this.props.navigation.state.params.place_id,
           pins: this.props.markers,
           tags: this.state.tags
         })
@@ -829,21 +846,22 @@ class MapScreen extends Component {
           onPoiClick={this.onPoiClick}
           onLongPress={this.onLongPress}
           initialRegion={{
-            latitude: INIT_LOCATION.latitude,
-            longitude: INIT_LOCATION.longitude,
+            latitude: this.props.navigation.state.params.lat,
+            longitude: this.props.navigation.state.params.lng,
             latitudeDelta: 0.0922,
             longitudeDelta: 0.0421
           }}
+          showsUserLocation={true}
           ref={ref => this.mapRef = ref}
         >
-          {this.props.markers.map((marker, index) => 
+          {this.props.markers.map((marker, index) =>
             <Marker
               key={marker.properties.placeId}
               identifier={marker.properties.placeId}
               coordinate={{latitude: marker.geometry.coordinates[0], longitude: marker.geometry.coordinates[1]}}
               title={marker.properties.mainText}
               description={marker.properties.secondaryText}
-              icon={pin}
+              image={pin}
             >
               <View style={mapStyles.pin}>
                 <Text style={{color: 'white'}}>{index+1}</Text>
@@ -884,7 +902,7 @@ class MapScreen extends Component {
           {/* show focused card */}
           {this.state.focused && <FocusedCard
             marker={this.state.focused}
-            onAdd={this.onAddItem} 
+            onAdd={this.onAddItem}
           />}
           <View style={mapStyles.drawer} >
             <DrawerButton onPress={this.toggleDrawer} />

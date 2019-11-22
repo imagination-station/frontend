@@ -43,6 +43,10 @@ const styles = StyleSheet.create({
     top: 5,
     right: 5,
     zIndex: 5
+  },
+  cityTitle: {
+    fontSize: 10,
+    marginTop: 5,
   }
 });
 
@@ -55,26 +59,38 @@ export default function PathCard(props) {
     <TouchableWithoutFeedback onPress={props.onPress}>
       <View style={styles.card}>
         <View style={styles.iconButtonBar}>
-          <TouchableOpacity onPress={props.onBookmark}>
+          {'bookmarked' in props && <TouchableOpacity onPress={props.onBookmark}>
             <Icon
               name={props.bookmarked ? 'bookmark' : 'bookmark-border'}
               size={25}
               color={props.bookmarked ? '#f1c236': 'rgba(0, 0, 0, 0.5)'}
             />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={props.onLike}>
+          </TouchableOpacity>}
+          {'liked' in props && <TouchableOpacity onPress={props.onLike}>
             <Icon
               name={props.liked ? 'favorite' : 'favorite-border'}
               size={25}
               color={props.liked ? '#fd889c': 'rgba(0, 0, 0, 0.5)'}
             />
-          </TouchableOpacity>
+          </TouchableOpacity>}
         </View>
         <Image source={pic} style={styles.cardImage} resizeMode='cover' />
         <View style={styles.textContent}>
           <Text numberOfLines={1} style={styles.cardtitle}>
             {props.title}
           </Text>
+          {props.city && <Text numberOfLines={1} style={styles.cityTitle}>
+            {props.city}
+          </Text>}
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Icon
+              name='favorite'
+              size={15}
+              color='#e5446d'
+              style={{marginRight: 3}}
+            />
+            <Text style={{color: 'black', fontSize: 12}}>{props.numLikes}</Text>
+          </View>
         </View>
       </View>
     </TouchableWithoutFeedback>
