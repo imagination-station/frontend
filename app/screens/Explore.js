@@ -392,25 +392,14 @@ class ExploreScreen extends Component {
       return;
     }
     firebase.auth().currentUser.getIdToken().then(token =>{
-      if (this.state.currentCityByGPS === this.state.cityFullName) {
-        return fetch(`${SERVER_ADDR}/cities/routes/?lat=${this.state.longitude}&lng=${this.state.latitude}&page=0`, {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-            'Content-type': 'application/json',
-            Authorization: `Bearer ${token}`
-          }
-        })
-      } else {
-        return fetch(`${SERVER_ADDR}/cities/${this.state.place_id}/routes`, {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-            'Content-type': 'application/json',
-            Authorization: `Bearer ${token}`
-          }
-        })
-      }
+      return fetch(`${SERVER_ADDR}/cities/${this.state.place_id}/routes`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      })
     })
     .then(response => response.json())
     .then(responseJson => {
@@ -444,10 +433,16 @@ class ExploreScreen extends Component {
         });
       } else {
         let tags = [];
+        let otherTag = 'Other';
         responseJson.forEach((item, index) => {
-          item.tags.forEach((item_, index_) => {
-            tags.push(item_);
-          })
+          if (item.tags.length == 0) {
+            item.tags.push(otherTag);
+            tags.push(otherTag);
+          } else {
+            item.tags.forEach((item_, index_) => {
+              tags.push(item_);
+            })
+          }
         })
 
         var uniqueTags = tags.map((name) => {
@@ -467,6 +462,9 @@ class ExploreScreen extends Component {
           tags: Object.keys(uniqueTags)
         });
         this.getDistanceAndTime();
+        if (this.state.currentCityByGPS === this.state.cityFullName) {
+          this.currentCity();
+        }
       }
     })
     .catch(error => console.error(error));
@@ -504,6 +502,37 @@ class ExploreScreen extends Component {
           });
         });
     }
+  }
+
+  currentCity = () => {
+    let tags = this.state.tags;
+    let routes = this.state.routes;
+    let nearbyCityTag = 'Nearby City';
+    tags.unshift(nearbyCityTag);
+    firebase.auth().currentUser.getIdToken().then(token =>{
+      return fetch(`${SERVER_ADDR}/cities/routes/?lat=${this.state.longitude}&lng=${this.state.latitude}&page=0`, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+      })
+    })
+    .then(response => response.json())
+    .then(responseJson => {
+      for (i = 0; i < responseJson.length; i++) {
+        let id = responseJson[i]._id;
+        for (j = 0; j < routes.length; j++) {
+          let routeId = routes[j]._id;
+          if (id == routeId) {
+            routes[j].tags.push(nearbyCityTag);
+            break;
+          }
+        }
+      }
+      this.setState({routes: routes});
+    });
   }
 
   setDistanceLimit = (distance) => {
