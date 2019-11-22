@@ -849,6 +849,7 @@ class MapScreen extends Component {
             latitudeDelta: 0.0922,
             longitudeDelta: 0.0421
           }}
+          showsUserLocation={true}
           ref={ref => this.mapRef = ref}
         >
           {this.props.markers.map((marker, index) =>
