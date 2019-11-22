@@ -529,10 +529,12 @@ class MapScreen extends Component {
     focused: null,
     // route metadata
     name: '',
-    tags: []
+    tags: [],
+    userId: null
   };
 
   componentWillMount() {
+    this.setState({userId: this.props.userId});
     this.mapRef = null;
     this.scrollViewRef = null;
     this.searchBoxRef = null;

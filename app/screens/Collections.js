@@ -57,12 +57,14 @@ class CollectionsScreen extends Component {
     bookmarks: [],
     liked: [],
     screen: screens.MYTRIPS,
-    refreshing: false
+    refreshing: false,
+    userId: null
   };
 
   componentDidMount() {
+    this.setState({userId: this.props.userId});
     firebase.auth().currentUser.getIdToken()
-      .then(token => fetch(`${SERVER_ADDR}/users/${this.props.userId}/routes`, {
+      .then(token => fetch(`${SERVER_ADDR}/users/${this.state.userId}/routes`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -78,7 +80,7 @@ class CollectionsScreen extends Component {
       .catch(error => console.error(error));
 
     firebase.auth().currentUser.getIdToken()
-      .then(token => fetch(`${SERVER_ADDR}/users/${this.props.userId}/forks`, {
+      .then(token => fetch(`${SERVER_ADDR}/users/${this.state.userId}/forks`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -93,7 +95,7 @@ class CollectionsScreen extends Component {
       .catch(error => console.error(error));
 
     firebase.auth().currentUser.getIdToken()
-      .then(token => fetch(`${SERVER_ADDR}/users/${this.props.userId}/likes`, {
+      .then(token => fetch(`${SERVER_ADDR}/users/${this.state.userId}/likes`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -122,11 +124,11 @@ class CollectionsScreen extends Component {
     console.log('getting data');
     console.log(this.props.userId);
     console.log(this.props);
-    if (this.props.userId == undefined) {
+    if (this.state.userId == undefined) {
       return;
     }
     firebase.auth().currentUser.getIdToken()
-      .then(token => fetch(`${SERVER_ADDR}/users/${this.props.userId}/routes`, {
+      .then(token => fetch(`${SERVER_ADDR}/users/${this.state.userId}/routes`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -141,7 +143,7 @@ class CollectionsScreen extends Component {
       .catch(error => console.error(error));
 
     firebase.auth().currentUser.getIdToken()
-      .then(token => fetch(`${SERVER_ADDR}/users/${this.props.userId}/forks`, {
+      .then(token => fetch(`${SERVER_ADDR}/users/${this.state.userId}/forks`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -156,7 +158,7 @@ class CollectionsScreen extends Component {
       .catch(error => console.error(error));
 
     firebase.auth().currentUser.getIdToken()
-      .then(token => fetch(`${SERVER_ADDR}/users/${this.props.userId}/likes`, {
+      .then(token => fetch(`${SERVER_ADDR}/users/${this.state.userId}/likes`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',

@@ -319,11 +319,15 @@ class ExploreScreen extends Component {
     latitude: null,
     longitude: null,
     currentCityByGPS: '',
-    tags: []
+    tags: [],
+    userId: null
   };
 
   componentDidMount() {
     this.scrollValue = new Animated.Value(0);
+    this.setState({
+      userId: this.props.userId
+    })
     if (this.props.latitude && this.props.longitude) {
       this.setState({
         latitude: this.props.latitude,
@@ -376,7 +380,7 @@ class ExploreScreen extends Component {
   }
 
   getData = () => {
-    if (this.props.userId == undefined) {
+    if (this.state.userId == undefined) {
       this.setState({
         routes: [],
         bookmarks: new Array(0),
@@ -625,7 +629,7 @@ class ExploreScreen extends Component {
                           console.log(bookmarks);
                           if (bookmarks[index]) {
                             firebase.auth().currentUser.getIdToken().then(token =>
-                              fetch(`${SERVER_ADDR}/users/${this.props.userId}/forks`, {
+                              fetch(`${SERVER_ADDR}/users/${this.state.userId}/forks`, {
                                 method: 'POST',
                                 headers: {
                                   Accept: 'application/json',
@@ -679,7 +683,7 @@ class ExploreScreen extends Component {
                               },
                               body: JSON.stringify({
                                 type: like,
-                                userId: this.props.userId
+                                userId: this.state.userId
                               })
                             })
                           )
