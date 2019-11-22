@@ -734,6 +734,11 @@ class MapScreen extends Component {
     }, this.toggleDrawer);
   }
 
+  onPressAddTags = () => {
+    this.props.navigation.navigate('AddTags');
+    console.log("Button pressed");
+  }
+
   onComplete = () => {
     firebase.auth().currentUser.getIdToken().then(token =>
       fetch(`${SERVER_ADDR}/cities/routes`, {
@@ -940,7 +945,7 @@ class MapScreen extends Component {
                   onChangeText={text => this.setState({name: text})}
                   value={this.state.name}
                 />
-                <Picker
+                {/* <Picker
                   style={{height: 50, width: 150, alignSelf: 'flex-start', marginLeft: '5%', marginBottom: 10, borderWidth: 1}}
                   selectedValue='Add Tags'
                   onValueChange={value => {
@@ -953,7 +958,8 @@ class MapScreen extends Component {
                 >
                   <Picker.Item label='Add Tags' value={'Add Tags'} />
                   {TAGS.map(tag => <Picker.Item label={tag} value={tag} key={tag}/>)}
-                </Picker>
+                </Picker> */}
+                <Button title={'Add Tags'} onPress={this.onPressAddTags} />
                 <View style={{flexDirection: 'row', alignSelf: 'flex-start', marginLeft: '5%', flexWrap: 'wrap'}}>
                   {this.state.tags.map(tag => <Tag title={tag} onClear={() => this.clearTag(tag)} key={tag} />)}
                 </View>
