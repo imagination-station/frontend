@@ -14,9 +14,9 @@ import {
   Platform,
   PixelRatio
 } from 'react-native';
-import Checkbox from '../components/Checkbox.js';
-// import { Checkbox } from 'react-native-elements';
-import CheckboxFormX from 'react-native-checkbox-form';
+// import Checkbox from '../components/Checkbox.js';
+import { Checkbox } from 'react-native-elements';
+import CheckboxForm from 'react-native-checkbox-form';
 import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
 import * as firebase from 'firebase';
@@ -90,18 +90,20 @@ class AddTagsScreen extends Component {
           [option]: false
         }),
         {}
-      )
+      ),
+      selected: []
     };
 
     handleCheckboxChange = changeEvent => {
       const { name } = changeEvent.target;
-  
+      
       this.setState(prevState => ({
         checkboxes: {
           ...prevState.checkboxes,
           [name]: !prevState.checkboxes[name]
         }
       }));
+      console.log(this.state.checkboxes);
     };
   
     handleFormSubmit = formSubmitEvent => {
@@ -111,6 +113,9 @@ class AddTagsScreen extends Component {
         .filter(checkbox => this.state.checkboxes[checkbox])
         .forEach(checkbox => {
           console.log(checkbox, "is selected.");
+          this.setState({
+            selected: [...this.state.selected, checkbox]
+          });
         });
     };
   
@@ -127,7 +132,7 @@ class AddTagsScreen extends Component {
         return (
           <View style={styles.container}>
               <View style={{ marginVertical: 10 }} >
-                  <CheckboxFormX
+                  <CheckboxForm
                       style={{ width: width }}
                       dataSource={tags}
                       itemShowKey="label"
@@ -136,6 +141,14 @@ class AddTagsScreen extends Component {
                       formHorizontal={false}
                       labelHorizontal={true}
                       onChecked={(item) => this.handleCheckboxChange}
+                  />
+                  <Button 
+                        title={'Save'}
+                        onPress={ () => {
+                            this.handleFormSubmit;
+                            // this.props.update(this.state.selected);
+                            this.props.navigation.goBack();
+                        }} 
                   />
               </View>
          </View>
