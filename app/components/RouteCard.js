@@ -82,6 +82,15 @@ export default function PathCard(props) {
           {props.city && <Text numberOfLines={1} style={styles.cityTitle}>
             {props.city}
           </Text>}
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Icon
+              name='favorite'
+              size={15}
+              color='#e5446d'
+              style={{marginRight: 3}}
+            />
+            <Text style={{color: 'black', fontSize: 12}}>{props.numLikes}</Text>
+          </View>
         </View>
       </View>
     </TouchableWithoutFeedback>

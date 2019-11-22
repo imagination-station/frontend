@@ -609,6 +609,7 @@ class ExploreScreen extends Component {
                         key={item._id}
                         title={item.name}
                         photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
+                        numLikes={item.numLikes}
                         onPress={() => this.props.navigation.navigate('RouteDetail', {
                           route: item
                         })}
