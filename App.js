@@ -16,6 +16,7 @@ import PlaceDetailScreen from './app/screens/PlaceDetail.js';
 import RouteDetailScreen from './app/screens/RouteDetail.js';
 import SignUpScreen from './app/screens/SignUp.js';
 import SplashScreen from './app/screens/Splash.js';
+import TutorialScreen from './app/screens/Tutorial.js';
 import LocationScreen from './app/screens/Location.js';
 
 import Playground from './app/screens/Playground.js';
@@ -82,6 +83,7 @@ const HomeStack = createStackNavigator({
   PlaceDetail: mapNavigationStateParamsToProps(PlaceDetailScreen),
   NoteEditor: mapNavigationStateParamsToProps(NoteEditorScreen),
   RouteDetail: RouteDetailScreen,
+  Tutorial: TutorialScreen
 });
 
 const AppNavigator = createSwitchNavigator(

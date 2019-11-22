@@ -90,6 +90,10 @@ class ProfileScreen extends Component {
     firebase.auth().signOut();
   }
 
+  tutorial = () => {
+    this.props.navigation.navigate('Tutorial');
+  }
+
   render() {
     return (
       <Fragment>
@@ -109,6 +113,11 @@ class ProfileScreen extends Component {
             </View>
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionHeader}>ACTIONS</Text>
+              <ActionButton
+                title='Tutorial'
+                onPress={this.tutorial}
+                textStyle={{...styles.textStyle, color: ACCENT}}
+              />
               <ActionButton
                 title='Log out'
                 onPress={this.logout}

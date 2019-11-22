@@ -10,7 +10,7 @@ npm-debug.*
 web-build/
 web-report/
 package-lock.json
-./DS_Store
+.DS_Store
 
 app/config/settings.js
 app/config/settings.1.js

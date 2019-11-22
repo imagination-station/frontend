@@ -63,7 +63,7 @@ class SplashScreen extends Component {
         // console.log('facebook uid', firebase.auth().currentUser.providerData[0].uid);
 
         firebase.auth().currentUser.getIdToken()
-          .then(token => {      
+          .then(token => {
             return fetch(`${SERVER_ADDR}/users?firebaseId=${firebase.auth().currentUser.uid}`, {
               headers: {
                 Accept: 'application/json',
