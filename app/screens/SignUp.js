@@ -75,7 +75,7 @@ class SignUpScreen extends Component {
     render() {
         return (
           <View style={styles.container}>
-            <Text style={{...globalStyles.text, fontSize: 24, marginBottom: 50}}>A Travel App</Text>
+            <Text style={{...globalStyles.text, fontSize: 24, marginBottom: 50}}>Stumble</Text>
             <TextInput
               style={styles.textInput}
               placeholder={'Full Name'}

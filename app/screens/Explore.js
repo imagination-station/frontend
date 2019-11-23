@@ -271,19 +271,19 @@ function CityImage(props) {
       <View style={styles.searchBoxContainer}>
         <TextInput
           style={styles.searchBox}
-          placeholderTextColor = 'rgba(0, 0, 0, 0.3)'
+          placeholderTextColor = 'rgba(0, 0, 0, 0.5)'
           placeholder='Try "Barcelona"'
           onTouchEnd={props.onPressSearchBox}
         />
         <TouchableOpacity onPress={props.onPressFilter}>
-          <Icon name='menu' size={30} color='rgba(0, 0, 0, 0.3)' />
+          <Icon name='menu' size={30} color='rgba(0, 0, 0, 0.5)' />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => props.navigation.navigate('Map', {
           lat: props.lat,
           lng: props.lng,
           place_id: props.place_id
         })}>
-          <Icon name='add' size={30} color='dodgerblue' />
+          <Icon name='add' size={30} color='rgba(0, 0, 0, 0.5)' />
         </TouchableOpacity>
       </View>
       <View style={{paddingLeft: 10, position: 'absolute', bottom: 10}}>
@@ -507,7 +507,7 @@ class ExploreScreen extends Component {
   currentCity = () => {
     let tags = this.state.tags;
     let routes = this.state.routes;
-    let nearbyCityTag = 'Nearby City';
+    let nearbyCityTag = 'Nearby';
     tags.unshift(nearbyCityTag);
     firebase.auth().currentUser.getIdToken().then(token =>{
       return fetch(`${SERVER_ADDR}/cities/routes/?lat=${this.state.longitude}&lng=${this.state.latitude}&page=0`, {
