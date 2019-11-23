@@ -88,7 +88,7 @@ const AuthStack = createStackNavigator({
   SignUp: SignUpScreen,
   Location: LocationScreen,
 }, {
-  initialRouteName: 'Login'
+  initialRouteName: 'Location'
 });
 
 const AppNavigator = createSwitchNavigator(

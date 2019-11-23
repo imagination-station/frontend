@@ -11,78 +11,69 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-import { GREY, DARKER_GREY, PRIMARY, ACCENT, AQUAMARINE } from '../config/styles.js';
+import { GREY, PRIMARY, AQUAMARINE } from '../config/styles.js';
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   button: { 
     color: AQUAMARINE,
     fontSize: 18,
     paddingHorizontal: 7,
-    marginRight: 10
-  }
-});
-
-const searchStyles = StyleSheet.create({
+    marginRight: 10,
+    opacity: 1
+  },
   container: {
     flex: 1,
-    alignItems: 'center',
-    flexWrap: 'wrap'
+    alignItems: 'center'
   },
   textBoxContainer: {
     backgroundColor: GREY,
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
+    width: '90%',
     paddingHorizontal: '2.5%',
+    borderRadius: 10
   },
   textBox: {
     height: 46,
     width: '90%',
-    paddingLeft: 10,
+    paddingLeft: 10
   },
-  list: {
-    height: '50%',
+  listContainer: {
     width: '100%',
-    borderTopWidth: 5,
-    borderColor: GREY,
-    paddingHorizontal: '2.5%',
+    height: '50%',
+    marginTop: 15
   },
   autoCompleteItem: {
     borderColor: GREY,
     borderBottomWidth: 1,
-    padding: 10
+    padding: 15
   },
-  mainText: {
-    fontSize: 16,
-  },
-  secondaryText: {
-    fontSize: 10,
-    color: 'grey'
-  }
 });
+
+function SearchBox(props) {
+  return (
+    <View style={styles.textBoxContainer}>
+      <TextInput
+        style={{...styles.textBox, color: props.snappedToCity ? AQUAMARINE : 'black'}}
+        placeholder={props.autoDetectionHandled ? 'Search for a city': 'Getting your city...'}
+        value={props.textInput}
+        onChangeText={props.onChangeText}
+        editable={props.autoDetectionHandled}
+      />
+      {props.autoDetectionHandled ? <TouchableOpacity onPress={props.onClearText}>
+        <Icon name='clear' size={30} color='grey' />
+      </TouchableOpacity>
+      : <ActivityIndicator size='small' color='grey' />}
+    </View>
+  );
+}
 
 function SearchItem(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
-      <View style={searchStyles.autoCompleteItem}>
-        <Text style={searchStyles.mainText}>{props.item.matching_full_name}</Text>
+      <View style={styles.autoCompleteItem}>
+        <Text style={styles.mainText}>{props.item.matching_full_name}</Text>
       </View>
-    </TouchableOpacity>
-  );
-}
-
-function MyButton(props) {
-  let style = styles.button;
-  if (props.small) {
-    style = {...style, fontSize: 14};
-  }
-
-  return (
-    <TouchableOpacity onPress={props.onPress} disabled={props.disabled}>
-      <Text style={style}>{props.title}</Text>
     </TouchableOpacity>
   );
 }
@@ -93,20 +84,22 @@ class Location extends Component {
     return {
       headerTitle: () => <Text style={{fontSize: 20, marginLeft: 10}}>Sign up</Text>,
       headerRight: () => (
-        <MyButton
-          title='Next'
+        <TouchableOpacity
           disabled={!navigation.getParam('snappedToCity')}
-          onPress={() => console.log('next pressed')}
-        />
+        >
+          {/* make Next button opaque until city is chosen */}
+          <Text style={{...styles.button, opacity: navigation.getParam('snappedToCity') ? 1 : 0.3}}>Next</Text>
+        </TouchableOpacity>
       )
     };
   }
 
   state = {
     textInput: '',
-    results: null,
+    results: [],
     location: null,
     autoDetectionHandled: false,
+    snappedToCity: false,
   }
 
   SEARCH_TIMEOUT = 100; // ms
@@ -114,6 +107,7 @@ class Location extends Component {
   componentDidMount() {
     this.searchTimer = null;
     this.props.navigation.setParams({snappedToCity: false});
+    // get city based on user's current location
     navigator.geolocation.getCurrentPosition(
       position => {
         const latitude = JSON.stringify(position.coords.latitude);
@@ -127,6 +121,7 @@ class Location extends Component {
             this.setState({
               location: responseJson,
               autoDetectionHandled: true,
+              snappedToCity: true,
               textInput: responseJson.full_name
             });
             this.props.navigation.setParams({snappedToCity: true});
@@ -140,53 +135,68 @@ class Location extends Component {
 
   onChangeText = text => {
     this.setState({textInput: text});
+    this.props.navigation.setParams({snappedToCity: false});
     if (!this.searchTimer && text !== '') {
       this.searchTimer = setTimeout(() => {
         fetch(`https://api.teleport.org/api/cities/?search=${this.state.textInput.replace(' ', '%20')}`)
           .then(response => response.json())
-          .then(responseJson => this.setState({results: responseJson._embedded['city:search-results']}));
+          .then(responseJson => this.setState({
+            results: responseJson._embedded['city:search-results'],
+            snappedToCity: false
+          }));
         this.searchTimer = null;
       }, this.SEARCH_TIMEOUT);
     }
   }
 
+  onClearText = () => {
+    this.props.navigation.setParams({snappedToCity: false});
+    this.setState({
+      textInput: '',
+      results: [],
+      snappedToCity: false
+    });
+  }
+
+  onPressSearchItem = item => {
+    fetch(item._links['city:item'].href)
+    .then(response => response.json())
+    .then(responseJson => this.setState({
+      location: responseJson,
+      textInput: responseJson.full_name,
+      snappedToCity: true
+    }));
+    this.props.navigation.setParams({snappedToCity: true});
+  }
+
   render() {
     return (
       <View style={styles.container}>
-        <View style={searchStyles.textBoxContainer}>
-          <TextInput
-            style={searchStyles.textBox}
-            placeholder={this.state.autoDetectionHandled ? 'Search for a city': 'Getting your city...'}
-            value={this.state.textInput}
-            onChangeText={this.onChangeText}
-            editable={this.state.autoDetectionHandled}
-          />
-          {this.state.autoDetectionHandled ? <TouchableOpacity onPress={() => this.setState({textInput: ''})}>
-            <Icon name='clear' size={30} />
-          </TouchableOpacity>
-          : <ActivityIndicator size='small' color='black' />}
+        <View style={{width: '90%', marginVertical: 10, marginHorizontal: '5%'}}>
+          <Text style={{fontSize: 32}}>Hello!</Text>
+          <Text style={{fontSize: 32}}>Where do you live?</Text>
+          <View style={{flexDirection: 'row', marginTop: 10}}>
+            <Icon name='help-outline' size={20} color={PRIMARY} style={{marginRight: 5}}/>
+            <Text>Your content will receive priority in your city.</Text>
+          </View>
         </View>
-        <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-          {this.state.results ?
-            <View style={searchStyles.list}>
-              <FlatList
-                data={this.state.results}
-                renderItem={({ item }) => <SearchItem
-                  item={item}
-                  // navigation passed in to pop from search page
-                  onPress={() => {
-                    fetch(item._links['city:item'].href)
-                      .then(response => response.json())
-                      .then(responseJson => this.setState({
-                        location: responseJson,
-                        textInput: responseJson.full_name,
-                      }));
-                    this.props.navigation.setParams({snappedToCity: true});
-                  }}
-                />}
-                keyExtractor={item => item._links['city:item'].href}
-              />
-            </View> : <Text style={{fontSize: 24}}>Where do you live?</Text>}
+        <SearchBox
+          autoDetectionHandled={this.state.autoDetectionHandled}
+          snappedToCity={this.state.snappedToCity}
+          textInput={this.state.textInput}
+          onChangeText={this.onChangeText}
+          onClearText={this.onClearText}
+        />
+        <View style={styles.listContainer}>
+          <FlatList
+            data={this.state.results}
+            renderItem={({ item }) => <SearchItem
+              item={item}
+              // navigation passed in to pop from search page
+              onPress={() => this.onPressSearchItem(item)}
+            />}
+            keyExtractor={item => item._links['city:item'].href}
+          />
         </View>
       </View>
     );
