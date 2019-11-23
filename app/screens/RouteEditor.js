@@ -808,10 +808,10 @@ class MapScreen extends Component {
                   [this.props.markers[index], this.props.markers[index+1]].map(marker => marker.properties.placeId),
                   {
                     edgePadding: {
-                      top: 500,
-                      left: 500,
-                      bottom: 800,
-                      right: 500
+                      top: 100,
+                      left: 100,
+                      bottom: 300,
+                      right: 100
                     },
                     animated: true
                   }
