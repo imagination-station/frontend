@@ -103,6 +103,7 @@ class LoginScreen extends Component {
                 this.props.navigation.navigate('Home');
               } else {
                 console.log('new user!');
+                // TODO: POST request to API server
                 this.props.navigation.navigate('Location');
               }
             }

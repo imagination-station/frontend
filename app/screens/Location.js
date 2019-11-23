@@ -82,10 +82,14 @@ class Location extends Component {
 
   static navigationOptions = ({ navigation }) => {
     return {
-      headerTitle: () => <Text style={{fontSize: 20, marginLeft: 10}}>Sign up</Text>,
+      headerTitle: () => <Text style={{fontSize: 20, marginLeft: 10}}>Location</Text>,
       headerRight: () => (
         <TouchableOpacity
           disabled={!navigation.getParam('snappedToCity')}
+          // TODO: PUT request to API server
+          onPress={() => {
+            navigation.navigate('Interests');
+          }}
         >
           {/* make Next button opaque until city is chosen */}
           <Text style={{...styles.button, opacity: navigation.getParam('snappedToCity') ? 1 : 0.3}}>Next</Text>
@@ -173,8 +177,8 @@ class Location extends Component {
     return (
       <View style={styles.container}>
         <View style={{width: '90%', marginVertical: 10, marginHorizontal: '5%'}}>
-          <Text style={{fontSize: 32}}>Hello!</Text>
-          <Text style={{fontSize: 32}}>Where do you live?</Text>
+          <Text style={{fontSize: 32, color: 'grey'}}>Hello!</Text>
+          <Text style={{fontSize: 32, color: 'grey'}}>Where do you live?</Text>
           <View style={{flexDirection: 'row', marginTop: 10}}>
             <Icon name='help-outline' size={20} color={PRIMARY} style={{marginRight: 5}}/>
             <Text>Your content will receive priority in your city.</Text>

@@ -17,6 +17,7 @@ import RouteDetailScreen from './app/screens/RouteDetail.js';
 import SignUpScreen from './app/screens/SignUp.js';
 import SplashScreen from './app/screens/Splash.js';
 import LocationScreen from './app/screens/Location.js';
+import InterestsScreen from './app/screens/Interests.js';
 
 import Playground from './app/screens/Playground.js';
 
@@ -87,8 +88,9 @@ const AuthStack = createStackNavigator({
   Login: LoginScreen,
   SignUp: SignUpScreen,
   Location: LocationScreen,
+  Interests: InterestsScreen,
 }, {
-  initialRouteName: 'Location'
+  initialRouteName: 'Login'
 });
 
 const AppNavigator = createSwitchNavigator(
