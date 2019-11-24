@@ -316,23 +316,31 @@ class ExploreScreen extends Component {
     maximumDistance: 10,
     place_id: PLACE_ID,
     cityFullName: '',
-    latitude: null,
-    longitude: null,
     currentCityByGPS: '',
-    tags: [],
-    userId: null
+    tags: []
   };
 
   componentDidMount() {
     this.scrollValue = new Animated.Value(0);
-    this.setState({
-      userId: this.props.userId
-    })
+
+    navigator.geolocation.getCurrentPosition(() => {
+      console.log('Location Granted');
+      navigator.geolocation.getCurrentPosition((position) => {
+        this.setState({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        });
+        this.goToExplore();
+      });
+    },() => {
+      console.log('Location Denied');
+      this.goToExplore();
+    });
+
+    navigator.geolocation.navigation
+
     if (this.props.latitude && this.props.longitude) {
-      this.setState({
-        latitude: this.props.latitude,
-        longitude: this.props.longitude
-      })
+
       fetch(`https://api.teleport.org/api/locations/${this.props.latitude},${this.props.longitude}`)
         .then(response => response.json())
         .then(responseJson => {
