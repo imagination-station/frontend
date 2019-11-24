@@ -281,7 +281,7 @@ function CityImage(props) {
         <TouchableOpacity onPress={() => props.navigation.navigate('Map', {
           lat: props.lat,
           lng: props.lng,
-          place_id: props.place_id
+          placeId: props.placeId
         })}>
           <Icon name='add' size={30} color='dodgerblue' />
         </TouchableOpacity>
@@ -314,7 +314,7 @@ class ExploreScreen extends Component {
     timeFilterValue: 0,
     minimumDistance: 0,
     maximumDistance: 10,
-    place_id: PLACE_ID,
+    placeId: PLACE_ID,
     cityFullName: '',
     currentCityByGPS: '',
     tags: []
@@ -323,54 +323,38 @@ class ExploreScreen extends Component {
   componentDidMount() {
     this.scrollValue = new Animated.Value(0);
 
-    navigator.geolocation.getCurrentPosition(() => {
-      console.log('Location Granted');
-      navigator.geolocation.getCurrentPosition((position) => {
-        this.setState({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        });
-        this.goToExplore();
-      });
-    },() => {
-      console.log('Location Denied');
-      this.goToExplore();
+    navigator.geolocation.getCurrentPosition(position => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      /* fetch city by lat, lng using Telepoort first,
+         fetch Google placeId using city's full name.
+
+         Once placeId is found, use that to get city image
+       */
+      fetch(`https://api.teleport.org/api/locations/${lat},${lng}`)
+      .then(response => response.json())
+      .then(responseJson => {
+        const url = responseJson._embedded['location:nearest-cities'][0]._links['location:nearest-city'].href;
+        return fetch(url);
+      })
+      .then(response => response.json())
+      .then(responseJson => {
+        this.setState({city: responseJson});
+        return fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${responseJson.full_name}&key=${MAPS_API_KEY}`);
+      })
+      .then(response => response.json())
+      .then(responseJson => {
+        const placeId = responseJson.results[0].place_id;
+        this.setState({placeId: placeId});
+        return fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}`);
+      })
+      .then(response => response.json())
+      .then(responseJson => {
+        const ref = responseJson.result.photos[0].photo_reference;
+        return fetch (`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=1000`)
+      })
     });
-
-    navigator.geolocation.navigation
-
-    if (this.props.latitude && this.props.longitude) {
-
-      fetch(`https://api.teleport.org/api/locations/${this.props.latitude},${this.props.longitude}`)
-        .then(response => response.json())
-        .then(responseJson => {
-          let link = responseJson._embedded['location:nearest-cities'][0]._links['location:nearest-city'].href;
-          let geonameid = link.substring(link.indexOf('geonameid:') + 10);
-          geonameid = geonameid.substring(0, geonameid.length - 1);
-          this.setState({geonameid: geonameid});
-          return fetch(link)
-        })
-        .then(response => response.json())
-        .then(responseJson => {
-          let fullName = responseJson.full_name.split(' ').join('+');
-          let name = responseJson.name;
-          this.setState({
-            city: responseJson,
-            cityFullName: responseJson.full_name,
-            currentCityByGPS: responseJson.full_name
-          });
-          return fullName;
-        })
-        .then(fullName => fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${fullName}&key=${MAPS_API_KEY}`))
-        .then(response => response.json())
-        .then(responseJson => {
-          let place_id = responseJson.results[0].place_id
-          this.setState({place_id: place_id});
-          this.mount();
-        })
-    } else {
-      this.mount();
-    }
   }
 
   mount = () => {
@@ -400,7 +384,7 @@ class ExploreScreen extends Component {
       return;
     }
     firebase.auth().currentUser.getIdToken().then(token =>{
-      return fetch(`${SERVER_ADDR}/cities/${this.state.place_id}/routes`, {
+      return fetch(`${SERVER_ADDR}/cities/${this.state.placeId}/routes`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -422,7 +406,7 @@ class ExploreScreen extends Component {
             },
             body: JSON.stringify({
               name: this.state.cityFullName,
-              placeId: this.state.place_id,
+              placeId: this.state.placeId,
               photoRef: ''
             })
           })
@@ -486,7 +470,7 @@ class ExploreScreen extends Component {
       let markers = this.state.routes[i].pins;
       for (let j = 0; j < markers.length - 1; j++) {
         fetches[i].push(
-          fetch(`https://maps.googleapis.com/maps/api/directions/json?key=${MAPS_API_KEY}&origin=place_id:${markers[j].properties.placeId}&destination=place_id:${markers[j+1].properties.placeId}&mode=walking`)
+          fetch(`https://maps.googleapis.com/maps/api/directions/json?key=${MAPS_API_KEY}&origin=placeId:${markers[j].properties.placeId}&destination=placeId:${markers[j+1].properties.placeId}&mode=walking`)
             .then(response => response.json())
         );
       }
@@ -599,8 +583,8 @@ class ExploreScreen extends Component {
       })
       .then(response => response.json())
       .then(responseJson => {
-        let place_id = responseJson.results[0].place_id;
-        this.setState({place_id: place_id});
+        let placeId = responseJson.results[0].placeId;
+        this.setState({placeId: placeId});
         this.getData();
         return fetch(link);
       })
@@ -626,7 +610,7 @@ class ExploreScreen extends Component {
             navigation={this.props.navigation}
             lat={this.state.latitude}
             lng={this.state.longitude}
-            place_id={this.state.place_id}
+            placeId={this.state.placeId}
           />
           {this.state.tags.map((tag, index) => {
             return(
