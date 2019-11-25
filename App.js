@@ -12,6 +12,7 @@ import ExploreScreen, { CitySearchScreen, RouteFilterScreen } from './app/screen
 import CollectionsScreen from './app/screens/Collections.js';
 import ProfileScreen from './app/screens/Profile.js';
 import MapScreen, { MapSearchScreen, NoteEditorScreen } from './app/screens/RouteEditor.js';
+import AddTagsScreen from './app/screens/AddTags.js';
 import PlaceDetailScreen from './app/screens/PlaceDetail.js';
 import RouteDetailScreen from './app/screens/RouteDetail.js';
 import SignUpScreen from './app/screens/SignUp.js';
@@ -25,6 +26,7 @@ import routeReducer from './app/reducers/RouteReducer.js';
 
 import { FIREBASE_CONFIG } from './app/config/settings.js';
 import { ACCENT } from './app/config/styles.js';
+// import AddTagsScreen from './app/screens/AddTags.js';
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const store = createStore(routeReducer);
@@ -79,6 +81,7 @@ const HomeStack = createStackNavigator({
   CitySearch: mapNavigationStateParamsToProps(CitySearchScreen),
   RouteFilter: mapNavigationStateParamsToProps(RouteFilterScreen),
   Map: MapScreen,
+  AddTags: AddTagsScreen,
   MapSearch: mapNavigationStateParamsToProps(MapSearchScreen),
   PlaceDetail: mapNavigationStateParamsToProps(PlaceDetailScreen),
   NoteEditor: mapNavigationStateParamsToProps(NoteEditorScreen),
