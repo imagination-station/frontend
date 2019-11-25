@@ -32,7 +32,7 @@ const METERS_TO_MILES = 1609.34;
 const SECONDS_TO_MINUTES = 60;
 
 import Button from '../components/Buttons.js';
-import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
+import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT, DARK_MODE_MAP } from '../config/styles.js';
 import {
   MAPS_API_KEY,
   SERVER_ADDR,
@@ -842,6 +842,7 @@ class MapScreen extends Component {
       <View style={globalStyles.container}>
         <MapView
           provider={'google'}
+          customMapStyle={DARK_MODE_MAP}
           style={globalStyles.container}
           onPoiClick={this.onPoiClick}
           onLongPress={this.onLongPress}

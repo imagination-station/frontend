@@ -20,8 +20,9 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
 import resolveAssetSource from 'resolveAssetSource';
+import { Appearance, AppearanceProvider, useColorScheme } from 'react-native-appearance';
 
-import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
+import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT, DARK_MODE_MAP } from '../config/styles.js';
 import {
   MAPS_API_KEY,
   INIT_LOCATION,
@@ -62,13 +63,13 @@ const mapStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)'
+    backgroundColor: Appearance.getColorScheme() == 'dark' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.9)'
   },
   endPadding: {
     flexGrow: 1
   },
   card: {
-    backgroundColor: 'white',
+    backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white',
     marginHorizontal: 10,
     marginBottom: 5,
     height: CARD_HEIGHT,
@@ -92,11 +93,12 @@ const mapStyles = StyleSheet.create({
   cardtitle: {
     fontSize: 12,
     marginTop: 5,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    color: Appearance.getColorScheme() ? 'white' : 'black'
   },
   cardDescription: {
     fontSize: 12,
-    color: '#444'
+    color: Appearance.getColorScheme() ? 'grey' : '#444'
   },
   cardNumber: {
     position: 'absolute',
@@ -194,19 +196,19 @@ function ActionCard(props) {
   let miles = (props.distance / METERS_TO_MILES).toFixed(2);
   if (props.numPins == 0) {
     content = (
-      <Text style={{color: DARKER_GREY, textAlign: 'center'}}>
+      <Text style={{color: Appearance.getColorScheme() == 'dark' ? 'white' : DARKER_GREY, textAlign: 'center'}}>
         {'Loading...'}
       </Text>
     );
   } else {
     content = [
-      <Text style={{color: DARKER_GREY}} key='num_pins'>
+      <Text style={{color: Appearance.getColorScheme() == 'dark' ? 'white' : DARKER_GREY}} key='num_pins'>
         {`${props.numPins} pins`}
       </Text>,
-      <Text style={{color: DARKER_GREY}} key='distance'>
+      <Text style={{color: Appearance.getColorScheme() == 'dark' ? 'white' : DARKER_GREY}} key='distance'>
         {`${miles} mi`}
       </Text>,
-      <Text style={{color: DARKER_GREY}} key='time'>
+      <Text style={{color: Appearance.getColorScheme() == 'dark' ? 'white' : DARKER_GREY}} key='time'>
         {`${timeString}`}
       </Text>,
       props.view != 'info' &&
@@ -247,7 +249,10 @@ class RouteDetailScreen extends Component {
 
   static navigationOptions = {
     tabBarVisible: false,
-    headerTitle: () => <Text style={{fontSize: 20}}>Route Details</Text>
+    headerStyle: {
+      backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white'
+    },
+    headerTitle: () => <Text style={{fontSize: 20, color: Appearance.getColorScheme() == 'dark' ? 'white' : 'black'}}>Route Details</Text>
   };
 
   state = {
@@ -417,11 +422,11 @@ class RouteDetailScreen extends Component {
             key={`${marker.properties.placeId}_leg`}
           >
             <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
-              <Icon name='directions-walk' size={30} color={index === this.props.showRoute ? PRIMARY : DARKER_GREY} />
-              <Text style={{color: index === this.props.showRoute ? PRIMARY : DARKER_GREY}}>
+              <Icon name='directions-walk' size={30} color={index === this.props.showRoute ? PRIMARY : Appearance.getColorScheme() == 'dark' ? 'white' : DARKER_GREY} />
+              <Text style={{color: index === this.props.showRoute ? PRIMARY : Appearance.getColorScheme() == 'dark' ? 'white' : DARKER_GREY}}>
                 {this.props.steps[index].distance.text}
               </Text>
-              <Text style={{color: index === this.props.showRoute ? PRIMARY : DARKER_GREY}}>
+              <Text style={{color: index === this.props.showRoute ? PRIMARY : Appearance.getColorScheme() == 'dark' ? 'white' : DARKER_GREY}}>
                 {this.props.steps[index].duration.text}
               </Text>
             </View>
@@ -439,6 +444,7 @@ class RouteDetailScreen extends Component {
       <View style={globalStyles.container}>
         <MapView
           provider={'google'}
+          customMapStyle={DARK_MODE_MAP}
           style={globalStyles.container}
           initialRegion={{
             latitude: initLocation[0],

@@ -6,6 +6,7 @@ import * as firebase from 'firebase';
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Appearance, AppearanceProvider, useColorScheme } from 'react-native-appearance';
 
 import LoginScreen from './app/screens/Login.js';
 import ExploreScreen, { CitySearchScreen, RouteFilterScreen } from './app/screens/Explore.js';
@@ -24,7 +25,7 @@ import Playground from './app/screens/Playground.js';
 import routeReducer from './app/reducers/RouteReducer.js';
 
 import { FIREBASE_CONFIG } from './app/config/settings.js';
-import { ACCENT } from './app/config/styles.js';
+import { ACCENT, PRIMARY } from './app/config/styles.js';
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const store = createStore(routeReducer);
@@ -45,9 +46,9 @@ const HomeTab = createMaterialBottomTabNavigator({
   Profile: ProfileScreen
 }, {
   shifting: false,
-  activeColor: ACCENT,
+  activeColor: Appearance.getColorScheme() == 'dark' ? PRIMARY : ACCENT,
   barStyle: {
-    backgroundColor: 'white',
+    backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white',
   },
   defaultNavigationOptions: ({ navigation }) => ({
     tabBarIcon: ({ focused, horizontal, tintColor }) => {

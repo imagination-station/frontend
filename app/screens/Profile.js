@@ -2,6 +2,7 @@ import React, { Component, Fragment } from 'react';
 import { Text, View, Image, StyleSheet, TouchableOpacity, StatusBar, SafeAreaView, Platform } from 'react-native';
 import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Appearance, AppearanceProvider, useColorScheme } from 'react-native-appearance';
 
 import { DARKER_GREY, GREY, PRIMARY, ACCENT } from '../config/styles.js';
 
@@ -17,15 +18,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     elevation: 0.5,
-    backgroundColor: 'white'
+    backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white'
   },
   headerTextContainer: {
     flex: 1,
-    marginLeft: 25
+    marginLeft: 25,
+    color: Appearance.getColorScheme() == 'dark' ? 'white' : 'black'
   },
   headerMainText: {
     fontSize: 20,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    color: Appearance.getColorScheme() == 'dark' ? 'white' : 'black'
   },
   headerSecondaryText: {
     fontSize: 14,
@@ -33,8 +36,8 @@ const styles = StyleSheet.create({
   },
   sectionContainer: {
     padding: 20,
-    backgroundColor: 'white',
-    width: '100%'
+    backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white',
+    width: '100%',
   },
   sectionHeader: {
     fontSize: 12,
@@ -54,11 +57,11 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white'
   },
   safeStatusArea: {
     flex: 0,
-    backgroundColor: '#fff'
+    backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white'
   }
 });
 
@@ -109,7 +112,7 @@ class ProfileScreen extends Component {
             </View>
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionHeader}>BIO</Text>
-              <Text style={{lineHeight: 20}}>{BIO}</Text>
+              <Text style={{lineHeight: 20, color: Appearance.getColorScheme() == 'dark' ? 'white' : 'black'}}>{BIO}</Text>
             </View>
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionHeader}>ACTIONS</Text>

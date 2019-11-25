@@ -25,7 +25,8 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.imaginationstation.stumble"
+      "bundleIdentifier": "com.imaginationstation.stumble",
+      "userInterfaceStyle": "automatic"
     },
     "android": {
 			"package": "com.imaginationstation.stumble"

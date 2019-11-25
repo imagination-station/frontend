@@ -20,10 +20,15 @@ import * as firebase from 'firebase';
 import { connect } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import TimePicker from 'react-native-simple-time-picker';
+import { Appearance, AppearanceProvider, useColorScheme } from 'react-native-appearance';
+// import { useDarkMode } from 'react-native-dark-mode';
+// import { DynamicStyleSheet, DynamicValue, useDynamicStyleSheet } from 'react-native-dark-mode';
+// import { useDarkModeContext } from 'react-native-dark-mode'
+
 
 import RouteCard from '../components/RouteCard.js';
 
-import { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
+import { GREY, DARKER_GREY, PRIMARY, ACCENT, darkMode } from '../config/styles.js';
 import { SERVER_ADDR, PLACE_ID, GEONAME_ID, MAPS_API_KEY, TAGS } from '../config/settings.js';
 
 const {width, height} = Dimensions.get('window');
@@ -37,7 +42,7 @@ const styles = StyleSheet.create({
     width: '100%'
   },
   sectionContainer: {
-    backgroundColor: 'white',
+    backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white',
     width: '100%',
     paddingTop: 7
   },
@@ -605,6 +610,11 @@ class ExploreScreen extends Component {
       })
   }
 
+  componentWillMount() {
+    console.log('will mounting');
+
+  }
+
   render() {
     return (
     <ScrollView contentContainerStyle={styles.scrollView} refreshControl={<RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh.bind(this)} />}>
@@ -623,7 +633,7 @@ class ExploreScreen extends Component {
           {this.state.tags.map((tag, index) => {
             return(
               <View style={styles.sectionContainer}>
-                <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>{tag}</Text>
+                <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20, color: Appearance.getColorScheme() == 'dark' ? 'white' : 'black'}}>{tag}</Text>
                 <Animated.ScrollView
                   contentContainerStyle={styles.endPadding}
                   horizontal

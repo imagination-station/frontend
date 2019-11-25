@@ -8,10 +8,11 @@ import {
   TouchableOpacity
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Appearance, AppearanceProvider, useColorScheme } from 'react-native-appearance';
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'white',
+    backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white',
     marginHorizontal: 10,
     marginVertical: 15,
     height: 200,
@@ -35,6 +36,7 @@ const styles = StyleSheet.create({
   cardtitle: {
     fontSize: 16,
     marginTop: 5,
+    color: Appearance.getColorScheme() == 'dark' ? 'white' : 'black'
   },
   iconButtonBar: {
     flexDirection: 'row',
@@ -47,6 +49,7 @@ const styles = StyleSheet.create({
   cityTitle: {
     fontSize: 10,
     marginTop: 5,
+    color: Appearance.getColorScheme() == 'dark' ? 'white' : 'black'
   }
 });
 
@@ -89,7 +92,7 @@ export default function PathCard(props) {
               color='#e5446d'
               style={{marginRight: 3}}
             />
-            <Text style={{color: 'black', fontSize: 12}}>{props.numLikes}</Text>
+            <Text style={{color: Appearance.getColorScheme() == 'dark' ? 'white' : 'black', fontSize: 12}}>{props.numLikes}</Text>
           </View>
         </View>
       </View>

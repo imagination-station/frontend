@@ -7,6 +7,7 @@ import { connect } from 'react-redux';
 import { DARKER_GREY, GREY } from '../config/styles.js';
 import { SERVER_ADDR, MAPS_API_KEY } from '../config/settings.js';
 import RouteCard from '../components/RouteCard.js';
+import { Appearance, AppearanceProvider, useColorScheme } from 'react-native-appearance';
 
 const styles = StyleSheet.create({
   container: {
@@ -15,17 +16,18 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight
   },
   sectionContainer: {
-    backgroundColor: 'white',
+    backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white',
     width: '100%'
   },
   headerFocused: {
     fontSize: 28,
-    paddingLeft: 12
+    paddingLeft: 12,
+    color: Appearance.getColorScheme() == 'dark' ? 'white' : DARKER_GREY
   },
   headerBlurred: {
     fontSize: 28,
     paddingLeft: 12,
-    color: DARKER_GREY
+    color: Appearance.getColorScheme() == 'dark' ? 'rgba(255, 255, 255, 0.5)' : GREY
   },
   safeArea: {
     flex: 1,
@@ -33,11 +35,11 @@ const styles = StyleSheet.create({
   },
   safeStatusArea: {
     flex: 0,
-    backgroundColor: '#fff'
+    backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white'
   },
   scrollView: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white',
     alignItems: 'center',
     justifyContent: 'center',
   }

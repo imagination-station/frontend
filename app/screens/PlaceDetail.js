@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { View, StyleSheet, Text, Animated, Image, Dimensions, ScrollView } from 'react-native';
 import { connect } from 'react-redux';
+import { Appearance, AppearanceProvider, useColorScheme } from 'react-native-appearance';
 
 import { LongButton } from '../components/Buttons.js';
 import ImageCollage from '../components/ImageCollage.js';
@@ -12,7 +13,8 @@ const CARD_WIDTH = Math.floor(width / 1.5);
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
+    backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white'
   },
   scrollViewContainer: {
     alignItems: 'center'
@@ -30,7 +32,8 @@ const styles = StyleSheet.create({
   },
   mainText: {
     fontSize: 24,
-    marginBottom: 3
+    marginBottom: 3,
+    color: Appearance.getColorScheme() == 'dark' ? 'white' : 'black'
   },
   secondaryText: {
     color: DARKER_GREY
@@ -53,6 +56,14 @@ const styles = StyleSheet.create({
 
 class PlaceDetailScreen extends Component {
 
+  static navigationOptions = {
+    tabBarVisible: false,
+    headerStyle: {
+      backgroundColor: Appearance.getColorScheme() == 'dark' ? 'black' : 'white'
+    },
+    headerTitle: () => <Text style={{fontSize: 20, color: Appearance.getColorScheme() == 'dark' ? 'white' : 'black'}}>Place</Text>
+  };
+
   componentWillMount() {
     this.scrollValue = new Animated.Value(0);
   }
@@ -71,7 +82,7 @@ class PlaceDetailScreen extends Component {
     const photoUris = place.properties.photoRefs
         ? place.properties.photoRefs.map(ref => `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=1000`)
         : [];
-      
+
 
     let placeholder;
     if (this.props.editable) {
