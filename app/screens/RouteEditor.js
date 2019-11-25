@@ -546,6 +546,10 @@ class MapScreen extends Component {
     this.focusChanged = false;
   }
 
+  componentDidMount() {
+    console.log('city:', this.props.city.name);
+  }
+
   componentWillUnmount() {
     this.props.clear();
   }
@@ -763,14 +767,19 @@ class MapScreen extends Component {
         body: JSON.stringify({
           name: this.state.name,
           creator: this.props.userId,
-          city: this.props.navigation.state.params.place_id,
+          city: PLACE_ID,
           pins: this.props.markers,
           tags: this.state.tags
         })
       })
     )
       .then(response => {
-        this.props.navigation.goBack();
+        this.props.toggleRefresh();
+        if (this.props.from == 'location') {
+          this.props.navigation.goBack('Location');
+        } else {
+          this.props.navigation.goBack();
+        }
       })
       .catch(error => console.error(error));
   }
@@ -846,8 +855,8 @@ class MapScreen extends Component {
           onPoiClick={this.onPoiClick}
           onLongPress={this.onLongPress}
           initialRegion={{
-            latitude: this.props.navigation.state.params.lat,
-            longitude: this.props.navigation.state.params.lng,
+            latitude: this.props.city.location.latlon.latitude,
+            longitude: this.props.city.location.latlon.longitude,
             latitudeDelta: 0.0922,
             longitudeDelta: 0.0421
           }}
@@ -1014,7 +1023,8 @@ const mapDispatchToProps = dispatch => {
     selectRoute: index => dispatch({type: 'SELECT_ROUTE', payload: {
       selectedIndex: index
     }}),
-    clearRoute: () => dispatch({type: 'CLEAR_ROUTE'})
+    clearRoute: () => dispatch({type: 'CLEAR_ROUTE'}),
+    toggleRefresh: () => dispatch({type: 'TOGGLE_REFRESH'})
   };
 }
 

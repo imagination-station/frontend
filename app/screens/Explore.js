@@ -11,6 +11,7 @@ import {
   RefreshControl,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   StatusBar,
   FlatList,
   Platform,
@@ -51,9 +52,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 5,
     color: DARKER_GREY
-  },
-  imageContainer: {
-    height: Math.floor(height / 2)
   },
   imageText: {
     color: 'rgba(255, 255, 255, 0.7)',
@@ -96,7 +94,7 @@ const styles = StyleSheet.create({
 const searchStyles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   textBoxContainer: {
     flexDirection: 'row',
@@ -190,7 +188,7 @@ class CitySearch extends Component {
             onChangeText={this.onChangeText}
           />
           <TouchableOpacity onPress={() => this.setState({textInput: ''})}>
-            <Icon name='clear' size={30} />
+            <Icon name='search' size={30} />
           </TouchableOpacity>
         </View>
         <View style={searchStyles.list}>

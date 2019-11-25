@@ -55,6 +55,19 @@ const styles = StyleSheet.create({
     flex: 0,
     backgroundColor: '#fff'
   },
+  fab: {
+    position: 'absolute',
+    bottom: 25,
+    right: 25,
+    borderRadius: 25,
+    height: 50,
+    width: 50,
+    elevation: 2,
+    backgroundColor: PRIMARY,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 30
+  }
 });
 
 const cardStyles = StyleSheet.create({
@@ -93,7 +106,6 @@ const cardStyles = StyleSheet.create({
     position: 'absolute',
     top: 5,
     right: 5,
-    zIndex: 5
   }
 });
 
@@ -124,13 +136,13 @@ function RouteCard(props) {
   return (
     <TouchableWithoutFeedback onPress={props.onPress}>
       <View style={cardStyles.card}>
-        {buttons}
         <Image source={pic} style={cardStyles.cardImage} resizeMode='cover' />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.9)']}
           style={cardStyles.gradient}
         >
         </LinearGradient>
+        {buttons}
         <View style={cardStyles.textContent}>
           <Text style={cardStyles.cardtitle}>{props.route.name}</Text>
           <Text style={{marginBottom: 5, color: GREY}}>{props.route.city.name}</Text>
@@ -151,14 +163,12 @@ function RouteCard(props) {
 
 function FAB(props) {
   return (
-    <TouchableOpacity>
-      <View style={{position: 'absolute', bottom: 25, right: 25, borderRadius: 25, height: 50, width: 50, elevation: 2, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center'}}>
-        <Icon
-          name='add'
-          size={40}
-          color='white'
-        />
-      </View>
+    <TouchableOpacity onPressIn={props.onPress} style={styles.fab}>
+      <Icon
+        name='add'
+        size={40}
+        color='white'
+      />
     </TouchableOpacity>
   );
 }
@@ -180,7 +190,13 @@ class CollectionsScreen extends Component {
 
   componentDidMount() {
     this.fetchRoutes();
-    this.focusListener = this.props.navigation.addListener('didFocus', this.fetchRoutes);
+  }
+
+  componentDidUpdate() {
+    if (this.props.refresh) {
+      this.fetchRoutes();
+      this.props.toggleRefresh();
+    }
   }
 
   fetchRoutes = () => {
@@ -266,7 +282,12 @@ class CollectionsScreen extends Component {
               onRefresh={this.fetchRoutes}
               refreshing={this.state.refreshing}
             /> : <Text style={{padding: 30, alignSelf: 'center', color: DARKER_GREY}}>Wow, so empty :)</Text>}
-          <FAB />
+            <FAB onPress={() => {
+              this.props.navigation.navigate('Location', {
+                purpose: 'ROUTE_CREATION',
+                update: this.fetchRoutes
+              });
+            }}/>
         </View>
       );
     }
@@ -284,8 +305,15 @@ class CollectionsScreen extends Component {
 
 const mapStateToProps = state => {
   return {
-    userId: state.userId
+    userId: state.userId,
+    refresh: state.refresh
   };
 }
 
-export default connect(mapStateToProps, null)(CollectionsScreen);
+const mapDispatchToProps = dispatch => {
+  return {
+    toggleRefresh: () => dispatch({type: 'TOGGLE_REFRESH'})
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(CollectionsScreen);

@@ -35,26 +35,7 @@ class SplashScreen extends Component {
   }
 
   componentDidMount() {
-    navigator.geolocation.getCurrentPosition(() => {
-      console.log('Location Granted');
-      navigator.geolocation.getCurrentPosition((position) => {
-        this.setState({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        });
-        this.goToExplore();
-      });
-    },() => {
-      console.log('Location Denied');
-      this.goToExplore();
-    });
-  }
-
-  goToExplore = () => {
-    console.log('Explore');
-    console.log(this.state.latitude);
-    console.log(this.state.longitude);
-    firebase.auth().onAuthStateChanged(user => {
+    this.firebaseListener = firebase.auth().onAuthStateChanged(user => {
       if (user != null) {
         console.log(firebase.auth().currentUser.email, 'logged in!');
         // // check if user logged in through facebook
@@ -81,9 +62,13 @@ class SplashScreen extends Component {
             this.props.navigation.navigate('Home');
           });
       } else {
-        this.props.navigation.navigate('Login');
+        this.props.navigation.navigate('Auth');
       }
     });
+  }
+
+  componentWillUnmount() {
+    this.firebaseListener && this.firebaseListener();
   }
 
   render() {

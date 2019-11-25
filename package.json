@@ -12,6 +12,7 @@
     "expo": "^35.0.0",
     "expo-blur": "^7.0.0",
     "expo-facebook": "^7.0.0",
+    "expo-linear-gradient": "^7.0.1",
     "firebase": "^7.1.0",
     "json-loader": "^0.5.7",
     "react": "16.8.3",

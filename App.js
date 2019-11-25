@@ -18,13 +18,14 @@ import SignUpScreen from './app/screens/SignUp.js';
 import SplashScreen from './app/screens/Splash.js';
 import TutorialScreen from './app/screens/Tutorial.js';
 import LocationScreen from './app/screens/Location.js';
+import InterestsScreen from './app/screens/Interests.js';
 
 import Playground from './app/screens/Playground.js';
 
 import routeReducer from './app/reducers/RouteReducer.js';
 
 import { FIREBASE_CONFIG } from './app/config/settings.js';
-import { ACCENT } from './app/config/styles.js';
+import { ACCENT, PRIMARY } from './app/config/styles.js';
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const store = createStore(routeReducer);
@@ -45,7 +46,7 @@ const HomeTab = createMaterialBottomTabNavigator({
   Profile: ProfileScreen
 }, {
   shifting: false,
-  activeColor: ACCENT,
+  activeColor: PRIMARY,
   barStyle: {
     backgroundColor: 'white',
   },
@@ -78,7 +79,8 @@ const HomeStack = createStackNavigator({
   },
   CitySearch: mapNavigationStateParamsToProps(CitySearchScreen),
   RouteFilter: mapNavigationStateParamsToProps(RouteFilterScreen),
-  Map: MapScreen,
+  RouteEditor: mapNavigationStateParamsToProps(MapScreen),
+  Location: mapNavigationStateParamsToProps(LocationScreen),
   MapSearch: mapNavigationStateParamsToProps(MapSearchScreen),
   PlaceDetail: mapNavigationStateParamsToProps(PlaceDetailScreen),
   NoteEditor: mapNavigationStateParamsToProps(NoteEditorScreen),
@@ -86,26 +88,23 @@ const HomeStack = createStackNavigator({
   Tutorial: TutorialScreen
 });
 
+const AuthStack = createStackNavigator({
+  Login: LoginScreen,
+  SignUp: SignUpScreen,
+  Location: LocationScreen,
+  Interests: InterestsScreen,
+}, {
+  initialRouteName: 'Login'
+});
+
 const AppNavigator = createSwitchNavigator(
   {
-    SignUp: {
-      screen: SignUpScreen
-    },
-    Login: {
-      screen: LoginScreen
-    },
-    Home: {
-      screen: HomeStack
-    },
-    Splash: {
-      screen: SplashScreen
-    },
+    Splash: SplashScreen,
+    Auth: AuthStack,
+    Home: HomeStack,
   },
   {
     initialRouteName: 'Splash',
-    // defaultNavigationOptions: {
-    //   headerTitle: <Text style={{flex: 1, paddingLeft: 10, fontSize: 18, color: DARKER_GREY}}>Stumble</Text>
-    // }
   }
 );
 
