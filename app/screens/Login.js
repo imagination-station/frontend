@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import * as firebase from 'firebase';
 import * as Facebook from 'expo-facebook';
+import { connect } from 'react-redux';
 
+import { SERVER_ADDR } from '../config/settings.js';
 import { GREY, DARKER_GREY, ACCENT, PRIMARY, FACEBOOK } from '../config/styles.js';
 
 const styles = StyleSheet.create({
@@ -80,7 +82,24 @@ class LoginScreen extends Component {
   logInWithEmail = () => {
     firebase.auth()
       .signInWithEmailAndPassword(this.state.email, this.state.password)
-      .then(cred => this.props.navigation.navigate('Home'))
+      .then(cred => {
+        return cred.user.getIdToken();
+      })
+      .then(token => {
+        return fetch(`${SERVER_ADDR}/users?firebaseId=${firebase.auth().currentUser.uid}`, {
+          headers: {
+            Accept: 'application/json',
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+        });
+      })
+      .then(response => response.json())
+      .then(responseJson => {
+        console.log('uid', responseJson._id);
+        this.props.logIn(responseJson._id);
+        this.props.navigation.navigate('Home');
+      })
       .catch(error => console.log(error));
   }
 
@@ -172,4 +191,14 @@ class LoginScreen extends Component {
   }
 }
 
-export default LoginScreen;
+const mapDispatchToProps = dispatch => {
+  return {
+    logIn: (id) => {
+      dispatch({type: 'LOG_IN', payload: {
+        userId: id,
+      }});
+    },
+  };
+}
+
+export default connect(null, mapDispatchToProps)(LoginScreen);

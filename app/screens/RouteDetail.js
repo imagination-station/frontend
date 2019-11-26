@@ -3,6 +3,7 @@ import {
   View,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   Animated,
   ScrollView,
@@ -20,6 +21,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
 import resolveAssetSource from 'resolveAssetSource';
+import OptionsMenu from 'react-native-options-menu';
 
 import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
 import {
@@ -35,7 +37,9 @@ const CARD_HEIGHT = height / 4;
 const CARD_WIDTH = Math.floor(width / 1.5);
 const OFFSET_DIV = CARD_WIDTH * (5/4);
 
-const OSVAL = Platform.OS === 'ios' ? 0 : StatusBar.currentHeight;
+const IMG_HEIGHT = PixelRatio.getPixelSizeForLayoutSize(CARD_HEIGHT);
+const IMG_WIDTH = PixelRatio.getPixelSizeForLayoutSize(CARD_WIDTH);
+
 const DRAWER_OPEN = Platform.OS === 'ios' ? height - (Header.HEIGHT) - (CARD_HEIGHT + 80) : height - (Header.HEIGHT + StatusBar.currentHeight) - (CARD_HEIGHT + 35);
 const DRAWER_CLOSED = Platform.OS === 'ios' ? height - Header.HEIGHT - 80 : height - Header.HEIGHT - 35;
 const DRAWER_EXPANDED = 0;
@@ -50,6 +54,24 @@ const METERS_TO_MILES = 1609.34;
 const SECONDS_TO_MINUTES = 60;
 
 const mapStyles = StyleSheet.create({
+  searchBoxContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    flexDirection: 'row',
+    height: 46,
+    borderRadius: 20,
+    width: '90%',
+    top: 10,
+    marginHorizontal: '5%',
+    position: 'absolute',
+    alignItems: 'center',
+  },
+  searchBox: {
+    backgroundColor: 'transparent',
+    height: 46,
+    paddingHorizontal: 10,
+    width: '90%',
+    color: 'grey'
+  },
   animated: {
     position: 'absolute',
     bottom: 0,
@@ -156,8 +178,9 @@ const mapStyles = StyleSheet.create({
 
 function Card(props) {
   const source = props.marker.properties.photoRefs ?
-    {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoRefs[0]}&maxheight=800&maxWidth=${CARD_WIDTH}`} :
+    {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoRefs[0]}&maxheight=${IMG_HEIGHT}&maxWidth=${IMG_WIDTH}`} :
     {uri: PLACEHOLDER_IMG};
+
   return (
     <TouchableWithoutFeedback onPress={props.onMore}>
       <View style={mapStyles.card}>
@@ -245,14 +268,24 @@ function Tag(props) {
 
 class RouteDetailScreen extends Component {
 
-  static navigationOptions = {
-    tabBarVisible: false,
-    headerTitle: () => <Text style={{fontSize: 20}}>Route Details</Text>
-  };
+  static navigationOptions = ({ navigation }) => {
+    return {
+      tabBarVisible: false,
+      headerTitle: () => <Text style={{fontSize: 20}}>Route Details</Text>,
+      headerRight: () => (
+        <OptionsMenu
+          customButton={<Icon name='more-vert' size={30} color='black' style={{marginRight: 10}} />}
+          options={['Edit', 'Delete']}
+          actions={[navigation.getParam('onPressEdit'), () => console.log('Delete')]}
+        />
+      )
+    };
+  }
 
   state = {
     view: 'map',
-    drawer: 'open'
+    drawer: 'open',
+    editing: false
   };
 
   constructor(props) {
@@ -266,8 +299,10 @@ class RouteDetailScreen extends Component {
     this.mapRef = null;
     // for animating bottom drawer collapse
     this.collapseValue = new Animated.Value(DRAWER_OPEN);
-    // for initially rendering map
-    this.initLocation = this.props.navigation.getParam('route').pins[0].geometry.coordinates;
+    
+    this.props.navigation.setParams({
+      onPressEdit: () => this.setState({editing: true})
+    });
   }
 
   componentDidMount() {
@@ -472,6 +507,17 @@ class RouteDetailScreen extends Component {
             // lineDashPattern={[5, 30]}
           /> : null}
         </MapView>
+        {this.state.editing && <View style={mapStyles.searchBoxContainer}>
+          <TextInput
+            style={mapStyles.searchBox}
+            placeholder='Search'
+            value={this.state.searchInput}
+            onTouchEnd={this.onPressSearch}
+          />
+          <TouchableOpacity onPress={this.onClearSearch}>
+            <Icon name='clear' size={30} color='grey' />
+          </TouchableOpacity>
+        </View>}
         <Animated.View style={{...mapStyles.animated, top: this.collapseValue}}>
           <View style={mapStyles.drawer} >
             <DrawerButton onPress={this.toggleDrawer} />
