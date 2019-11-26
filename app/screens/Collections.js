@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     backgroundColor: PRIMARY,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 30
+    zIndex: 5
   }
 });
 
@@ -175,7 +175,6 @@ function FAB(props) {
 
 const screens = {
   MYTRIPS: 'm',
-  SAVED: 's',
   LIKED: 'l'
 }
 
@@ -202,31 +201,31 @@ class CollectionsScreen extends Component {
   fetchRoutes = () => {
     this.setState({refreshing: true});
     firebase.auth().currentUser.getIdToken()
-    .then(token => {
-      let fetches = [];
-      for (let identifier of ['routes', 'likes']) {
-        fetches.push(
-          fetch(`${SERVER_ADDR}/users/${this.props.userId}/${identifier}`, {
-            method: 'GET',
-            headers: {
-              Accept: 'application/json',
-              'Content-type': 'application/json',
-              Authorization: `Bearer ${token}`
-            }
-          })
-          .then(response => response.json())
-        );
-      }
+      .then(token => {
+        let fetches = [];
+        for (let identifier of ['routes', 'likes']) {
+          fetches.push(
+            fetch(`${SERVER_ADDR}/users/${this.props.userId}/${identifier}`, {
+              method: 'GET',
+              headers: {
+                Accept: 'application/json',
+                'Content-type': 'application/json',
+                Authorization: `Bearer ${token}`
+              }
+            })
+            .then(response => response.json())
+          );
+        }
 
-      return Promise.all(fetches);
-    })
-    .then(responseJsons => {
-      this.setState({
-        routes: responseJsons[0],
-        liked: responseJsons[1],
-        refreshing: false
+        return Promise.all(fetches);
+      })
+      .then(responseJsons => {
+        this.setState({
+          routes: responseJsons[0],
+          liked: responseJsons[1],
+          refreshing: false
+        });
       });
-    });
   }
 
   currentStyle = screen => {
