@@ -86,14 +86,18 @@ class Location extends Component {
       headerRight: () => (
         <TouchableOpacity
           disabled={!navigation.getParam('snappedToCity')}
-          // TODO: PUT request to API server
           onPress={() => {
             if (navigation.getParam('purpose') == 'SIGN_UP') {
+              // TODO: PUT request to API server
               navigation.navigate('Interests');
             } else {
-              navigation.navigate('RouteEditor', {
+              navigation.navigate('RouteDetail', {
                 city: navigation.getParam('location'),
-                from: 'location' 
+                from: 'location',
+                route:  {
+                  pins: []
+                },
+                editing: true
               });
             }
           }}

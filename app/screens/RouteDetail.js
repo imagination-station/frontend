@@ -23,7 +23,8 @@ import MapViewDirections from 'react-native-maps-directions';
 import resolveAssetSource from 'resolveAssetSource';
 import OptionsMenu from 'react-native-options-menu';
 
-import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
+import Button from '../components/Buttons.js';
+import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT, AQUAMARINE } from '../config/styles.js';
 import {
   MAPS_API_KEY,
   INIT_LOCATION,
@@ -35,6 +36,12 @@ const {width, height} = Dimensions.get('window');
 
 const CARD_HEIGHT = height / 4;
 const CARD_WIDTH = Math.floor(width / 1.5);
+
+const FOCUSED_CARD_HEIGHT = CARD_HEIGHT * 1.4;
+const FOCUSED_CARD_WIDTH = width * 0.9;
+const FOCUSED_IMG_HEIGHT = PixelRatio.getPixelSizeForLayoutSize(FOCUSED_CARD_HEIGHT);
+const FOCUSED_IMG_WIDTH = PixelRatio.getPixelSizeForLayoutSize(FOCUSED_CARD_WIDTH);
+
 const OFFSET_DIV = CARD_WIDTH * (5/4);
 
 const IMG_HEIGHT = PixelRatio.getPixelSizeForLayoutSize(CARD_HEIGHT);
@@ -88,6 +95,22 @@ const mapStyles = StyleSheet.create({
   },
   endPadding: {
     flexGrow: 1
+  },
+  focusedCard: {
+    backgroundColor: 'white',
+    marginHorizontal: 10,
+    marginBottom: 5,
+    height: FOCUSED_CARD_HEIGHT,
+    width: '90%',
+    overflow: 'hidden',
+    borderRadius: 10,
+    marginBottom: 7
+  },
+  cardButtonBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+    padding: 10
   },
   card: {
     backgroundColor: 'white',
@@ -201,6 +224,29 @@ function Card(props) {
   );
 }
 
+function FocusedCard(props) {
+  const source = props.marker.properties.photoRefs ?
+    {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.marker.properties.photoRefs[0]}&maxheight=${FOCUSED_IMG_HEIGHT}&maxWidth=${FOCUSED_IMG_WIDTH}`} :
+    {uri: PLACEHOLDER_IMG};
+
+  return (
+    <View style={mapStyles.focusedCard}>
+      <Image source={source} style={mapStyles.cardImage} resizeMode='cover' />
+      <View style={mapStyles.textContent}>
+        <Text numberOfLines={1} style={mapStyles.cardtitle}>
+          {props.marker.properties.mainText}
+        </Text>
+        <Text numberOfLines={1} style={mapStyles.cardDescription}>
+          {props.marker.properties.secondaryText}
+        </Text>
+      </View>
+      <View style={mapStyles.cardButtonBar}>
+        <Button title={'Add'} onPress={props.onAdd} />
+      </View>
+    </View>
+  );
+}
+
 function ActionCard(props) {
   let content;
   let mins = Math.floor(props.duration / 60);
@@ -273,6 +319,9 @@ class RouteDetailScreen extends Component {
       tabBarVisible: false,
       headerTitle: () => <Text style={{fontSize: 20}}>Route Details</Text>,
       headerRight: () => (
+        navigation.getParam('editing') ? <TouchableOpacity onPress={navigation.getParam('onPressSave')}>
+          <Icon name='save' size={30} color={AQUAMARINE} style={{marginRight: 10}} />
+        </TouchableOpacity> :
         <OptionsMenu
           customButton={<Icon name='more-vert' size={30} color='black' style={{marginRight: 10}} />}
           options={['Edit', 'Delete']}
@@ -285,7 +334,9 @@ class RouteDetailScreen extends Component {
   state = {
     view: 'map',
     drawer: 'open',
-    editing: false
+    editing: this.props.navigation.getParam('editing'),
+    searchInput: '',
+    focused: null
   };
 
   constructor(props) {
@@ -301,7 +352,12 @@ class RouteDetailScreen extends Component {
     this.collapseValue = new Animated.Value(DRAWER_OPEN);
     
     this.props.navigation.setParams({
-      onPressEdit: () => this.setState({editing: true})
+      editing: false,
+      onPressEdit: () => {
+        this.setState({editing: true});
+        this.props.navigation.setParams({editing: true});
+      },
+      onPressSave: this.onComplete
     });
   }
 
@@ -385,6 +441,16 @@ class RouteDetailScreen extends Component {
     ).start);
   }
 
+  closeDrawer = () => {
+    Animated.timing(
+      this.collapseValue,
+      {
+        toValue: Platform.OS === 'ios' ? height - Header.HEIGHT - 80 : height - Header.HEIGHT - 35,
+        duration: 200
+      }
+    ).start(() => this.setState({drawerCollapsed: true}));
+  }
+
   showRouteInfo = () => {
     this.setState({view: 'info'}, () => {
       this.didEnterRouteInfo = this.props.navigation.addListener(
@@ -401,6 +467,97 @@ class RouteDetailScreen extends Component {
           duration: 200
         }
       ).start();
+    });
+  }
+
+  onPressSearch = () => {
+    this.props.navigation.navigate('MapSearch', {
+      searchInput: this.state.searchInput,
+      onPressItem: this.onPressSearchItem,
+    });
+  }
+
+  onPressSearchItem = (item, navigation) => {
+    this.fetchPlaceDetails(item.place_id, () => {
+      navigation.goBack();
+      this.mapRef.animateCamera({
+        center: {
+          latitude: this.state.focused.geometry.coordinates[0],
+          longitude: this.state.focused.geometry.coordinates[1],
+        },
+        zoom: 17
+      }, 30);
+    });
+  }
+
+  fetchPlaceDetails = (placeId, callback) => {
+    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}`)
+    .then(response => response.json())
+    .then(responseJson => {
+      // limit showing photos to 4 to save ca$h
+      const photos = responseJson.result.photos ? responseJson.result.photos.map(elem => elem.photo_reference).slice(0, 4) : null;
+      const marker = {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [
+            responseJson.result.geometry.location.lat,
+            responseJson.result.geometry.location.lng
+          ]
+        },
+        properties: {
+          placeId: placeId,
+          mainText: responseJson.result.name,
+          secondaryText: responseJson.result.formatted_address,
+          photoRefs: photos
+        }
+      };
+
+      this.closeDrawer();
+      this.setState({
+        searchInput: responseJson.result.name,
+        focused: marker,
+      }, callback);
+    });
+  }
+
+  onComplete = () => {
+    this.setState({editing: false});
+    this.props.navigation.setParams({editing: false});
+
+    // firebase.auth().currentUser.getIdToken().then(token =>
+    //   fetch(`${SERVER_ADDR}/cities/routes`, {
+    //     method: 'POST',
+    //     headers: {
+    //       Accept: 'application/json',
+    //       'Content-type': 'application/json',
+    //       Authorization: `Bearer ${token}`
+    //     },
+    //     body: JSON.stringify({
+    //       name: this.state.name,
+    //       creator: this.props.userId,
+    //       city: PLACE_ID,
+    //       pins: this.props.markers,
+    //       tags: this.state.tags
+    //     })
+    //   })
+    // )
+    //   .then(response => {
+    //     this.props.toggleRefresh();
+    //     this.setState({editing: false});
+    //     this.props.navigation.setParams({editing: false});
+    //     // if (this.props.from == 'location') {
+    //     //   this.props.navigation.goBack('Location');
+    //     // } else {
+    //     //   this.props.navigation.goBack();
+    //     // }
+    //   })
+    //   .catch(error => console.error(error));
+  }
+
+  clearTag = value => {
+    this.setState({
+      tags: this.state.tags.filter(tag => tag != value)
     });
   }
 
@@ -519,6 +676,11 @@ class RouteDetailScreen extends Component {
           </TouchableOpacity>
         </View>}
         <Animated.View style={{...mapStyles.animated, top: this.collapseValue}}>
+          {/* show focused card */}
+          {this.state.focused && <FocusedCard
+            marker={this.state.focused}
+            onAdd={this.onAddItem}
+          />}
           <View style={mapStyles.drawer} >
             <DrawerButton onPress={this.toggleDrawer} />
             <ScrollView
