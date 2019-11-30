@@ -6,6 +6,8 @@ import { LongButton } from '../components/Buttons.js';
 import ImageCollage from '../components/ImageCollage.js';
 import { GREY, DARKER_GREY, PRIMARY } from '../config/styles.js';
 import { MAPS_API_KEY, PLACEHOLDER_IMG } from '../config/settings.js';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import OptionsMenu from 'react-native-options-menu';
 
 const {width, height} = Dimensions.get('window');
 const CARD_WIDTH = Math.floor(width / 1.5);
@@ -52,6 +54,20 @@ const styles = StyleSheet.create({
 });
 
 class PlaceDetailScreen extends Component {
+
+  static navigationOptions = ({ navigation }) => {
+    return {
+      tabBarVisible: false,
+      headerTitle: () => <Text style={{fontSize: 20}}>Place Details</Text>,
+      headerRight: () => (
+        <OptionsMenu
+          customButton={<Icon name='more-vert' size={30} color='black' style={{marginRight: 10}} />}
+          options={['Edit', 'Delete']}
+          actions={[() => console.log('Edit Place'), () => console.log('Delete Place')]}
+        />
+      )
+    };
+  }
 
   componentWillMount() {
     this.scrollValue = new Animated.Value(0);

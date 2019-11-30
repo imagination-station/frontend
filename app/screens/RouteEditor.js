@@ -298,7 +298,7 @@ class MapSearch extends Component {
 
   componentDidMount() {
     if (this.state.textInput) {
-      fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${this.state.textInput}&key=${MAPS_API_KEY}&location=${INIT_LOCATION.latitude},${INIT_LOCATION.longitude}`)
+      fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${this.state.textInput}&key=${MAPS_API_KEY}&location=${this.props.location.latitude},${this.location.origin.longitude}`)
         .then(response => response.json())
         .then(responseJson => this.setState({results: responseJson.predictions}));
     }
@@ -308,7 +308,7 @@ class MapSearch extends Component {
     this.setState({textInput: text});
     if (!this.searchTimer) {
       this.searchTimer = setTimeout(() => {
-        fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${text}&key=${MAPS_API_KEY}&location=${INIT_LOCATION.latitude},${INIT_LOCATION.longitude}`)
+        fetch(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${text}&key=${MAPS_API_KEY}&location=${this.props.location.latitude},${this.props.location.longitude}`)
           .then(response => response.json())
           .then(responseJson => this.setState({results: responseJson.predictions}));
         this.searchTimer = null;

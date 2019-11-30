@@ -24,7 +24,7 @@ import resolveAssetSource from 'resolveAssetSource';
 import OptionsMenu from 'react-native-options-menu';
 
 import Button from '../components/Buttons.js';
-import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT, AQUAMARINE } from '../config/styles.js';
+import { GREY, DARKER_GREY, PRIMARY, ACCENT, AQUAMARINE } from '../config/styles.js';
 import {
   MAPS_API_KEY,
   INIT_LOCATION,
@@ -61,6 +61,9 @@ const METERS_TO_MILES = 1609.34;
 const SECONDS_TO_MINUTES = 60;
 
 const mapStyles = StyleSheet.create({
+  container: {
+    flex: 1
+  },
   searchBoxContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     flexDirection: 'row',
@@ -261,7 +264,8 @@ function ActionCard(props) {
     timeString = `${hours} hours ${mins} mins`;
   }
   let miles = (props.distance / METERS_TO_MILES).toFixed(2);
-  if (props.numPins == 0) {
+
+  if (!props.loaded) {
     content = (
       <Text style={{color: DARKER_GREY, textAlign: 'center'}}>
         {'Loading...'}
@@ -318,6 +322,7 @@ class RouteDetailScreen extends Component {
     return {
       tabBarVisible: false,
       headerTitle: () => <Text style={{fontSize: 20}}>Route Details</Text>,
+      headerLeft: () => <Icon name='arrow-back' size={30} style={{marginLeft: 10}} onPress={navigation.getParam('onBack')} />,
       headerRight: () => (
         navigation.getParam('editing') ? <TouchableOpacity onPress={navigation.getParam('onPressSave')}>
           <Icon name='save' size={30} color={AQUAMARINE} style={{marginRight: 10}} />
@@ -335,6 +340,8 @@ class RouteDetailScreen extends Component {
     view: 'map',
     drawer: 'open',
     editing: this.props.navigation.getParam('editing'),
+    // if no pins, user is creating route from scratch
+    loaded: this.props.navigation.getParam('route').pins.length == 0,
     searchInput: '',
     focused: null
   };
@@ -344,6 +351,17 @@ class RouteDetailScreen extends Component {
     this.didFocus = props.navigation.addListener('didFocus', payload =>
       BackHandler.addEventListener('hardwareBackPress', this.onBack)
     );
+
+    const pins = this.props.navigation.getParam('route').pins;
+    if (pins.length != 0) {
+      // longer names here because this is what Teleport uses
+      this.initLocation = {
+        latitude: pins[0].geometry.coordinates[0],
+        longitude: pins[0].geometry.coordinates[1]
+      };
+    } else {
+      this.initLocation = this.props.navigation.getParam('city').location.latlon;
+    }
   }
 
   componentWillMount() {
@@ -353,6 +371,7 @@ class RouteDetailScreen extends Component {
     
     this.props.navigation.setParams({
       editing: false,
+      onBack: this.onBack,
       onPressEdit: () => {
         this.setState({editing: true});
         this.props.navigation.setParams({editing: true});
@@ -384,6 +403,7 @@ class RouteDetailScreen extends Component {
         });
 
         this.props.loadRoute(this.props.navigation.getParam('route').pins, steps);
+        this.setState({loaded: true});
         if (this.props.navigation.getParam('route').pins.length > 1) {
           // show first "leg" of route by default
           this.props.selectRoute(0);
@@ -405,10 +425,16 @@ class RouteDetailScreen extends Component {
   onBack = () => {
     if (this.state.view == 'info') {
       this.toggleDrawer();
-      return true;
+      return true;    
     }
 
-    return false;
+    if (this.props.navigation.getParam('from') == 'location') {
+      this.props.navigation.goBack('Location');
+    } else {
+      this.props.navigation.goBack();
+    }
+
+    return true;
   }
 
   toggleDrawer = () => {
@@ -442,13 +468,13 @@ class RouteDetailScreen extends Component {
   }
 
   closeDrawer = () => {
-    Animated.timing(
+    this.setState({drawer: 'closed', view: 'map'}, Animated.timing(
       this.collapseValue,
       {
-        toValue: Platform.OS === 'ios' ? height - Header.HEIGHT - 80 : height - Header.HEIGHT - 35,
+        toValue: DRAWER_CLOSED,
         duration: 200
       }
-    ).start(() => this.setState({drawerCollapsed: true}));
+    ).start);
   }
 
   showRouteInfo = () => {
@@ -472,6 +498,7 @@ class RouteDetailScreen extends Component {
 
   onPressSearch = () => {
     this.props.navigation.navigate('MapSearch', {
+      location: this.initLocation,
       searchInput: this.state.searchInput,
       onPressItem: this.onPressSearchItem,
     });
@@ -480,6 +507,19 @@ class RouteDetailScreen extends Component {
   onPressSearchItem = (item, navigation) => {
     this.fetchPlaceDetails(item.place_id, () => {
       navigation.goBack();
+      this.mapRef.animateCamera({
+        center: {
+          latitude: this.state.focused.geometry.coordinates[0],
+          longitude: this.state.focused.geometry.coordinates[1],
+        },
+        zoom: 17
+      }, 30);
+    });
+  }
+
+  onPoiClick = event => {
+    event.persist(); // necessary to persist event data for some reason
+    this.fetchPlaceDetails(event.nativeEvent.placeId, () => {
       this.mapRef.animateCamera({
         center: {
           latitude: this.state.focused.geometry.coordinates[0],
@@ -519,6 +559,26 @@ class RouteDetailScreen extends Component {
         focused: marker,
       }, callback);
     });
+  }
+
+  onAddItem = async () => {
+    let info;
+    if (this.props.markers.length > 0) {
+      await fetch(`https://maps.googleapis.com/maps/api/directions/json?key=${MAPS_API_KEY}&origin=place_id:${this.props.markers[this.props.markers.length-1].properties.placeId}&destination=place_id:${this.state.focused.properties.placeId}&mode=walking`)
+        .then(response => response.json())
+        .then(responseJson => {
+          info = {
+            distance: responseJson.routes[0].legs[0].distance,
+            duration: responseJson.routes[0].legs[0].duration
+          }
+        });
+    }
+
+    this.props.addMarker(this.state.focused, info);
+    this.setState({
+      focused: null,
+      searchInput: '',
+    }, this.toggleDrawer);
   }
 
   onComplete = () => {
@@ -625,16 +685,16 @@ class RouteDetailScreen extends Component {
     }
 
     const cards = this.props.markers.reduce(reducer, []);
-    const initLocation = this.props.navigation.getParam('route').pins[0].geometry.coordinates;
 
     return (
-      <View style={globalStyles.container}>
+      <View style={mapStyles.container}>
         <MapView
           provider={'google'}
-          style={globalStyles.container}
+          style={mapStyles.container}
+          onPoiClick={this.state.editing && this.onPoiClick}
           initialRegion={{
-            latitude: initLocation[0],
-            longitude: initLocation[1],
+            latitude: this.initLocation.latitude,
+            longitude: this.initLocation.longitude, 
             latitudeDelta: 0.0922,
             longitudeDelta: 0.0421
           }}
@@ -655,6 +715,16 @@ class RouteDetailScreen extends Component {
               </View>
             </Marker>
           )}
+          {this.state.focused &&
+            <Marker
+              key={this.state.focused.properties.placeId}
+              identifier={this.state.focused.properties.placeId}
+              coordinate={{latitude: this.state.focused.geometry.coordinates[0], longitude: this.state.focused.geometry.coordinates[1]}}
+              title={this.state.focused.properties.mainText}
+              description={this.state.focused.properties.secondaryText}
+              icon={pin}
+            />
+          }
           {this.props.showRoute !== null ? <MapViewDirections
             origin={`place_id:${this.props.markers[this.props.showRoute].properties.placeId}`}
             destination={`place_id:${this.props.markers[this.props.showRoute+1].properties.placeId}`}
@@ -697,10 +767,10 @@ class RouteDetailScreen extends Component {
                     this.props.markers.map(marker => marker.properties.placeId),
                     {
                       edgePadding: {
-                        top: 100,
-                        left: 100,
-                        bottom: 300,
-                        right: 100
+                        top: CARD_HEIGHT,
+                        left: 150,
+                        bottom: CARD_HEIGHT,
+                        right: 150
                       },
                       animated: true
                     }
@@ -719,7 +789,7 @@ class RouteDetailScreen extends Component {
               <View style={mapStyles.filler} />
               {cards}
               <ActionCard
-                numPins={this.props.markers.length}
+                loaded={this.state.loaded}
                 showRouteInfo={this.showRouteInfo}
                 view={this.state.view}
                 distance={this.props.steps.reduce((res, cur) => res + cur.distance.value, 0)}
@@ -760,6 +830,10 @@ const mapDispatchToProps = dispatch => {
   return {
     viewDetail: index => dispatch({type: 'VIEW_DETAIL', payload: {
       selectedIndex: index
+    }}),
+    addMarker: (marker, routeInfo) => dispatch({type: 'ADD', payload: {
+      marker: marker,
+      routeInfo: routeInfo
     }}),
     clear: () => dispatch({type: 'CLEAR'}),
     loadRoute: (markers, steps) => dispatch({type: 'LOAD_ROUTE', payload: {
