@@ -19,7 +19,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
-    padding: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight
+    padding: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
+    backgroundColor: 'white',
   },
   logo: {
     height: 125,
@@ -29,12 +30,13 @@ const styles = StyleSheet.create({
   },
   textInput: {
     height: 50,
-    paddingHorizontal: 10,
+    paddingHorizontal: 10, 
     width: 350,
     marginBottom: 10,
-    borderColor: GREY,
+    borderColor: GREY, 
     borderWidth: 2,
-    borderRadius: 20
+    borderRadius: 20,
+    backgroundColor: 'white'
   },
   logInButtton: {
     color: 'white',
@@ -66,6 +68,10 @@ function SignUpButton(props) {
 
 class LoginScreen extends Component {
 
+  static navigationOptions = {
+    header: null
+  };
+
   state = {
     email: '',
     password: ''
@@ -74,6 +80,7 @@ class LoginScreen extends Component {
   logInWithEmail = () => {
     firebase.auth()
       .signInWithEmailAndPassword(this.state.email, this.state.password)
+      .then(cred => this.props.navigation.navigate('Home'))
       .catch(error => console.log(error));
   }
 
@@ -90,10 +97,18 @@ class LoginScreen extends Component {
         case 'success':
           await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
           const credential = firebase.auth.FacebookAuthProvider.credential(token);
-          firebase.auth().signInAndRetrieveDataWithCredential(credential)
+          firebase.auth().signInWithCredential(credential)
             .then(cred => {
               console.log('logged in with facebook!');
-              console.log('is new user:', cred.additionalUserInfo.isNewUser);
+              if (!cred.additionalUserInfo.isNewUser) {
+                this.props.navigation.navigate('Home');
+              } else {
+                console.log('new user!');
+                // TODO: POST request to API server
+                this.props.navigation.navigate('Location', {
+                  purpose: 'SIGN_UP'
+                });
+              }
             }
           ); 
 

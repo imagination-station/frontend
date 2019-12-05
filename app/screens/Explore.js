@@ -11,15 +11,19 @@ import {
   RefreshControl,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   StatusBar,
   FlatList,
   Platform,
-  Slider
+  Slider,
+  PixelRatio,
+  ActivityIndicator
 } from 'react-native';
 import * as firebase from 'firebase';
 import { connect } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import TimePicker from 'react-native-simple-time-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import RouteCard from '../components/RouteCard.js';
 
@@ -28,13 +32,16 @@ import { SERVER_ADDR, PLACE_ID, GEONAME_ID, MAPS_API_KEY, TAGS } from '../config
 
 const {width, height} = Dimensions.get('window');
 
+const CITY_IMG_WIDTH = PixelRatio.getPixelSizeForLayoutSize(width);
+const CITY_IMG_HEIGHT = PixelRatio.getPixelSizeForLayoutSize(height / 2);
+
 const METERS_TO_MILES = 1609.34;
 const SECONDS_TO_MINUTES = 60;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%'
+    backgroundColor: '#fff'
   },
   sectionContainer: {
     backgroundColor: 'white',
@@ -46,37 +53,34 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     color: DARKER_GREY
   },
-  imageContainer: {
-    height: Math.floor(height / 2)
-  },
   imageText: {
-    color: 'rgba(255, 255, 255, 0.5)',
-    fontWeight: 'bold',
+    color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 48,
+    width: width
   },
-  image: {
-    height: Math.floor(height / 2),
+  cityImage: {
+    height: height / 2,
     resizeMode: 'cover'
+  },
+  gradient: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%'
   },
   endPadding: {
     flexGrow: 1
   },
-  scrollView: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   searchBoxContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     flexDirection: 'row',
     height: 46,
-    borderRadius: 10,
-    width: '95%',
+    borderRadius: 15,
+    width: '90%',
     top: Platform.OS === 'ios' ? 45 : 10 + StatusBar.currentHeight,
-    marginHorizontal: '2.5%',
+    marginHorizontal: '5%',
     position: 'absolute',
     alignItems: 'center',
+    zIndex: 5
   },
   searchBox: {
     backgroundColor: 'transparent',
@@ -90,7 +94,7 @@ const styles = StyleSheet.create({
 const searchStyles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   textBoxContainer: {
     flexDirection: 'row',
@@ -114,7 +118,7 @@ const searchStyles = StyleSheet.create({
   autoCompleteItem: {
     borderColor: GREY,
     borderBottomWidth: 1,
-    padding: 10
+    padding: 15
   },
   mainText: {
     fontSize: 16,
@@ -184,7 +188,7 @@ class CitySearch extends Component {
             onChangeText={this.onChangeText}
           />
           <TouchableOpacity onPress={() => this.setState({textInput: ''})}>
-            <Icon name='clear' size={30} />
+            <Icon name='search' size={30} />
           </TouchableOpacity>
         </View>
         <View style={searchStyles.list}>
@@ -251,6 +255,19 @@ class RouteFilter extends Component {
   }
 }
 
+function SearchBox(props) {
+  return (
+    <View style={styles.searchBoxContainer}>
+      <TextInput
+        style={styles.searchBox}
+        placeholderTextColor = 'rgba(0, 0, 0, 0.7)'
+        placeholder='Try "Barcelona"'
+        onTouchEnd={props.onPress}
+      />
+    </View>
+  )
+}
+
 function SearchItem(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
@@ -261,305 +278,78 @@ function SearchItem(props) {
   );
 }
 
-function CityImage(props) {
-  return (
-    <View style={props.uri != undefined ? styles.imageContainer : {height: 170}}>
-      {props.uri != undefined && <Image
-        source={{uri: props.uri}}
-        style={styles.image}
-      />}
-      <View style={styles.searchBoxContainer}>
-        <TextInput
-          style={styles.searchBox}
-          placeholderTextColor = 'rgba(0, 0, 0, 0.3)'
-          placeholder='Try "Barcelona"'
-          onTouchEnd={props.onPressSearchBox}
-        />
-        <TouchableOpacity onPress={props.onPressFilter}>
-          <Icon name='menu' size={30} color='rgba(0, 0, 0, 0.3)' />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => props.navigation.navigate('Map', {
-          lat: props.lat,
-          lng: props.lng,
-          place_id: props.place_id
-        })}>
-          <Icon name='add' size={30} color='dodgerblue' />
-        </TouchableOpacity>
-      </View>
-      <View style={{paddingLeft: 10, position: 'absolute', bottom: 10}}>
-        <Text style={props.uri != undefined? styles.imageText: {color: 'rgba(0, 0, 0, 1)', fontWeight: 'bold',fontSize: 48}}>{props.title}</Text>
-      </View>
-    </View>
-  );
-}
-
 class ExploreScreen extends Component {
 
   state = {
-    routes: [],
-    // simulate bookmarks
-    bookmarks: [],
-    bookmarks_id: [],
-    likes: [],
-    refreshing: false,
-    // hardcoded for Atlanta for now
-    geonameid: GEONAME_ID,
     city: null,
     photoUri: '',
     searchInput: '',
-    // filtering
-    distance: [],
-    time: [],
-    distanceFilterValue: 0,
-    timeFilterValue: 0,
-    minimumDistance: 0,
-    maximumDistance: 10,
-    place_id: PLACE_ID,
-    cityFullName: '',
-    latitude: null,
-    longitude: null,
-    currentCityByGPS: '',
-    tags: [],
-    userId: null
+    refreshing: false,
+    loaded: false
   };
 
   componentDidMount() {
     this.scrollValue = new Animated.Value(0);
-    this.setState({
-      userId: this.props.userId
-    })
-    if (this.props.latitude && this.props.longitude) {
-      this.setState({
-        latitude: this.props.latitude,
-        longitude: this.props.longitude
-      })
-      fetch(`https://api.teleport.org/api/locations/${this.props.latitude},${this.props.longitude}`)
+
+    navigator.geolocation.getCurrentPosition(position => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      /* fetch city by user location (lat, lng) via Telepoort first,
+         then fetch Google placeId using city's full name.
+
+         Once placeId is found, use that to get city image
+       */
+      fetch(`https://api.teleport.org/api/locations/${lat},${lng}`)
         .then(response => response.json())
         .then(responseJson => {
-          let link = responseJson._embedded['location:nearest-cities'][0]._links['location:nearest-city'].href;
-          let geonameid = link.substring(link.indexOf('geonameid:') + 10);
-          geonameid = geonameid.substring(0, geonameid.length - 1);
-          this.setState({geonameid: geonameid});
-          return fetch(link)
+          const url = responseJson._embedded['location:nearest-cities'][0]._links['location:nearest-city'].href;
+          return fetch(url);
         })
         .then(response => response.json())
         .then(responseJson => {
-          let fullName = responseJson.full_name.split(' ').join('+');
-          let name = responseJson.name;
-          this.setState({
-            city: responseJson,
-            cityFullName: responseJson.full_name,
-            currentCityByGPS: responseJson.full_name
-          });
-          return fullName;
-        })
-        .then(fullName => fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${fullName}&key=${MAPS_API_KEY}`))
-        .then(response => response.json())
-        .then(responseJson => {
-          let place_id = responseJson.results[0].place_id
-          this.setState({place_id: place_id});
-          this.mount();
-        })
-    } else {
-      this.mount();
-    }
-  }
-
-  mount = () => {
-    fetch(`https://api.teleport.org/api/cities/geonameid:${this.state.geonameid}/`)
-      .then(response => response.json())
-      .then(responseJson => {
-        this.setState({city: responseJson});
-        return fetch(responseJson._links['city:urban_area'].href + 'images/');
-      })
-      .then(response => response.json())
-      .then(responseJson => {
-        this.setState({photoUri: responseJson.photos[0].image.mobile})
-      });
-    this.getData();
-  }
-
-  getData = () => {
-    if (this.state.userId == undefined) {
-      this.setState({
-        routes: [],
-        bookmarks: new Array(0),
-        bookmarks_id: new Array(0),
-        likes: new Array(0),
-        distance: new Array(0).fill(0),
-        time: new Array(0).fill(0)
-      });
-      return;
-    }
-    firebase.auth().currentUser.getIdToken().then(token =>{
-      return fetch(`${SERVER_ADDR}/cities/${this.state.place_id}/routes`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-type': 'application/json',
-          Authorization: `Bearer ${token}`
-        }
-      })
-    })
-    .then(response => response.json())
-    .then(responseJson => {
-      if (responseJson.err == "City not found") {
-        firebase.auth().currentUser.getIdToken().then(token =>
-          fetch(`${SERVER_ADDR}/cities/`, {
-            method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Content-type': 'application/json',
-              Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              name: this.state.cityFullName,
-              placeId: this.state.place_id,
-              photoRef: ''
-            })
-          })
-        )
-        .then(response => response.text())
-        .then(responseText => {
-          console.log(responseText);
+          this.setState({city: responseJson});
+          this.fetchCityImage(responseJson);
         });
-        this.setState({
-          routes: [],
-          bookmarks: new Array(0),
-          bookmarks_id: new Array(0),
-          likes: new Array(0),
-          distance: new Array(0).fill(0),
-          time: new Array(0).fill(0)
-        });
-      } else {
-        let tags = [];
-        let otherTag = 'Other';
-        responseJson.forEach((item, index) => {
-          if (item.tags.length == 0) {
-            item.tags.push(otherTag);
-            tags.push(otherTag);
-          } else {
-            item.tags.forEach((item_, index_) => {
-              tags.push(item_);
-            })
-          }
-        })
-
-        var uniqueTags = tags.map((name) => {
-          return {count: 1, name: name}
-        }).reduce((a, b) => {
-          a[b.name] = (a[b.name] || 0) + b.count
-          return a
-        }, {})
-
-        this.setState({
-          routes: responseJson,
-          bookmarks: new Array(responseJson.length),
-          bookmarks_id: new Array(responseJson.length),
-          likes: new Array(responseJson.length),
-          distance: new Array(responseJson.length).fill(0),
-          time: new Array(responseJson.length).fill(0),
-          tags: Object.keys(uniqueTags)
-        });
-        this.getDistanceAndTime();
-        if (this.state.currentCityByGPS === this.state.cityFullName) {
-          this.currentCity();
-        }
-      }
-    })
-    .catch(error => console.error(error));
-    this.setState({refreshing: false});
-  }
-
-  getDistanceAndTime = () => {
-    let fetches = [];
-    for (let i = 0; i < this.state.routes.length; i++) {
-      fetches.push([]);
-      let markers = this.state.routes[i].pins;
-      for (let j = 0; j < markers.length - 1; j++) {
-        fetches[i].push(
-          fetch(`https://maps.googleapis.com/maps/api/directions/json?key=${MAPS_API_KEY}&origin=place_id:${markers[j].properties.placeId}&destination=place_id:${markers[j+1].properties.placeId}&mode=walking`)
-            .then(response => response.json())
-        );
-      }
-      Promise.all(fetches[i])
-        .then(responseJson => {
-          let distance = 0;
-          let time = 0;
-          for (let k = 0; k < responseJson.length; k++) {
-            distance += responseJson[k].routes[0].legs[0].distance.value;
-            time += responseJson[k].routes[0].legs[0].duration.value;
-          }
-          distance /= METERS_TO_MILES;
-          time /= SECONDS_TO_MINUTES;
-          let distanceArray = [...this.state.distance];
-          let timeArray = [...this.state.time];
-          distanceArray[i] = distance;
-          timeArray[i] = time;
-          this.setState({
-            distance: distanceArray,
-            time: timeArray
-          });
-        });
-    }
-  }
-
-  currentCity = () => {
-    let tags = this.state.tags;
-    let routes = this.state.routes;
-    let nearbyCityTag = 'Nearby City';
-    tags.unshift(nearbyCityTag);
-    firebase.auth().currentUser.getIdToken().then(token =>{
-      return fetch(`${SERVER_ADDR}/cities/routes/?lat=${this.state.longitude}&lng=${this.state.latitude}&page=0`, {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-            'Content-type': 'application/json',
-            Authorization: `Bearer ${token}`
-          }
-      })
-    })
-    .then(response => response.json())
-    .then(responseJson => {
-      for (i = 0; i < responseJson.length; i++) {
-        let id = responseJson[i]._id;
-        for (j = 0; j < routes.length; j++) {
-          let routeId = routes[j]._id;
-          if (id == routeId) {
-            routes[j].tags.push(nearbyCityTag);
-            break;
-          }
-        }
-      }
-      this.setState({routes: routes});
     });
   }
 
-  setDistanceLimit = (distance) => {
-    this.setState({
-      distanceFilterValue: distance,
-    })
-  }
+  fetchCityImage = city => {
+    // try to fetch image from Teleport first (sometimes slow)
+    if (city._links['city:urban_area']) {
+      fetch(city._links['city:urban_area'].href + 'images/')
+        .then(response => response.json())
+        .then(responseJson => {
+          if (responseJson.photos[0].image.mobile) {
+            this.setState({
+              photoUri: responseJson.photos[0].image.mobile,
+              loaded: true
+            });
+          }
+        });
+      return;
+    }
 
-  setTimeLimit = (time) => {
-    this.setState({
-      timeFilterValue: time,
-    })
+    // if no image found, try Google
+    fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${city.full_name}&key=${MAPS_API_KEY}`)
+      .then(response => response.json())
+      .then(responseJson => {
+        const placeId = responseJson.results[0].place_id;
+        return fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}`);
+      })
+      .then(response => response.json())
+      .then(responseJson => {
+        const ref = responseJson.result.photos[0].photo_reference;
+
+        this.setState({
+          photoUri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=${CITY_IMG_HEIGHT}&maxWidth=${CITY_IMG_WIDTH}`,
+          loaded: true
+        });
+      });
   }
 
   onRefresh() {
-    this.getData();
-  }
-
-  onPressFilter = () => {
-    this.props.navigation.navigate('RouteFilter', {
-      filterDistance: this.setDistanceLimit,
-      filterTime: this.setTimeLimit,
-      time: this.state.timeFilterValue == 1500 ? 0 : this.state.timeFilterValue,
-      distance: this.state.distanceFilterValue,
-      minimumDistance: this.state.minimumDistance,
-      maximumDistance: this.state.maximumDistance
-    });
+    console.log('refreshed!');
   }
 
   onPressSearch = () => {
@@ -570,166 +360,53 @@ class ExploreScreen extends Component {
   }
 
   onPressSearchItem = (item, navigation) => {
-    navigation.goBack();
-    let link;
-    fetch(item._links['city:item'].href)
-      .then(response => response.json())
-      .then(responseJson => {
-        try {
-          link = responseJson._links['city:urban_area'].href + 'images/';
-        } catch (error) {
-          link = undefined;
-        }
-        console.log(link);
-        this.setState({
-          city: responseJson,
-          cityFullName: responseJson.full_name,
-          latitude: responseJson.location.latlon.latitude,
-          longitude: responseJson.location.latlon.longitude
+    this.setState({loaded: false}, () => {
+      navigation.goBack();
+      fetch(item._links['city:item'].href)
+        .then(response => response.json())
+        .then(responseJson => {
+          this.setState({city: responseJson});
+          this.fetchCityImage(responseJson);
         });
-        return fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${item.matching_full_name.split(' ').join('+')}&key=${MAPS_API_KEY}`)
-      })
-      .then(response => response.json())
-      .then(responseJson => {
-        let place_id = responseJson.results[0].place_id;
-        this.setState({place_id: place_id});
-        this.getData();
-        return fetch(link);
-      })
-      .then(response => response.json())
-      .then(responseJson => {
-        this.setState({photoUri: responseJson.photos[0].image.mobile});
-      })
-      .catch(error => {
-        this.setState({photoUri: undefined});
-      })
+    });
   }
 
   render() {
+    if (!this.state.loaded) {
+      return (
+        <View style={{...styles.container, justifyContent: 'center', alignItems: 'center'}}>
+          <ActivityIndicator size='large' color={PRIMARY} />
+        </View>
+      );
+    }
+
     return (
-    <ScrollView contentContainerStyle={styles.scrollView} refreshControl={<RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh.bind(this)} />}>
-      <View style={styles.container}>
-        <ScrollView style={{flex: 1}}>
-          <CityImage
-            title={this.state.city ? this.state.city.name : 'Loading...'}
-            uri={this.state.photoUri}
-            onPressSearchBox={this.onPressSearch}
-            onPressFilter={this.onPressFilter}
-            navigation={this.props.navigation}
-            lat={this.state.latitude}
-            lng={this.state.longitude}
-            place_id={this.state.place_id}
+      <ScrollView
+        contentContainerStyle={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={this.state.refreshing}
+            onRefresh={this.onRefresh.bind(this)} />
+        }
+      >
+        <SearchBox onPress={this.onPressSearch} />
+        <View>
+          <Image
+            source={{uri: this.state.photoUri}} 
+            style={styles.cityImage}
+            loadingIndicatorSource={require('../assets/placeholder.jpg')}
           />
-          {this.state.tags.map((tag, index) => {
-            return(
-              <View style={styles.sectionContainer}>
-                <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>{tag}</Text>
-                <Animated.ScrollView
-                  contentContainerStyle={styles.endPadding}
-                  horizontal
-                  scrollEventThrottle={1}
-                  showsHorizontalScrollIndicator={false}
-                  onScroll={Animated.event([{nativeEvent: {contentOffset: {x: this.scrollValue}}}], {useNativeDriver: true})}
-                  style={{width: '100%', backgroundColor: 'transparent', paddingLeft: 10, marginBottom: 0}}
-                >
-                {this.state.routes.map((item, index) => {
-                  const timeCondition = this.state.timeFilterValue != 0 && this.state.timeFilterValue != 1500 ? this.state.time[index] <= this.state.timeFilterValue : true;
-                  const distanceCondition = this.state.distanceFilterValue != this.state.maximumDistance && this.state.distanceFilterValue != this.state.minimumDistance ? this.state.distance[index] <= this.state.distanceFilterValue : true;
-                  if (timeCondition && distanceCondition && item.tags.includes(tag)) {
-                    let photoRef = item.pins[0].properties.photoRefs[0];
-                    return (
-                      <RouteCard
-                        key={item._id}
-                        title={item.name}
-                        photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
-                        numLikes={item.numLikes}
-                        onPress={() => this.props.navigation.navigate('RouteDetail', {
-                          route: item
-                        })}
-                        bookmarked={this.state.bookmarks[index]}
-                        liked={this.state.likes[index]}
-                        onBookmark = {() => {
-                          let bookmarks = [...this.state.bookmarks];
-                          bookmarks[index] = !this.state.bookmarks[index];
-                          this.setState({bookmarks: bookmarks});
-                          let bookmarks_id = [...this.state.bookmarks_id];
-                          let routeId = this.state.routes[index]._id;
-                          console.log(`Route ID: ${routeId}`);
-                          console.log(bookmarks);
-                          if (bookmarks[index]) {
-                            firebase.auth().currentUser.getIdToken().then(token =>
-                              fetch(`${SERVER_ADDR}/users/${this.state.userId}/forks`, {
-                                method: 'POST',
-                                headers: {
-                                  Accept: 'application/json',
-                                  'Content-type': 'application/json',
-                                  Authorization: `Bearer ${token}`
-                                },
-                                body: JSON.stringify({
-                                  routeId: routeId,
-                                })
-                              })
-                            )
-                            .then(response => response.json())
-                            .then(responseJson => {
-                              let tempID = responseJson["Mongo ObjectID"];
-                              bookmarks_id[index] = tempID;
-                              this.setState({bookmarks_id: bookmarks_id});
-                            })
-                           } else {
-                             let route_id = this.state.bookmarks_id[index];
-                             console.log(`Deleting ${route_id}`);
-                             firebase.auth().currentUser.getIdToken().then(token =>
-                               fetch(`${SERVER_ADDR}/cities/routes/${route_id}`, {
-                                 method: 'DELETE',
-                                 headers: {
-                                   Accept: 'application/json',
-                                   'Content-type': 'application/json',
-                                   Authorization: `Bearer ${token}`
-                                 }
-                               }))
-                               .then(response => response.json())
-                               .then(responseJson => {
-                                 console.log(responseJson);
-                               })
-                          }
-                        }}
-                        onLike = {() => {
-                          let likes = [...this.state.likes];
-                          likes[index] = !this.state.likes[index];
-                          this.setState({likes: likes});
-                          let routeId = this.state.routes[index]._id;
-                          console.log(`Route ID: ${routeId}`);
-                          like = likes[index] ? "like" : "unlike";
-                          console.log(like);
-                          firebase.auth().currentUser.getIdToken().then(token =>
-                            fetch(`${SERVER_ADDR}/cities/routes/${routeId}/likes`, {
-                              method: 'PATCH',
-                              headers: {
-                                Accept: 'application/json',
-                                'Content-type': 'application/json',
-                                Authorization: `Bearer ${token}`
-                              },
-                              body: JSON.stringify({
-                                type: like,
-                                userId: this.state.userId
-                              })
-                            })
-                          )
-                          .then(response => response.text())
-                          .then(responseText => {
-                            console.log(responseText);
-                          })
-                        }}
-                      />
-                    );
-                  }
-              })}
-            </Animated.ScrollView>
-          </View>)})}
-        </ScrollView>
-      </View>
-    </ScrollView>
+          <LinearGradient
+            colors={['rgba(0,0,0,0.3)', 'transparent', 'rgba(0,0,0,0.8)']}
+            style={styles.gradient}
+          />
+          <View style={{paddingLeft: 10, position: 'absolute', bottom: 10}}>
+            <Text style={styles.imageText}>
+              {this.state.loaded ? this.state.city.name : 'Loading...'}
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
     );
   }
 }

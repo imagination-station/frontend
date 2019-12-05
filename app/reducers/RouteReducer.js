@@ -4,6 +4,7 @@ const INITIAL_STATE = {
   selected: null,
   showRoute: null,
   userId: null,
+  refresh: false,
   latitude: null,
   longitude: null
 };
@@ -90,6 +91,11 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         ...state,
         longitude: action.payload.longitude
       }
+    case 'TOGGLE_REFRESH':
+      return {
+        ...state,
+        refresh: !state.refresh
+      };
     default:
       return state;
   }
