@@ -211,6 +211,14 @@ function Card(props) {
     <TouchableWithoutFeedback onPress={props.onMore}>
       <View style={mapStyles.card}>
         <Image source={source} style={mapStyles.cardImage} resizeMode='cover' />
+        {/* Number label */}
+        <View style={{position: 'absolute', top: 5, right: 5}}>
+          <OptionsMenu
+            customButton={<Icon name='more-vert' size={30} color='black' />}
+            options={props.options}
+            actions={props.actions}
+          />
+        </View>
         <View style={mapStyles.cardNumber}>
           <Text style={{color: 'white'}}>{props.index + 1}</Text>
         </View>
@@ -623,6 +631,9 @@ class RouteDetailScreen extends Component {
 
   render() {
     const reducer = (res, marker, index) => {
+      const options = ['Remove', 'Move Left', 'Move Right'];
+      const actions = [() => console.log('Remove'), () => console.log('Move Left'), () => console.log('Move Right')];
+
       res.push(
         <Card
           key={marker.properties.placeId}
@@ -641,6 +652,8 @@ class RouteDetailScreen extends Component {
             this.props.navigation.navigate('PlaceDetail');
           }}
           index={index}
+          options={options}
+          actions={actions}
         />
       );
 

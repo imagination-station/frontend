@@ -57,8 +57,6 @@ class SplashScreen extends Component {
           .then(responseJson => {
             console.log('uid', responseJson._id);
             this.props.logIn(responseJson._id);
-            this.props.setLatitude(this.state.latitude);
-            this.props.setLongitude(this.state.longitude);
             this.props.navigation.navigate('Home');
           });
       } else {
@@ -89,16 +87,6 @@ const mapDispatchToProps = dispatch => {
     logIn: (id) => {
       dispatch({type: 'LOG_IN', payload: {
         userId: id,
-      }});
-    },
-    setLatitude: (latitude) => {
-      dispatch({type: 'SET_LATITUDE', payload: {
-        latitude: latitude,
-      }});
-    },
-    setLongitude: (longitude) => {
-      dispatch({type: 'SET_LONGITUDE', payload: {
-        longitude: longitude,
       }});
     }
   };

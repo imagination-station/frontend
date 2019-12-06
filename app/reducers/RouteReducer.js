@@ -5,8 +5,6 @@ const INITIAL_STATE = {
   showRoute: null,
   userId: null,
   refresh: false,
-  latitude: null,
-  longitude: null
 };
 
 const routeReducer = (state = INITIAL_STATE, action) => {
@@ -34,6 +32,16 @@ const routeReducer = (state = INITIAL_STATE, action) => {
           return true;
         }),
         steps: state.steps.filter((_, index) => index != indexToRemove),
+      };
+    case 'SWAP':
+      let newMarkers = [...state.markers];
+      const temp = newMarkers[action.payload.a];
+      newMarkers[a] = newMarkers[b];
+      newMarkers[b] = temp;
+      
+      return {
+        ...state,
+        markers: newMarkers
       };
     case 'VIEW_DETAIL':
       return {
@@ -81,16 +89,6 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         ...state,
         showRoute: null
       };
-    case 'SET_LATITUDE':
-      return {
-        ...state,
-        latitude: action.payload.latitude
-      };
-    case 'SET_LONGITUDE':
-      return {
-        ...state,
-        longitude: action.payload.longitude
-      }
     case 'TOGGLE_REFRESH':
       return {
         ...state,
