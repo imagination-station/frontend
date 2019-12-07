@@ -22,6 +22,7 @@ import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
 import resolveAssetSource from 'resolveAssetSource';
 import OptionsMenu from 'react-native-options-menu';
+import { Linking } from 'expo';
 
 import Button from '../components/Buttons.js';
 import { GREY, DARKER_GREY, PRIMARY, ACCENT, AQUAMARINE } from '../config/styles.js';
@@ -214,7 +215,7 @@ function Card(props) {
         {/* Number label */}
         <View style={{position: 'absolute', top: 5, right: 5}}>
           <OptionsMenu
-            customButton={<Icon name='more-vert' size={30} color='black' />}
+            customButton={<Icon name='more-vert' size={30} color={ACCENT} />}
             options={props.options}
             actions={props.actions}
           />
@@ -389,35 +390,26 @@ class RouteDetailScreen extends Component {
   }
 
   componentDidMount() {
-    let fetches = [];
-
     const markers = this.props.navigation.getParam('route').pins;
-    // get walking directions between each markers
-    for (let i = 0; i < markers.length - 1; i++) {
-      fetches.push(
-        fetch(`https://maps.googleapis.com/maps/api/directions/json?key=${MAPS_API_KEY}&origin=place_id:${markers[i].properties.placeId}&destination=place_id:${markers[i+1].properties.placeId}&mode=walking`)
-          .then(response => response.json())
-      );
-    }
+    const placeIds = markers.map(marker => 'place_id:' + marker.properties.placeId);
 
-    Promise.all(fetches)
-      .then(responsesJson => {
-        const steps = responsesJson.map(responseJson => {
-          const info = {
-            distance: responseJson.routes[0].legs[0].distance,
-            duration: responseJson.routes[0].legs[0].duration
-          };
-          return info;
-        });
+    const origins = [...placeIds];
+    const destinations = [...placeIds];
 
-        this.props.loadRoute(this.props.navigation.getParam('route').pins, steps);
+    origins.pop();
+    destinations.shift();
+
+    if (origins.length != 0) {
+      fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?key=${MAPS_API_KEY}&origins=${origins.join('|')}&destinations=${destinations.join('|')}&mode=walking`)
+      .then(response => response.json())
+      .then(responseJson => {
+        const distances = responseJson.rows.map((row, index) => row.elements[index].distance);
+        this.props.loadRoute(markers, distances);
         this.setState({loaded: true});
-        if (this.props.navigation.getParam('route').pins.length > 1) {
-          // show first "leg" of route by default
-          this.props.selectRoute(0);
-        }
-      }
-    );
+      });
+    } else {
+      this.setState({loaded: true});
+    }
 
     this.willBlur = this.props.navigation.addListener('willBlur', payload =>
       BackHandler.removeEventListener('hardwareBackPress', this.onBack)
@@ -570,19 +562,16 @@ class RouteDetailScreen extends Component {
   }
 
   onAddItem = async () => {
-    let info;
+    let distance;
     if (this.props.markers.length > 0) {
-      await fetch(`https://maps.googleapis.com/maps/api/directions/json?key=${MAPS_API_KEY}&origin=place_id:${this.props.markers[this.props.markers.length-1].properties.placeId}&destination=place_id:${this.state.focused.properties.placeId}&mode=walking`)
+      await fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?key=${MAPS_API_KEY}&origins=place_id:${this.props.markers[this.props.markers.length-1].properties.placeId}&destinations=place_id:${this.state.focused.properties.placeId}&mode=walking`)
         .then(response => response.json())
         .then(responseJson => {
-          info = {
-            distance: responseJson.routes[0].legs[0].distance,
-            duration: responseJson.routes[0].legs[0].duration
-          }
+          distance = responseJson.rows[0].elements[0].distance;
         });
     }
 
-    this.props.addMarker(this.state.focused, info);
+    this.props.addMarker(this.state.focused, distance);
     this.setState({
       focused: null,
       searchInput: '',
@@ -631,8 +620,17 @@ class RouteDetailScreen extends Component {
 
   render() {
     const reducer = (res, marker, index) => {
-      const options = ['Remove', 'Move Left', 'Move Right'];
-      const actions = [() => console.log('Remove'), () => console.log('Move Left'), () => console.log('Move Right')];
+      const options = ['Remove'];
+      const actions = [() => this.props.removeMarker(marker.properties.placeId)];
+
+      if (index != 0) {
+        options.push('Move Left');
+        actions.push(() => this.props.swapMarkers(index-1, index));
+      }
+      if (index != this.props.markers.length -1) {
+        options.push('Move Right');
+        actions.push(() => this.props.swapMarkers(index, index+1));
+      }
 
       res.push(
         <Card
@@ -661,34 +659,37 @@ class RouteDetailScreen extends Component {
         res.push(
           <TouchableOpacity
             onPress={() => {
-              if (index === this.props.showRoute) {
-                this.props.clearRoute();
-              } else {
-                this.props.selectRoute(index);
-                this.mapRef.fitToSuppliedMarkers(
-                  [this.props.markers[index], this.props.markers[index+1]].map(marker => marker.properties.placeId),
-                  {
-                    edgePadding: {
-                      top: 100,
-                      left: 100,
-                      bottom: 300,
-                      right: 100
-                    },
-                    animated: true
-                  }
-                );
-              }
+            // Open Google Maps
+            Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${this.props.markers[index+1].properties.secondaryText}&travelmode=walking`);
+            //   if (index === this.props.showRoute) {
+            //     this.props.clearRoute();
+            //   } else {
+            //     this.props.selectRoute(index);
+            //     this.mapRef.fitToSuppliedMarkers(
+            //       [this.props.markers[index], this.props.markers[index+1]].map(marker => marker.properties.placeId),
+            //       {
+            //         edgePadding: {
+            //           top: 100,
+            //           left: 100,
+            //           bottom: 300,
+            //           right: 100
+            //         },
+            //         animated: true
+            //       }
+            //     );
+            //   }
+            // }}
+            // key={`${marker.properties.placeId}_leg`}
             }}
-            key={`${marker.properties.placeId}_leg`}
           >
             <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
-              <Icon name='directions-walk' size={30} color={index === this.props.showRoute ? PRIMARY : DARKER_GREY} />
-              <Text style={{color: index === this.props.showRoute ? PRIMARY : DARKER_GREY}}>
-                {this.props.steps[index].distance.text}
+              <Icon name='directions-walk' size={30} color={DARKER_GREY} />
+              <Text style={{color: DARKER_GREY}}>
+                {this.props.steps[index].text}
               </Text>
-              <Text style={{color: index === this.props.showRoute ? PRIMARY : DARKER_GREY}}>
+              {/* <Text style={{color: index === this.props.showRoute ? PRIMARY : DARKER_GREY}}>
                 {this.props.steps[index].duration.text}
-              </Text>
+              </Text> */}
             </View>
           </TouchableOpacity>
         );
@@ -738,14 +739,6 @@ class RouteDetailScreen extends Component {
               icon={pin}
             />
           }
-          {this.props.showRoute !== null ? <MapViewDirections
-            origin={`place_id:${this.props.markers[this.props.showRoute].properties.placeId}`}
-            destination={`place_id:${this.props.markers[this.props.showRoute+1].properties.placeId}`}
-            apikey={MAPS_API_KEY}
-            strokeColor={PRIMARY}
-            strokeWidth={6}
-            // lineDashPattern={[5, 30]}
-          /> : null}
         </MapView>
         {this.state.editing && <View style={mapStyles.searchBoxContainer}>
           <TextInput
@@ -805,8 +798,8 @@ class RouteDetailScreen extends Component {
                 loaded={this.state.loaded}
                 showRouteInfo={this.showRouteInfo}
                 view={this.state.view}
-                distance={this.props.steps.reduce((res, cur) => res + cur.distance.value, 0)}
-                duration={this.props.steps.reduce((res, cur) => res + cur.duration.value, 0)}
+                // distance={this.props.steps.reduce((res, cur) => res + cur.distance.value, 0)}
+                // duration={this.props.steps.reduce((res, cur) => res + cur.duration.value, 0)}
               />
               <View style={mapStyles.filler} />
             </ScrollView>
@@ -844,9 +837,16 @@ const mapDispatchToProps = dispatch => {
     viewDetail: index => dispatch({type: 'VIEW_DETAIL', payload: {
       selectedIndex: index
     }}),
-    addMarker: (marker, routeInfo) => dispatch({type: 'ADD', payload: {
+    addMarker: (marker, distance) => dispatch({type: 'ADD', payload: {
       marker: marker,
-      routeInfo: routeInfo
+      distance: distance
+    }}),
+    removeMarker: id => dispatch({type: 'REMOVE', payload: {
+      id: id
+    }}),
+    swapMarkers: (a, b) => dispatch({type: 'SWAP', payload: {
+      a: a,
+      b: b
     }}),
     clear: () => dispatch({type: 'CLEAR'}),
     loadRoute: (markers, steps) => dispatch({type: 'LOAD_ROUTE', payload: {

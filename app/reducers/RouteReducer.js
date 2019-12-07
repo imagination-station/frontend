@@ -2,7 +2,6 @@ const INITIAL_STATE = {
   markers: [],
   steps: [],
   selected: null,
-  showRoute: null,
   userId: null,
   refresh: false,
 };
@@ -13,7 +12,7 @@ const routeReducer = (state = INITIAL_STATE, action) => {
       return {
         ...state,
         markers: [...state.markers, action.payload.marker],
-        steps: action.payload.routeInfo ? [...state.steps, action.payload.routeInfo] : state.steps
+        steps: action.payload.distance ? [...state.steps, action.payload.distance] : state.steps
       };
     case 'REMOVE':
       let indexToRemove;
@@ -36,8 +35,8 @@ const routeReducer = (state = INITIAL_STATE, action) => {
     case 'SWAP':
       let newMarkers = [...state.markers];
       const temp = newMarkers[action.payload.a];
-      newMarkers[a] = newMarkers[b];
-      newMarkers[b] = temp;
+      newMarkers[action.payload.a] = newMarkers[action.payload.b];
+      newMarkers[action.payload.b] = temp;
       
       return {
         ...state,
