@@ -116,6 +116,7 @@ class LoginScreen extends Component {
         case 'success':
           await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
           const credential = firebase.auth.FacebookAuthProvider.credential(token);
+
           firebase.auth().signInWithCredential(credential)
             .then(cred => {
               console.log('logged in with facebook!');
@@ -124,9 +125,28 @@ class LoginScreen extends Component {
               } else {
                 console.log('new user!');
                 // TODO: POST request to API server
-                this.props.navigation.navigate('Location', {
-                  purpose: 'SIGN_UP'
-                });
+                fetch(`${SERVER_ADDR}/users`, {
+                  method: 'POST',
+                  headers: {
+                    Accept: 'application/json',
+                    'Content-type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    fullName: cred.additionalUserInfo.profile.name,
+                    email: '',
+                    authProvider: cred.additionalUserInfo.providerId,
+                    bio: '',
+                    location: '',
+                    photoUrl: cred.additionalUserInfo.profile.picture.url
+                  })
+                })
+                  .then(response => {
+                    console.log(response);
+                    this.props.navigation.navigate('Location', {
+                      purpose: 'SIGN_UP'
+                    });
+                  })
+                  .catch(error => console.error(error));
               }
             }
           ); 

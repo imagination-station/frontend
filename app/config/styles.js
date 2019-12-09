@@ -1,8 +1,9 @@
 import { StyleSheet } from 'react-native';
 
-export const PRIMARY = '#E77728';
-export const ACCENT = '#0B3C49';
-export const MINT_CREAM = '#ffffff';
+export const PRIMARY = '#f7941d';
+export const ACCENT = '#60d394';
+
+export const MINT_CREAM = '#fcfffc';
 
 export const GREY = '#f2f2f2'; 
 export const DARKER_GREY = '#6D7380';

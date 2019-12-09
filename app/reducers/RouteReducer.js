@@ -1,6 +1,5 @@
 const INITIAL_STATE = {
   markers: [],
-  steps: [],
   selected: null,
   userId: null,
   refresh: false,
@@ -12,7 +11,6 @@ const routeReducer = (state = INITIAL_STATE, action) => {
       return {
         ...state,
         markers: [...state.markers, action.payload.marker],
-        steps: action.payload.distance ? [...state.steps, action.payload.distance] : state.steps
       };
     case 'REMOVE':
       let indexToRemove;
@@ -21,7 +19,7 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         markers: state.markers.filter((marker, index) => {
           if (marker.properties.placeId == action.payload.id) {
             if (index == state.markers.length - 1) {
-              indexToRemove = state.steps.length - 1;
+              indexToRemove = state.distances.length - 1;
             } else {
               indexToRemove = index;
             }
@@ -30,7 +28,6 @@ const routeReducer = (state = INITIAL_STATE, action) => {
 
           return true;
         }),
-        steps: state.steps.filter((_, index) => index != indexToRemove),
       };
     case 'SWAP':
       let newMarkers = [...state.markers];
@@ -63,7 +60,7 @@ const routeReducer = (state = INITIAL_STATE, action) => {
     case 'CLEAR':
       return {
         markers: [],
-        steps: [],
+        distances: [],
         selected: null,
         showRoute: null
       };
@@ -76,17 +73,7 @@ const routeReducer = (state = INITIAL_STATE, action) => {
       return {
         ...state,
         markers: action.payload.markers,
-        steps: action.payload.steps
-      };
-    case 'SELECT_ROUTE':
-      return {
-        ...state,
-        showRoute: action.payload.selectedIndex
-      };
-    case 'CLEAR_ROUTE':
-      return {
-        ...state,
-        showRoute: null
+        distances: action.payload.distances
       };
     case 'TOGGLE_REFRESH':
       return {

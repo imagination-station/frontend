@@ -19,7 +19,6 @@ import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
-import MapViewDirections from 'react-native-maps-directions';
 import resolveAssetSource from 'resolveAssetSource';
 import OptionsMenu from 'react-native-options-menu';
 import { Linking } from 'expo';
@@ -399,7 +398,7 @@ class RouteDetailScreen extends Component {
     origins.pop();
     destinations.shift();
 
-    if (origins.length != 0) {
+    if (!this.state.loaded) {
       fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?key=${MAPS_API_KEY}&origins=${origins.join('|')}&destinations=${destinations.join('|')}&mode=walking`)
       .then(response => response.json())
       .then(responseJson => {
@@ -407,8 +406,6 @@ class RouteDetailScreen extends Component {
         this.props.loadRoute(markers, distances);
         this.setState({loaded: true});
       });
-    } else {
-      this.setState({loaded: true});
     }
 
     this.willBlur = this.props.navigation.addListener('willBlur', payload =>
@@ -571,7 +568,11 @@ class RouteDetailScreen extends Component {
         });
     }
 
-    this.props.addMarker(this.state.focused, distance);
+    if (distance) {
+      this.state.focused.distToNext = distance;
+    }
+
+    this.props.addMarker(this.state.focused);
     this.setState({
       focused: null,
       searchInput: '',

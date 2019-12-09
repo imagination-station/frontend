@@ -75,7 +75,7 @@ class SplashScreen extends Component {
         {/* don't worry, this is just a temporary logo. */}
         <Image
           style={styles.logo}
-          source={require('../assets/logo-white.png')}
+          source={require('../assets/logo.png')}
         />
       </View>
     );
