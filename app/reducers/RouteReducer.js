@@ -51,7 +51,7 @@ const routeReducer = (state = INITIAL_STATE, action) => {
 
       return {
         ...state,
-        markers: updatedMarkers  
+        markers: updatedMarkers
       };
     case 'CLEAR':
       return {
@@ -63,7 +63,8 @@ const routeReducer = (state = INITIAL_STATE, action) => {
     case 'LOG_IN':
       return {
         ...state,
-        userId: action.payload.userId
+        userId: action.payload.userId,
+        userTags: action.payload.userTags
       };
     case 'LOAD_ROUTE':
       return {
