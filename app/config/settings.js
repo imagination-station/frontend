@@ -3,6 +3,8 @@ import env from './.env.json';
 export const MAPS_API_KEY = env.MAPS_API_KEY;
 export const SERVER_ADDR = env.API_SERVER_ADDR;
 
+export const TEST_SERVER_ADDR = 'https://e13a1fd0.ngrok.io';
+
 // hardcoded values for Providence; replace later
 export const INIT_LOCATION = {
   latitude: 41.8239891,

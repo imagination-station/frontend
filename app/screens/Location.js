@@ -10,12 +10,15 @@ import {
   FlatList
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { connect } from 'react-redux';
+import * as firebase from 'firebase';
 
-import { GREY, PRIMARY, AQUAMARINE } from '../config/styles.js';
+import { GREY, PRIMARY, ACCENT } from '../config/styles.js';
+import { TEST_SERVER_ADDR } from '../config/settings.js';
 
 const styles = StyleSheet.create({
   button: { 
-    color: AQUAMARINE,
+    color: ACCENT,
     fontSize: 18,
     paddingHorizontal: 7,
     marginRight: 10,
@@ -54,7 +57,7 @@ function SearchBox(props) {
   return (
     <View style={styles.textBoxContainer}>
       <TextInput
-        style={{...styles.textBox, color: props.snappedToCity ? AQUAMARINE : 'black'}}
+        style={{...styles.textBox, color: props.snappedToCity ? ACCENT : 'black'}}
         placeholder={props.autoDetectionHandled ? 'Search for a city': 'Getting your city...'}
         value={props.textInput}
         onChangeText={props.onChangeText}
@@ -86,21 +89,7 @@ class Location extends Component {
       headerRight: () => (
         <TouchableOpacity
           disabled={!navigation.getParam('snappedToCity')}
-          onPress={() => {
-            if (navigation.getParam('purpose') == 'SIGN_UP') {
-              // TODO: PUT request to API server
-              navigation.navigate('Interests');
-            } else {
-              navigation.navigate('RouteDetail', {
-                city: navigation.getParam('location'),
-                from: 'location',
-                route:  {
-                  pins: []
-                },
-                editing: true
-              });
-            }
-          }}
+          onPress={navigation.getParam('onPressNext')}
         >
           {/* make Next button opaque until city is chosen */}
           <Text style={{...styles.button, opacity: navigation.getParam('snappedToCity') ? 1 : 0.3}}>Next</Text>
@@ -126,9 +115,13 @@ class Location extends Component {
 
   componentDidMount() {
     this.searchTimer = null;
-    this.props.navigation.setParams({snappedToCity: false});
+    this.props.navigation.setParams({
+      snappedToCity: false,
+      onPressNext: this.onPressNext
+    });
+
     // get city based on user's current location
-    if (this.props.purpose == 'SIGN_UP') {
+    if (this.props.purpose == 'UPDATE_USER') {
       navigator.geolocation.getCurrentPosition(
         position => {
           const latitude = JSON.stringify(position.coords.latitude);
@@ -195,6 +188,30 @@ class Location extends Component {
     });
   }
 
+  onPressNext = () => {
+    console.log('onPressNext()');
+    if (this.props.purpose == 'UPDATE_USER') {
+      firebase.auth().currentUser.getIdToken().then(token =>
+        fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.userId}`, {
+          method: 'PUT',
+          headers: {
+            Accept: 'application/json',
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            location: this.state.location.geoname_id
+          })
+        })
+      )
+        .then(response => {
+          console.log(response);
+          navigation.navigate('Interests');
+        })
+        .catch(error => console.error(error));
+    }
+  }
+
   render() {
     let message;
     if (this.props.purpose == 'ROUTE_CREATION') {
@@ -242,4 +259,10 @@ class Location extends Component {
   }
 }
 
-export default Location;
+const mapStateToProps = state => {
+  return {
+    userId: state.userId
+  };
+}
+
+export default connect(mapStateToProps)(Location);

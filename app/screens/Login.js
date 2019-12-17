@@ -13,7 +13,7 @@ import * as firebase from 'firebase';
 import * as Facebook from 'expo-facebook';
 import { connect } from 'react-redux';
 
-import { SERVER_ADDR } from '../config/settings.js';
+import { SERVER_ADDR, TEST_SERVER_ADDR } from '../config/settings.js';
 import { GREY, DARKER_GREY, ACCENT, PRIMARY, FACEBOOK } from '../config/styles.js';
 
 const styles = StyleSheet.create({
@@ -79,9 +79,13 @@ class LoginScreen extends Component {
     password: ''
   };
 
+  // componentDidMount() {
+  //   fetch(`${TEST_SERVER_ADDR}/ping`)
+  //     .then(response => console.log(response));
+  // }
+
   logInWithEmail = () => {
-    firebase.auth()
-      .signInWithEmailAndPassword(this.state.email, this.state.password)
+    firebase.auth().signInWithEmailAndPassword(this.state.email, this.state.password)
       .then(cred => {
         return cred.user.getIdToken();
       })
@@ -105,6 +109,7 @@ class LoginScreen extends Component {
 
   logInWithFacebook = async () => {
     try {
+      await Facebook.initializeAsync('2873476886029892');
       const {
         type,
         token
@@ -124,8 +129,9 @@ class LoginScreen extends Component {
                 this.props.navigation.navigate('Home');
               } else {
                 console.log('new user!');
+                console.log(cred.additionalUserInfo);
                 // TODO: POST request to API server
-                fetch(`${SERVER_ADDR}/users`, {
+                fetch(`${TEST_SERVER_ADDR}/api/users`, {
                   method: 'POST',
                   headers: {
                     Accept: 'application/json',
@@ -137,15 +143,11 @@ class LoginScreen extends Component {
                     authProvider: cred.additionalUserInfo.providerId,
                     bio: '',
                     location: '',
-                    photoUrl: cred.additionalUserInfo.profile.picture.url
+                    photoUrl: cred.additionalUserInfo.profile.picture.data.url,
+                    _id: firebase.auth().currentUser.uid
                   })
                 })
-                  .then(response => {
-                    console.log(response);
-                    this.props.navigation.navigate('Location', {
-                      purpose: 'SIGN_UP'
-                    });
-                  })
+                  .then(response => console.log(response))
                   .catch(error => console.error(error));
               }
             }
@@ -213,8 +215,8 @@ class LoginScreen extends Component {
 
 const mapDispatchToProps = dispatch => {
   return {
-    logIn: (id) => {
-      dispatch({type: 'LOG_IN', payload: {
+    setUserId: (id) => {
+      dispatch({type: 'SET_USER_ID', payload: {
         userId: id,
       }});
     },

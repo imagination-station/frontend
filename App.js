@@ -91,7 +91,7 @@ const HomeStack = createStackNavigator({
 const AuthStack = createStackNavigator({
   Login: LoginScreen,
   SignUp: SignUpScreen,
-  Location: LocationScreen,
+  Location: mapNavigationStateParamsToProps(LocationScreen),
   Interests: InterestsScreen,
 }, {
   initialRouteName: 'Login'

@@ -64,7 +64,7 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         selected: null,
         showRoute: null
       };
-    case 'LOG_IN':
+    case 'SET_USER_ID':
       return {
         ...state,
         userId: action.payload.userId

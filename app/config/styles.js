@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 
+// color scheme
 export const PRIMARY = '#f7941d';
 export const ACCENT = '#60d394';
 
