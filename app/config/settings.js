@@ -3,7 +3,7 @@ import env from './.env.json';
 export const MAPS_API_KEY = env.MAPS_API_KEY;
 export const SERVER_ADDR = env.API_SERVER_ADDR;
 
-export const TEST_SERVER_ADDR = 'https://e13a1fd0.ngrok.io';
+export const TEST_SERVER_ADDR = 'https://d39355de.ngrok.io';
 
 // hardcoded values for Providence; replace later
 export const INIT_LOCATION = {
@@ -24,11 +24,13 @@ export const PLACEHOLDER_IMG = 'https://upload.wikimedia.org/wikipedia/commons/t
 export const TAGS = [
   'Budget',
   'Walkable',
-  'Historical',
-  'Art & Architecture',
-  'Local Approved',
-  'Iconic',
-  'Foodie'
+  'History',
+  'Art',
+  'Urban',
+  'Architecture',
+  'Romantic',
+  'Nature',
+  'Food'
 ];
 
 export const FIREBASE_CONFIG = {

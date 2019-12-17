@@ -129,7 +129,6 @@ class LoginScreen extends Component {
                 this.props.navigation.navigate('Home');
               } else {
                 console.log('new user!');
-                console.log(cred.additionalUserInfo);
                 // TODO: POST request to API server
                 fetch(`${TEST_SERVER_ADDR}/api/users`, {
                   method: 'POST',
@@ -139,15 +138,23 @@ class LoginScreen extends Component {
                   },
                   body: JSON.stringify({
                     fullName: cred.additionalUserInfo.profile.name,
-                    email: '',
+                    email: cred.additionalUserInfo.profile.email,
                     authProvider: cred.additionalUserInfo.providerId,
                     bio: '',
                     location: '',
                     photoUrl: cred.additionalUserInfo.profile.picture.data.url,
+                    interests: [],
                     _id: firebase.auth().currentUser.uid
                   })
                 })
-                  .then(response => console.log(response))
+                  .then(response => response.json())
+                  .then(responseJson => {
+                    console.log(responseJson);
+                    this.props.setUser(responseJson);
+                    this.props.navigation.navigate('Location' , {
+                      purpose: 'UPDATE_USER' 
+                    });
+                  })
                   .catch(error => console.error(error));
               }
             }
@@ -215,9 +222,9 @@ class LoginScreen extends Component {
 
 const mapDispatchToProps = dispatch => {
   return {
-    setUserId: (id) => {
-      dispatch({type: 'SET_USER_ID', payload: {
-        userId: id,
+    setUser: user => {
+      dispatch({type: 'SET_USER', payload: {
+        user: user,
       }});
     },
   };

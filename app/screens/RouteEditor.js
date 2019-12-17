@@ -20,12 +20,12 @@ import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
 import MapViewDirections from 'react-native-maps-directions';
-import resolveAssetSource from 'resolveAssetSource';
+// import resolveAssetSource from 'resolveAssetSource';
 
 const pin =  require('../assets/pin.png');
 
-const PIN_WIDTH = resolveAssetSource(pin).width;
-const PIN_HEIGHT = resolveAssetSource(pin).width;
+const PIN_WIDTH = 10 // resolveAssetSource(pin).width;
+const PIN_HEIGHT = 10 //resolveAssetSource(pin).width;
 const PIXEL_RATIO = PixelRatio.get();
 
 const METERS_TO_MILES = 1609.34;

@@ -10,7 +10,7 @@ import * as firebase from 'firebase';
 import { connect } from 'react-redux';
 
 import { PRIMARY } from '../config/styles.js';
-import { SERVER_ADDR } from '../config/settings.js';
+import { SERVER_ADDR, TEST_SERVER_ADDR } from '../config/settings.js';
 
 const styles = StyleSheet.create({
   container: {
@@ -29,21 +29,29 @@ const styles = StyleSheet.create({
 
 class SplashScreen extends Component {
 
-  state = {
-    latitude: undefined,
-    longitude: undefined
-  }
-
   componentDidMount() {
     this.firebaseListener = firebase.auth().onAuthStateChanged(user => {
       if (user != null) {
-        console.log(firebase.auth().currentUser.email, 'logged in!');
         // // check if user logged in through facebook
         // console.log('auth provider', firebase.auth().currentUser.providerData[0].providerId);
         // // can use this in Facebook Graph API
         // console.log('facebook uid', firebase.auth().currentUser.providerData[0].uid);
 
-        this.props.navigation.navigate('Home');
+        firebase.auth().currentUser.getIdToken()
+          .then(token =>
+            fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}`, {
+              headers: {
+                Accept: 'application/json',
+                'Content-type': 'application/json',
+                Authorization: `Bearer ${token}`
+              },
+            }))
+          .then(response => response.json())
+          .then(responseJson => {
+            console.log(responseJson);
+            this.props.setUser(responseJson);
+            this.props.navigation.navigate('Home');
+          });
       } else {
         this.props.navigation.navigate('Auth');
       }
@@ -69,9 +77,9 @@ class SplashScreen extends Component {
 
 const mapDispatchToProps = dispatch => {
   return {
-    logIn: (id) => {
-      dispatch({type: 'LOG_IN', payload: {
-        userId: id,
+    setUser: user => {
+      dispatch({type: 'SET_USER', payload: {
+        user: user
       }});
     }
   };

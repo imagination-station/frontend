@@ -1,9 +1,21 @@
 import React, { Component, Fragment } from 'react';
-import { Text, View, Image, StyleSheet, TouchableOpacity, StatusBar, SafeAreaView, Platform } from 'react-native';
+import {
+  Text,
+  View,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  StatusBar,
+  SafeAreaView,
+  Platform
+} from 'react-native';
 import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { connect } from 'react-redux';
 
-import { DARKER_GREY, GREY, PRIMARY, ACCENT } from '../config/styles.js';
+import { DARKER_GREY, GREY, ACCENT } from '../config/styles.js';
+
+const PROFILE_PIC_SIZE = 70;
 
 const styles = StyleSheet.create({
   container: {
@@ -19,17 +31,19 @@ const styles = StyleSheet.create({
     elevation: 0.5,
     backgroundColor: 'white'
   },
+  profilePic: {
+    width: PROFILE_PIC_SIZE,
+    height: PROFILE_PIC_SIZE,
+    borderRadius: PROFILE_PIC_SIZE / 2
+  },
   headerTextContainer: {
     flex: 1,
-    marginLeft: 25
+    marginLeft: 25,
+    justifyContent: 'center'
   },
   headerMainText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold'
-  },
-  headerSecondaryText: {
-    fontSize: 14,
-    color: PRIMARY
   },
   sectionContainer: {
     padding: 20,
@@ -61,9 +75,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff'
   }
 });
-
-const NAME = 'Matias Sanders';
-const BIO = "Hello! I'm a professor of art history at Georgia State. I have lived in Atlanta for about 10 years."
 
 function ActionButton(props) {
   return (
@@ -99,40 +110,44 @@ class ProfileScreen extends Component {
   }
 
   render() {
+    const bio = this.props.user.bio ? this.props.user.bio : `Hello! My name is ${this.props.user.fullName}.`;
+
     return (
-      <Fragment>
-        <SafeAreaView style={styles.safeStatusArea} />
-        <SafeAreaView style={styles.safeArea}>
-          <View style={styles.container}>
-            <View style={styles.header}>
-              <Image style={{width: 70, height: 70, borderRadius: 70 / 2}} source={require('../assets/profile-pic.jpg')} />
-              <View style={styles.headerTextContainer}>
-                <Text style={styles.headerMainText}>{NAME}</Text>
-                <Text style={styles.headerSecondaryText}>{firebase.auth().currentUser.email}</Text>
-              </View>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionHeader}>BIO</Text>
-              <Text style={{lineHeight: 20}}>{BIO}</Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionHeader}>ACTIONS</Text>
-              <ActionButton
-                title='Tutorial'
-                onPress={this.tutorial}
-                textStyle={{...styles.textStyle, color: ACCENT}}
-              />
-              <ActionButton
-                title='Log out'
-                onPress={this.logout}
-                textStyle={{...styles.textStyle, color: ACCENT}}
-              />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Image style={{width: 70, height: 70, borderRadius: 70 / 2}} source={{uri: this.props.user.photoUrl}} />
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerMainText}>{this.props.user.fullName}</Text>
             </View>
           </View>
-        </SafeAreaView>
-      </Fragment>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionHeader}>BIO</Text>
+            <Text style={{lineHeight: 20}}>{bio}</Text>
+          </View>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionHeader}>ACTIONS</Text>
+            <ActionButton
+              title='Tutorial'
+              onPress={this.tutorial}
+              textStyle={{...styles.textStyle, color: ACCENT}}
+            />
+            <ActionButton
+              title='Log out'
+              onPress={this.logout}
+              textStyle={{...styles.textStyle, color: ACCENT}}
+            />
+          </View>
+        </View>
+      </SafeAreaView>
     );
   }
 }
 
-export default ProfileScreen;
+const mapStateToProps = state => {
+  return {
+    user: state.user
+  };
+}
+
+export default connect(mapStateToProps)(ProfileScreen);

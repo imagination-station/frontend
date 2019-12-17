@@ -19,7 +19,7 @@ import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
-import resolveAssetSource from 'resolveAssetSource';
+// import resolveAssetSource from 'resolveAssetSource';
 import OptionsMenu from 'react-native-options-menu';
 import { Linking } from 'expo';
 
@@ -53,8 +53,8 @@ const DRAWER_EXPANDED = 0;
 
 const pin =  require('../assets/pin.png');
 
-const PIN_WIDTH = resolveAssetSource(pin).width;
-const PIN_HEIGHT = resolveAssetSource(pin).width;
+const PIN_WIDTH = 10 //resolveAssetSource(pin).width;
+const PIN_HEIGHT = 10 //resolveAssetSource(pin).width;
 const PIXEL_RATIO = PixelRatio.get();
 
 const METERS_TO_MILES = 1609.34;

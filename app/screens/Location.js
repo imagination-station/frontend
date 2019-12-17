@@ -192,7 +192,7 @@ class Location extends Component {
     console.log('onPressNext()');
     if (this.props.purpose == 'UPDATE_USER') {
       firebase.auth().currentUser.getIdToken().then(token =>
-        fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.userId}`, {
+        fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}`, {
           method: 'PUT',
           headers: {
             Accept: 'application/json',
@@ -205,8 +205,7 @@ class Location extends Component {
         })
       )
         .then(response => {
-          console.log(response);
-          navigation.navigate('Interests');
+          this.props.navigation.navigate('Interests');
         })
         .catch(error => console.error(error));
     }
@@ -261,7 +260,7 @@ class Location extends Component {
 
 const mapStateToProps = state => {
   return {
-    userId: state.userId
+    user: state.user
   };
 }
 

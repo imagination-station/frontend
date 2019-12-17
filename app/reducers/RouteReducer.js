@@ -1,7 +1,7 @@
 const INITIAL_STATE = {
   markers: [],
   selected: null,
-  userId: null,
+  user: null,
   refresh: false,
 };
 
@@ -64,10 +64,10 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         selected: null,
         showRoute: null
       };
-    case 'SET_USER_ID':
+    case 'SET_USER':
       return {
         ...state,
-        userId: action.payload.userId
+        user: action.payload.user
       };
     case 'LOAD_ROUTE':
       return {

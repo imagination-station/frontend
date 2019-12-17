@@ -4,20 +4,19 @@ import {
   View,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  ActivityIndicator,
-  FlatList,
-  ScrollView
+  FlatList
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { connect } from 'react-redux';
+import * as firebase from 'firebase';
 
-import { GREY, PRIMARY, AQUAMARINE } from '../config/styles.js';
-import { TAGS } from '../config/settings.js';
+import { PRIMARY, ACCENT, BABY_POWDER } from '../config/styles.js';
+import { TAGS, TEST_SERVER_ADDR } from '../config/settings.js';
 
 const styles = StyleSheet.create({
   button: { 
-    color: AQUAMARINE,
+    color: ACCENT,
     fontSize: 18,
     paddingHorizontal: 7,
     marginRight: 10,
@@ -30,16 +29,16 @@ const styles = StyleSheet.create({
   box: {
     width: 170,
     height: 170,
-    backgroundColor: 'white',
+    backgroundColor: BABY_POWDER,
     justifyContent: 'center',
     marginLeft: 15,
     marginBottom: 15,
-    borderWidth: 2, borderColor: GREY
+    elevation: 1
   },
   highlighted: {
     width: 170,
     height: 170,
-    backgroundColor: AQUAMARINE,
+    backgroundColor: ACCENT,
     justifyContent: 'center',
     marginLeft: 15,
     marginBottom: 15,
@@ -54,6 +53,7 @@ class Interests extends Component {
       headerRight: () => (
         <TouchableOpacity
           // TODO: PUT request to API server
+          onPress={navigation.getParam('onPressNext')}
         >
           {/* make Next button opaque until city is chosen */}
           <Text style={{...styles.button, opacity: 1}}>Done!</Text>
@@ -66,16 +66,40 @@ class Interests extends Component {
     interests: []
   };
 
-  onToggleInterestBox = index => {
-    if (this.state.interests.includes(index)) {
+  componentDidMount() {
+    this.props.navigation.setParams({onPressNext: this.onPressNext});
+  }
+
+  onToggleInterestBox = item => {
+    if (this.state.interests.includes(item)) {
       this.setState({
-        interests: this.state.interests.filter(i => i != index)
+        interests: this.state.interests.filter(elem => item != elem)
       });
     } else {
       this.setState({
-        interests: [...this.state.interests, index]
+        interests: [...this.state.interests, item]
       });
     }
+  }
+
+  onPressNext = () => {
+    firebase.auth().currentUser.getIdToken().then(token =>
+      fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          interests: this.state.interests
+        })
+      })
+    )
+      .then(response => {
+        this.props.navigation.navigate('Home');
+      })
+      .catch(error => console.error(error));
   }
 
   render() {
@@ -92,9 +116,9 @@ class Interests extends Component {
         <FlatList
           style={{padding: 10, width: '100%'}}
           data={TAGS}
-          renderItem={({ item , index }) => <TouchableOpacity onPress={() => this.onToggleInterestBox(index)}>
-            <View style={this.state.interests.includes(index) ? styles.highlighted : styles.box}>
-              <Text style={{fontSize: 18, textAlign: 'center', color: this.state.interests.includes(index) ? 'white' : 'grey'}}>{item}</Text>
+          renderItem={({ item }) => <TouchableOpacity onPress={() => this.onToggleInterestBox(item)}>
+            <View style={this.state.interests.includes(item) ? styles.highlighted : styles.box}>
+              <Text style={{fontSize: 18, textAlign: 'center', color: this.state.interests.includes(item) ? 'white' : 'grey'}}>{item}</Text>
             </View>
           </TouchableOpacity>}
           numColumns={2}
@@ -105,4 +129,10 @@ class Interests extends Component {
   }
 }
 
-export default Interests;
+const mapStateToProps = state => {
+  return {
+    user: state.user
+  };
+}
+
+export default connect(mapStateToProps)(Interests);
