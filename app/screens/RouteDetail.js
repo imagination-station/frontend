@@ -281,15 +281,15 @@ function ActionCard(props) {
     );
   } else {
     content = [
-      <Text style={{color: DARKER_GREY}} key='num_pins'>
-        {`${props.numPins} pins`}
-      </Text>,
-      <Text style={{color: DARKER_GREY}} key='distance'>
-        {`${miles} mi`}
-      </Text>,
-      <Text style={{color: DARKER_GREY}} key='time'>
-        {`${timeString}`}
-      </Text>,
+      // <Text style={{color: DARKER_GREY}} key='num_pins'>
+      //   {`${props.numPins} pins`}
+      // </Text>,
+      // <Text style={{color: DARKER_GREY}} key='distance'>
+      //   {`${miles} mi`}
+      // </Text>,
+      // <Text style={{color: DARKER_GREY}} key='time'>
+      //   {`${timeString}`}
+      // </Text>,
       props.view != 'info' &&
         <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}} key='buttons'>
           <TouchableOpacity onPress={props.showRouteInfo} >
@@ -368,7 +368,7 @@ class RouteDetailScreen extends Component {
         longitude: pins[0].geometry.coordinates[1]
       };
     } else {
-      this.initLocation = this.props.navigation.getParam('city').location.latlon;
+      this.initLocation = this.props.navigation.getParam('location').location.latlon;
     }
   }
 
@@ -378,7 +378,6 @@ class RouteDetailScreen extends Component {
     this.collapseValue = new Animated.Value(DRAWER_OPEN);
     
     this.props.navigation.setParams({
-      editing: false,
       onBack: this.onBack,
       onPressEdit: () => {
         this.setState({editing: true});

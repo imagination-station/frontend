@@ -20,7 +20,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { DARKER_GREY, GREY, PRIMARY } from '../config/styles.js';
-import { SERVER_ADDR, MAPS_API_KEY } from '../config/settings.js';
+import { SERVER_ADDR, TEST_SERVER_ADDR, MAPS_API_KEY } from '../config/settings.js';
 
 const {width, height} = Dimensions.get('window');
 
@@ -181,7 +181,7 @@ const screens = {
 class CollectionsScreen extends Component {
 
   state = {
-    routes: [],
+    saved: [],
     liked: [],
     screen: screens.MYTRIPS,
     refreshing: true
@@ -203,9 +203,9 @@ class CollectionsScreen extends Component {
     firebase.auth().currentUser.getIdToken()
       .then(token => {
         let fetches = [];
-        for (let identifier of ['routes', 'likes']) {
+        for (let endpoint of ['saved']) {
           fetches.push(
-            fetch(`${SERVER_ADDR}/users/${this.props.userId}/${identifier}`, {
+            fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/routes/${endpoint}`, {
               method: 'GET',
               headers: {
                 Accept: 'application/json',
@@ -221,8 +221,7 @@ class CollectionsScreen extends Component {
       })
       .then(responseJsons => {
         this.setState({
-          routes: responseJsons[0],
-          liked: responseJsons[1],
+          saved: responseJsons[0],
           refreshing: false
         });
       });
@@ -237,7 +236,7 @@ class CollectionsScreen extends Component {
   }
 
   render() {
-    const current = this.state.screen == screens.MYTRIPS ? this.state.routes : this.state.liked;
+    const current = this.state.screen == screens.MYTRIPS ? this.state.saved : this.state.liked;
 
     const header = (
       <View style={styles.headerContainer}>
@@ -283,8 +282,7 @@ class CollectionsScreen extends Component {
             /> : <Text style={{padding: 30, alignSelf: 'center', color: DARKER_GREY}}>Wow, so empty :)</Text>}
             <FAB onPress={() => {
               this.props.navigation.navigate('Location', {
-                purpose: 'ROUTE_CREATION',
-                update: this.fetchRoutes
+                purpose: 'CREATE_ROUTE'
               });
             }}/>
         </View>
@@ -304,7 +302,7 @@ class CollectionsScreen extends Component {
 
 const mapStateToProps = state => {
   return {
-    userId: state.userId,
+    user: state.user,
     refresh: state.refresh
   };
 }

@@ -189,7 +189,6 @@ class Location extends Component {
   }
 
   onPressNext = () => {
-    console.log('onPressNext()');
     if (this.props.purpose == 'UPDATE_USER') {
       firebase.auth().currentUser.getIdToken().then(token =>
         fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}`, {
@@ -208,12 +207,20 @@ class Location extends Component {
           this.props.navigation.navigate('Interests');
         })
         .catch(error => console.error(error));
+    } else if (this.props.purpose == 'CREATE_ROUTE') {
+      this.props.navigation.navigate('RouteDetail', {
+        editing: true,
+        route: {
+          pins: []
+        },
+        location: this.state.location
+      })
     }
   }
 
   render() {
     let message;
-    if (this.props.purpose == 'ROUTE_CREATION') {
+    if (this.props.purpose == 'CREATE_ROUTE') {
       message = (
         <View style={{width: '90%', marginVertical: 10, marginHorizontal: '5%'}}>
           <Text style={{fontSize: 32, color: 'grey'}}>Where are you going?</Text>
