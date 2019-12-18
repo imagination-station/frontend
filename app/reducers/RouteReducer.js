@@ -59,10 +59,9 @@ const routeReducer = (state = INITIAL_STATE, action) => {
       };
     case 'CLEAR':
       return {
+        ...state,
         markers: [],
-        distances: [],
-        selected: null,
-        showRoute: null
+        selected: null
       };
     case 'SET_USER':
       return {

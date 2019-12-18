@@ -19,15 +19,17 @@ import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
+import * as firebase from 'firebase';
 // import resolveAssetSource from 'resolveAssetSource';
 import OptionsMenu from 'react-native-options-menu';
 import { Linking } from 'expo';
 
 import Button from '../components/Buttons.js';
-import { GREY, DARKER_GREY, PRIMARY, ACCENT, AQUAMARINE } from '../config/styles.js';
+import { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
 import {
   MAPS_API_KEY,
   INIT_LOCATION,
+  TEST_SERVER_ADDR,
   PLACEHOLDER_IMG
 } from '../config/settings.js';
 
@@ -53,8 +55,8 @@ const DRAWER_EXPANDED = 0;
 
 const pin =  require('../assets/pin.png');
 
-const PIN_WIDTH = 10 //resolveAssetSource(pin).width;
-const PIN_HEIGHT = 10 //resolveAssetSource(pin).width;
+const PIN_WIDTH = 92; //resolveAssetSource(pin).width;
+const PIN_HEIGHT = 110; //resolveAssetSource(pin).width;
 const PIXEL_RATIO = PixelRatio.get();
 
 const METERS_TO_MILES = 1609.34;
@@ -333,7 +335,7 @@ class RouteDetailScreen extends Component {
       headerLeft: () => <Icon name='arrow-back' size={30} style={{marginLeft: 10}} onPress={navigation.getParam('onBack')} />,
       headerRight: () => (
         navigation.getParam('editing') ? <TouchableOpacity onPress={navigation.getParam('onPressSave')}>
-          <Icon name='save' size={30} color={AQUAMARINE} style={{marginRight: 10}} />
+          <Icon name='save' size={30} color={ACCENT} style={{marginRight: 10}} />
         </TouchableOpacity> :
         <OptionsMenu
           customButton={<Icon name='more-vert' size={30} color='black' style={{marginRight: 10}} />}
@@ -579,37 +581,34 @@ class RouteDetailScreen extends Component {
   }
 
   onComplete = () => {
-    this.setState({editing: false});
-    this.props.navigation.setParams({editing: false});
-
-    // firebase.auth().currentUser.getIdToken().then(token =>
-    //   fetch(`${SERVER_ADDR}/cities/routes`, {
-    //     method: 'POST',
-    //     headers: {
-    //       Accept: 'application/json',
-    //       'Content-type': 'application/json',
-    //       Authorization: `Bearer ${token}`
-    //     },
-    //     body: JSON.stringify({
-    //       name: this.state.name,
-    //       creator: this.props.userId,
-    //       city: PLACE_ID,
-    //       pins: this.props.markers,
-    //       tags: this.state.tags
-    //     })
-    //   })
-    // )
-    //   .then(response => {
-    //     this.props.toggleRefresh();
-    //     this.setState({editing: false});
-    //     this.props.navigation.setParams({editing: false});
-    //     // if (this.props.from == 'location') {
-    //     //   this.props.navigation.goBack('Location');
-    //     // } else {
-    //     //   this.props.navigation.goBack();
-    //     // }
-    //   })
-    //   .catch(error => console.error(error));
+    firebase.auth().currentUser.getIdToken().then(token =>
+      fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/routes/saved`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: this.state.name,
+          creator: firebase.auth().currentUser.uid,
+          location: this.props.navigation.getParam('location').geoname_id,
+          pins: this.props.markers,
+          tags: this.state.tags
+        })
+      })
+    )
+      .then(response => {
+        this.props.toggleRefresh();
+        this.setState({editing: false});
+        this.props.navigation.setParams({editing: false});
+        // if (this.props.from == 'location') {
+        //   this.props.navigation.goBack('Location');
+        // } else {
+        //   this.props.navigation.goBack();
+        // }
+      })
+      .catch(error => console.error(error));
   }
 
   clearTag = value => {
@@ -655,45 +654,45 @@ class RouteDetailScreen extends Component {
         />
       );
 
-      if (this.props.steps[index]) {
-        res.push(
-          <TouchableOpacity
-            onPress={() => {
-            // Open Google Maps
-            Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${this.props.markers[index+1].properties.secondaryText}&travelmode=walking`);
-            //   if (index === this.props.showRoute) {
-            //     this.props.clearRoute();
-            //   } else {
-            //     this.props.selectRoute(index);
-            //     this.mapRef.fitToSuppliedMarkers(
-            //       [this.props.markers[index], this.props.markers[index+1]].map(marker => marker.properties.placeId),
-            //       {
-            //         edgePadding: {
-            //           top: 100,
-            //           left: 100,
-            //           bottom: 300,
-            //           right: 100
-            //         },
-            //         animated: true
-            //       }
-            //     );
-            //   }
-            // }}
-            // key={`${marker.properties.placeId}_leg`}
-            }}
-          >
-            <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
-              <Icon name='directions-walk' size={30} color={DARKER_GREY} />
-              <Text style={{color: DARKER_GREY}}>
-                {this.props.steps[index].text}
-              </Text>
-              {/* <Text style={{color: index === this.props.showRoute ? PRIMARY : DARKER_GREY}}>
-                {this.props.steps[index].duration.text}
-              </Text> */}
-            </View>
-          </TouchableOpacity>
-        );
-      }
+      // if (this.props.steps[index]) {
+      //   res.push(
+      //     <TouchableOpacity
+      //       onPress={() => {
+      //       // Open Google Maps
+      //       Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${this.props.markers[index+1].properties.secondaryText}&travelmode=walking`);
+      //       //   if (index === this.props.showRoute) {
+      //       //     this.props.clearRoute();
+      //       //   } else {
+      //       //     this.props.selectRoute(index);
+      //       //     this.mapRef.fitToSuppliedMarkers(
+      //       //       [this.props.markers[index], this.props.markers[index+1]].map(marker => marker.properties.placeId),
+      //       //       {
+      //       //         edgePadding: {
+      //       //           top: 100,
+      //       //           left: 100,
+      //       //           bottom: 300,
+      //       //           right: 100
+      //       //         },
+      //       //         animated: true
+      //       //       }
+      //       //     );
+      //       //   }
+      //       // }}
+      //       // key={`${marker.properties.placeId}_leg`}
+      //       }}
+      //     >
+      //       <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
+      //         <Icon name='directions-walk' size={30} color={DARKER_GREY} />
+      //         <Text style={{color: DARKER_GREY}}>
+      //           {this.props.steps[index].text}
+      //         </Text>
+      //         {/* <Text style={{color: index === this.props.showRoute ? PRIMARY : DARKER_GREY}}>
+      //           {this.props.steps[index].duration.text}
+      //         </Text> */}
+      //       </View>
+      //     </TouchableOpacity>
+      //   );
+      // }
 
       return res;
     }
@@ -856,7 +855,8 @@ const mapDispatchToProps = dispatch => {
     selectRoute: index => dispatch({type: 'SELECT_ROUTE', payload: {
       selectedIndex: index
     }}),
-    clearRoute: () => dispatch({type: 'CLEAR_ROUTE'})
+    clearRoute: () => dispatch({type: 'CLEAR_ROUTE'}),
+    toggleRefresh: () => dispatch({type: 'TOGGLE_REFRESH'})
   };
 }
 

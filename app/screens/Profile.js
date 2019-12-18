@@ -13,7 +13,7 @@ import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
 
-import { DARKER_GREY, GREY, ACCENT } from '../config/styles.js';
+import { DARKER_GREY, GREY, PRIMARY, ACCENT } from '../config/styles.js';
 
 const PROFILE_PIC_SIZE = 70;
 
@@ -38,12 +38,15 @@ const styles = StyleSheet.create({
   },
   headerTextContainer: {
     flex: 1,
-    marginLeft: 25,
-    justifyContent: 'center'
+    marginLeft: 25
   },
   headerMainText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold'
+  },
+  headerSecondaryText: {
+    color: PRIMARY,
+    fontSize: 16
   },
   sectionContainer: {
     padding: 20,
@@ -119,6 +122,7 @@ class ProfileScreen extends Component {
             <Image style={{width: 70, height: 70, borderRadius: 70 / 2}} source={{uri: this.props.user.photoUrl}} />
             <View style={styles.headerTextContainer}>
               <Text style={styles.headerMainText}>{this.props.user.fullName}</Text>
+              <Text style={styles.headerSecondaryText}>{this.props.user.location.fullName}</Text>
             </View>
           </View>
           <View style={styles.sectionContainer}>

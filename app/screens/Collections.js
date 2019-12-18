@@ -145,7 +145,7 @@ function RouteCard(props) {
         {buttons}
         <View style={cardStyles.textContent}>
           <Text style={cardStyles.cardtitle}>{props.route.name}</Text>
-          <Text style={{marginBottom: 5, color: GREY}}>{props.route.city.name}</Text>
+          <Text style={{marginBottom: 5, color: GREY}}>{props.route.location.fullName}</Text>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             <Icon
               name='favorite'
@@ -153,7 +153,7 @@ function RouteCard(props) {
               color='#e5446d'
               style={{marginRight: 3}}
             />
-            <Text style={{color: GREY, fontSize: 12}}>{props.route.numLikes}</Text>
+            <Text style={{color: GREY, fontSize: 12}}>{0}</Text>
           </View>
         </View>
       </View>
