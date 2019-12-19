@@ -349,15 +349,17 @@ class RouteDetailScreen extends Component {
   state = {
     view: 'map',
     drawer: 'open',
-    editing: this.props.navigation.getParam('editing'),
-    // if no pins, user is creating route from scratch
-    loaded: this.props.navigation.getParam('route').pins.length == 0,
+    // if new, default to editing
+    editing: this.props.navigation.getParam('new'),
+    // whether route is loaded to redux store
+    loaded: false,
     searchInput: '',
     focused: null
   };
 
   constructor(props) {
     super(props);
+    // capture hardware back button for Android
     this.didFocus = props.navigation.addListener('didFocus', payload =>
       BackHandler.addEventListener('hardwareBackPress', this.onBack)
     );
@@ -399,19 +401,24 @@ class RouteDetailScreen extends Component {
     origins.pop();
     destinations.shift();
 
-    if (!this.state.loaded) {
+    if (!this.props.navigation.getParam('new')) {
       fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?key=${MAPS_API_KEY}&origins=${origins.join('|')}&destinations=${destinations.join('|')}&mode=walking`)
       .then(response => response.json())
       .then(responseJson => {
         const distances = responseJson.rows.map((row, index) => row.elements[index].distance);
         this.props.loadRoute(markers, distances);
-        this.setState({loaded: true});
       });
     }
 
     this.willBlur = this.props.navigation.addListener('willBlur', payload =>
       BackHandler.removeEventListener('hardwareBackPress', this.onBack)
     );
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.markers === null && this.props.markers !== null) {
+      this.setState({loaded: true});
+    }
   }
 
   componentWillUnmount() {
@@ -426,7 +433,7 @@ class RouteDetailScreen extends Component {
       return true;    
     }
 
-    if (this.props.navigation.getParam('from') == 'location') {
+    if (this.props.navigation.getParam('new')) {
       this.props.navigation.goBack('Location');
     } else {
       this.props.navigation.goBack();
@@ -566,11 +573,12 @@ class RouteDetailScreen extends Component {
         .then(response => response.json())
         .then(responseJson => {
           distance = responseJson.rows[0].elements[0].distance;
+          console.log(distance);
         });
     }
 
     if (distance) {
-      this.state.focused.distToNext = distance;
+      this.state.focused.properties.distToNext = distance;
     }
 
     this.props.addMarker(this.state.focused);

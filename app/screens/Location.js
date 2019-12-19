@@ -210,6 +210,7 @@ class Location extends Component {
     } else if (this.props.purpose == 'CREATE_ROUTE') {
       this.props.navigation.navigate('RouteDetail', {
         editing: true,
+        new: true,
         route: {
           pins: []
         },
