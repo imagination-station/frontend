@@ -208,14 +208,22 @@ class Location extends Component {
         })
         .catch(error => console.error(error));
     } else if (this.props.purpose == 'CREATE_ROUTE') {
-      this.props.navigation.navigate('RouteDetail', {
-        editing: true,
-        new: true,
-        route: {
-          pins: []
+      this.props.loadRoute({
+        name: '',
+        creator: this.props.user._id,
+        location: {
+          fullName: this.state.location.fullName,
+          name: this.state.location.name,
+          coordinates: [
+            this.state.location.location.latlon.latitude,
+            this.state.location.location.latlon.longitude
+          ],
+          _id: this.state.geoname_id,
         },
-        location: this.state.location
-      })
+        pins: [],
+        tags: []
+      });
+      this.props.navigation.navigate('RouteDetail', {new: true});
     }
   }
 
@@ -272,4 +280,12 @@ const mapStateToProps = state => {
   };
 }
 
-export default connect(mapStateToProps)(Location);
+const mapDispatchToProps = dispatch => {
+  return {
+    loadRoute: route => dispatch({type: 'LOAD_ROUTE', payload: {
+      route: route,
+    }})
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Location);

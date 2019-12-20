@@ -74,16 +74,7 @@ class PlaceDetailScreen extends Component {
   }
 
   render() {
-    const place = this.props.markers[this.props.selected];
-    // const photos = place.properties.photoRefs ?
-    //   place.properties.photoRefs.map(ref =>
-    //     <Image
-    //       source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
-    //       style={styles.image}
-    //       key={ref}
-    //     />
-    //   ) : <Image source={{uri: PLACEHOLDER_IMG}} style={styles.image} />;
-
+    const place = this.props.pins[this.props.selected];
     const photoUris = place.properties.photoRefs
         ? place.properties.photoRefs.map(ref => `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=1000`)
         : [];
@@ -98,14 +89,6 @@ class PlaceDetailScreen extends Component {
 
     return (
       <ScrollView style={styles.container}>
-        {/* <ImageCarousel
-          width={width}
-          scrollValue={this.scrollValue}
-          containerStyle={styles.scrollViewContainer}
-          scrollViewStyle={styles.imageScrollView}
-        >
-          {photos}
-        </ImageCarousel> */}
         <View style={styles.textContainer}>
           <Text style={styles.mainText}>{place.properties.mainText}</Text>
           <Text style={styles.secondaryText}>{place.properties.secondaryText}</Text>
@@ -135,7 +118,7 @@ class PlaceDetailScreen extends Component {
 
 const mapStateToProps = state => {
   return {
-    markers: state.markers,
+    pins: state.pins,
     selected: state.selected,
   };
 }

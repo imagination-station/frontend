@@ -227,6 +227,11 @@ class CollectionsScreen extends Component {
       });
   }
 
+  onPressRoute = route => {
+    this.props.loadRoute(route);
+    this.props.navigation.navigate('RouteDetail');
+  }
+
   currentStyle = screen => {
     if (screen == this.state.screen) {
       return styles.headerFocused;
@@ -269,9 +274,7 @@ class CollectionsScreen extends Component {
                     key={item._id}
                     route={item}
                     buttons={this.state.screen != screens.MYTRIPS}
-                    onPress={() => this.props.navigation.navigate('RouteDetail', {
-                      route: item
-                    })}
+                    onPress={() => this.onPressRoute(item)}
                   />
                 );
               }}
@@ -309,7 +312,10 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
   return {
-    toggleRefresh: () => dispatch({type: 'TOGGLE_REFRESH'})
+    toggleRefresh: () => dispatch({type: 'TOGGLE_REFRESH'}),
+    loadRoute: route => dispatch({type: 'LOAD_ROUTE', payload: {
+      route: route,
+    }})
   };
 }
 

@@ -6,7 +6,9 @@ export const ACCENT = '#60d394';
 
 export const MINT_CREAM = '#fcfffc';
 
+// auxillary colors
 export const BABY_POWDER = '#fcfffc';
+export const WARM_BLACK = '#0b3c49';
 
 export const GREY = '#f2f2f2'; 
 export const DARKER_GREY = '#6D7380';
