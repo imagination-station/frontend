@@ -51,6 +51,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     padding: 15
   },
+  mainText: {
+    fontSize: 16
+  },
 });
 
 function SearchBox(props) {
@@ -212,13 +215,13 @@ class Location extends Component {
         name: '',
         creator: this.props.user._id,
         location: {
-          fullName: this.state.location.fullName,
+          fullName: this.state.location.full_name,
           name: this.state.location.name,
           coordinates: [
             this.state.location.location.latlon.latitude,
             this.state.location.location.latlon.longitude
           ],
-          _id: this.state.geoname_id,
+          _id: this.state.location.geoname_id,
         },
         pins: [],
         tags: []

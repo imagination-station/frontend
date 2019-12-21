@@ -13,7 +13,8 @@ import {
   Platform,
   StatusBar,
   PixelRatio,
-  BackHandler
+  BackHandler,
+  FlatList
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
@@ -23,14 +24,15 @@ import * as firebase from 'firebase';
 // import resolveAssetSource from 'resolveAssetSource';
 import OptionsMenu from 'react-native-options-menu';
 import { Linking } from 'expo';
+import uuidv4 from 'uuid/v4';
 
 import Button from '../components/Buttons.js';
 import { GREY, DARKER_GREY, PRIMARY, ACCENT, WARM_BLACK } from '../config/styles.js';
 import {
   MAPS_API_KEY,
-  INIT_LOCATION,
   TEST_SERVER_ADDR,
-  PLACEHOLDER_IMG
+  PLACEHOLDER_IMG,
+  PLACES_AUTOCOMPLETE_URL
 } from '../config/settings.js';
 
 // dimensions of the screen
@@ -203,6 +205,117 @@ const mapStyles = StyleSheet.create({
     alignItems: 'center',
   }
 });
+
+const searchStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center'
+  },
+  textBoxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: '2.5%',
+    paddingTop: 10
+  },
+  textBox: {
+    height: 46,
+    width: '90%',
+    paddingLeft: 10,
+  },
+  list: {
+    height: '50%',
+    width: '100%',
+    borderTopWidth: 5,
+    borderColor: GREY,
+    paddingHorizontal: '2.5%',
+  },
+  autoCompleteItem: {
+    borderColor: GREY,
+    borderBottomWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 15
+  },
+  mainText: {
+    fontSize: 16,
+  },
+  secondaryText: {
+    fontSize: 12,
+    color: 'grey'
+  }
+});
+
+class MapSearch extends Component {
+  state = {
+    textInput: this.props.searchInput,
+    results: null
+  };
+
+  componentDidMount() {
+    // session token to group queries
+    this.sessionToken = uuidv4();
+    // renew token every 3 minutes
+    this.renewToken = setInterval(() => this.sessionToken = uuidv4(), 1000 * 180);
+
+    fetch(`${PLACES_AUTOCOMPLETE_URL}?input=${this.state.textInput}&key=${MAPS_API_KEY}&location=${this.props.location.coordinates[0]},${this.props.location.coordinates[1]}&radius=10000&sessiontoken=${this.sessionToken}`)
+      .then(response => response.json())
+      .then(responseJson => this.setState({results: responseJson.predictions}));
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.renewToken);
+  }
+
+  onChangeText = text => {
+    this.setState({textInput: text}, () => 
+      fetch(`${PLACES_AUTOCOMPLETE_URL}?input=${this.state.textInput}&key=${MAPS_API_KEY}&location=${this.props.location.coordinates[0]},${this.props.location.coordinates[1]}&radius=10000&sessiontoken=${this.sessionToken}`)
+        .then(response => response.json())
+        .then(responseJson => this.setState({results: responseJson.predictions}))
+    );
+  }
+
+  render() {
+    return (
+      <View style={searchStyles.container}>
+        <View style={searchStyles.textBoxContainer}>
+          <TextInput
+            autoFocus
+            style={searchStyles.textBox}
+            placeholder='Search'
+            value={this.state.textInput}
+            onChangeText={this.onChangeText}
+          />
+          <TouchableOpacity onPress={() => this.setState({textInput: ''})}>
+            <Icon name='clear' size={30} />
+          </TouchableOpacity>
+        </View>
+        <View style={searchStyles.list}>
+          <FlatList
+            data={this.state.results}
+            renderItem={({ item }) => <SearchItem
+              item={item}
+              // navigation passed in to pop from search page
+              onPress={() => this.props.onPressItem(item, this.props.navigation, this.sessionToken)}
+            />}
+            keyExtractor={item => item.place_id}
+          />
+        </View>
+        <Text>{`${this.props.location.coordinates[0]},${this.props.location.coordinates[1]}`}</Text>
+      </View>
+    );
+  }
+}
+
+function SearchItem(props) {
+  return (
+    <TouchableOpacity onPress={props.onPress}>
+      <View style={searchStyles.autoCompleteItem}>
+        <Text style={searchStyles.mainText}>{props.item.structured_formatting.main_text}</Text>
+        <Text style={searchStyles.secondaryText}>{props.item.structured_formatting.secondary_text}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
 
 function Card(props) {
   const source = props.pin.properties.photoRefs ?
@@ -472,7 +585,7 @@ class RouteDetailScreen extends Component {
     });
   }
 
-  onPressSearchItem = (item, navigation) => {
+  onPressSearchItem = (item, navigation, sessionToken) => {
     this.fetchPlaceDetails(item.place_id, () => {
       navigation.goBack();
       this.mapRef.animateCamera({
@@ -482,7 +595,11 @@ class RouteDetailScreen extends Component {
         },
         zoom: 17
       }, 30);
-    });
+    }, sessionToken);
+  }
+
+  onClearSearch = () => {
+    this.setState({searchInput: '', focused: null});
   }
 
   onPoiClick = event => {
@@ -498,8 +615,8 @@ class RouteDetailScreen extends Component {
     });
   }
 
-  fetchPlaceDetails = (placeId, callback) => {
-    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}`)
+  fetchPlaceDetails = (placeId, callback, sessionToken) => {
+    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}${sessionToken ? '&sessiontoken=' + sessionToken : ''}`)
     .then(response => response.json())
     .then(responseJson => {
       // limit showing photos to 4 to save ca$h
@@ -552,6 +669,7 @@ class RouteDetailScreen extends Component {
   }
 
   onComplete = () => {
+    console.log(this.props.location);
     firebase.auth().currentUser.getIdToken().then(token =>
       fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/routes/saved`, {
         method: 'POST',
@@ -563,7 +681,7 @@ class RouteDetailScreen extends Component {
         body: JSON.stringify({
           name: this.props.name,
           creator: this.props.user._id,
-          location: this.props.location,
+          location: this.props.location._id,
           pins: this.props.pins,
           tags: this.state.tags
         })
@@ -616,9 +734,9 @@ class RouteDetailScreen extends Component {
         res.push(
           <TouchableOpacity
             onPress={() => {
-            // TODO: Fix this
-            // Open Google Maps
-            Linking.openURL(`https://www.google.com/maps/dir/?api=1&origin=${this.props.pins[index].properties.secondaryText}&destination=${this.props.pins[index + 1].properties.secondaryText}&travelmode=walking`);
+              // TODO: Fix this
+              // Open Google Maps
+              Linking.openURL(`https://www.google.com/maps/dir/?api=1&origin=${this.props.pins[index].properties.secondaryText}&destination=${this.props.pins[index + 1].properties.secondaryText}&travelmode=walking`);
             }}
           >
             <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
@@ -641,7 +759,7 @@ class RouteDetailScreen extends Component {
         <MapView
           provider={'google'}
           style={mapStyles.container}
-          onPoiClick={this.state.editing && this.onPoiClick}
+          onPoiClick={this.state.editing ? this.onPoiClick : undefined}
           initialRegion={{
             latitude: this.initLocation[0],
             longitude: this.initLocation[1],
@@ -731,21 +849,28 @@ class RouteDetailScreen extends Component {
             >
               <View style={mapStyles.filler} />
               {cards}
-              <ActionCard pins={this.props.pins} />
+              <ActionCard pins={this.props.pins} showRouteInfo={this.showRouteInfo} />
               <View style={mapStyles.filler} />
             </ScrollView>
-            {/* {this.state.view === 'info' &&
+            {this.state.view === 'info' &&
               <View style={mapStyles.infoContainer}>
-                <Text style={{alignSelf: 'flex-start', margin: 15, fontSize: 20, fontWeight: 'bold', width: 300}}>
-                  {this.props.navigation.getParam('route').name}
-                </Text>
-                {this.props.navigation.getParam('route').tags != undefined &&
+                {this.state.editing ?
+                  <TextInput
+                    style={{...mapStyles.nameBox, marginBottom: 10}}
+                    placeholder={'Name your route'}
+                    onChangeText={text => this.props.editRouteName(text)}
+                    value={this.props.name}
+                  />
+                  : <Text style={{alignSelf: 'flex-start', margin: 15, fontSize: 20, fontWeight: 'bold', width: 300}}>
+                    {this.props.name ? this.props.name : 'Untitled'}
+                  </Text>
+                }
+                {/* {this.props.navigation.getParam('route').tags != undefined &&
                 <View style={{flexDirection: 'row', alignSelf: 'flex-start', marginLeft: 15, flexWrap: 'wrap'}}>
                   {this.props.navigation.getParam('route').tags.map(tag => <Tag title={tag} key={tag} />)}
-                </View>
-                }
+                </View> */}
               </View>
-            } */}
+            }
           </View>
         </Animated.View>
       </View>
@@ -778,6 +903,7 @@ const mapDispatchToProps = dispatch => {
       a: a,
       b: b
     }}),
+    editRouteName: name => dispatch({type: 'EDIT_ROUTE_NAME', payload: {name: name}}),
     viewDetail: index => dispatch({type: 'VIEW_PLACE_DETAIL', payload: {
       selectedIndex: index
     }}),
@@ -785,5 +911,7 @@ const mapDispatchToProps = dispatch => {
     toggleRefresh: () => dispatch({type: 'TOGGLE_REFRESH'})
   };
 }
+
+export const MapSearchScreen = connect(mapStateToProps)(MapSearch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(RouteDetailScreen);

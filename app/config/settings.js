@@ -3,7 +3,7 @@ import env from './.env.json';
 export const MAPS_API_KEY = env.MAPS_API_KEY;
 export const SERVER_ADDR = env.API_SERVER_ADDR;
 
-export const TEST_SERVER_ADDR = 'https://8e38c7d1.ngrok.io';
+export const TEST_SERVER_ADDR = 'https://83dec015.ngrok.io';
 
 // hardcoded values for Providence; replace later
 export const INIT_LOCATION = {
@@ -17,6 +17,8 @@ export const INIT_LOCATION = {
 export const PLACE_ID = 'ChIJXXN-Q-BE5IkRJ7azSE1832k';
 export const GEONAME_ID = '5224151';
 export const NAME = 'Providence';
+
+export const PLACES_AUTOCOMPLETE_URL = 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
 
 export const PLACEHOLDER_IMG = 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg';
 

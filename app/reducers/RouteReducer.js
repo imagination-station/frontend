@@ -42,6 +42,11 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         ...state,
         pins: newPins
       };
+    case 'EDIT_ROUTE_NAME':
+      return {
+        ...state,
+        name: action.payload.name
+      };
     case 'VIEW_PLACE_DETAIL':
       return {
         ...state,
