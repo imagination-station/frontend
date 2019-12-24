@@ -11,9 +11,11 @@ import LoginScreen from './app/screens/Login.js';
 import ExploreScreen, { CitySearchScreen, RouteFilterScreen } from './app/screens/Explore.js';
 import CollectionsScreen from './app/screens/Collections.js';
 import ProfileScreen from './app/screens/Profile.js';
-import MapScreen, { NoteEditorScreen } from './app/screens/RouteEditor.js';
-import PlaceDetailScreen from './app/screens/PlaceDetail.js';
-import RouteDetailScreen, { MapSearchScreen } from './app/screens/RouteDetail.js';
+
+import PlaceDetailsScreen from './app/screens/PlaceDetails.js';
+import PlaceEditorScreen from './app/screens/PlaceEditor.js';
+import TextEditorScreen from './app/screens/TextEditor.js';
+import RouteDetailsScreen, { MapSearchScreen } from './app/screens/RouteDetails.js';
 import SignUpScreen from './app/screens/SignUp.js';
 import SplashScreen from './app/screens/Splash.js';
 import TutorialScreen from './app/screens/Tutorial.js';
@@ -79,12 +81,12 @@ const HomeStack = createStackNavigator({
   },
   CitySearch: mapNavigationStateParamsToProps(CitySearchScreen),
   RouteFilter: mapNavigationStateParamsToProps(RouteFilterScreen),
-  RouteEditor: mapNavigationStateParamsToProps(MapScreen),
   Location: mapNavigationStateParamsToProps(LocationScreen),
   MapSearch: mapNavigationStateParamsToProps(MapSearchScreen),
-  PlaceDetail: mapNavigationStateParamsToProps(PlaceDetailScreen),
-  NoteEditor: mapNavigationStateParamsToProps(NoteEditorScreen),
-  RouteDetail: RouteDetailScreen,
+  PlaceDetails: mapNavigationStateParamsToProps(PlaceDetailsScreen),
+  PlaceEditor: mapNavigationStateParamsToProps(PlaceEditorScreen),
+  TextEditor: mapNavigationStateParamsToProps(TextEditorScreen),
+  RouteDetails: RouteDetailsScreen,
   Tutorial: TutorialScreen
 });
 

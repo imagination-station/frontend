@@ -229,7 +229,7 @@ class CollectionsScreen extends Component {
 
   onPressRoute = route => {
     this.props.loadRoute(route);
-    this.props.navigation.navigate('RouteDetail');
+    this.props.navigation.navigate('RouteDetails');
   }
 
   currentStyle = screen => {
@@ -293,12 +293,9 @@ class CollectionsScreen extends Component {
     }
 
     return (
-      <Fragment>
-        <SafeAreaView style={styles.safeStatusArea} />
-        <SafeAreaView style={styles.safeArea}>
-          {content}
-        </SafeAreaView>
-      </Fragment>
+      <SafeAreaView style={styles.safeArea}>
+        {content}
+      </SafeAreaView>
     );
   }
 }

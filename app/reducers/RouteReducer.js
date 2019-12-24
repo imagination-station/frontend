@@ -11,6 +11,8 @@ const INITIAL_STATE = {
 };
 
 const routeReducer = (state = INITIAL_STATE, action) => {
+  let updatedPins;
+
   switch (action.type) {
     case 'SET_USER':
       return {
@@ -33,14 +35,19 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         pins: state.pins.filter((pin, index) => index != action.payload.indexToRemove)
       };
     case 'SWAP_PINS':
-      let newPins = [...state.pins];
-      const temp = newPins[action.payload.a];
-      newPins[action.payload.a] = newPins[action.payload.b];
-      newPins[action.payload.b] = temp;
+      updatedPins = [...state.pins];
       
+      let updated;
+      let swapTo;
+      for (let i of [0, 1]) {
+        updated = {...action.payload.pins[i]};
+        swapTo = (i + 1) % 2;
+        updatedPins[action.payload.indices[swapTo]] = updated;
+      }
+
       return {
         ...state,
-        pins: newPins
+        pins: updatedPins
       };
     case 'EDIT_ROUTE_NAME':
       return {
@@ -53,13 +60,13 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         selected: action.payload.selectedIndex
       };
     case 'UPDATE_PIN':
-      let updatedPins = [...state.pins];
-      let updatedPin = {...state.pins[state.selected]};
+      updatedPins = [...state.pins];
+      let updatedPin = {...state.pins[action.payload.index]};
       updatedPin.properties = {
         ...updatedPin.properties,
-        ...action.payload.data,
+        ...action.payload.data
       };
-      updatedPins[state.selected] = updatedPin;
+      updatedPins[action.payload.index] = updatedPin;
 
       return {
         ...state,

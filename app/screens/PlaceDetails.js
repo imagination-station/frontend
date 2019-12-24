@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   }
 });
 
-class PlaceDetailScreen extends Component {
+class PlaceDetailsScreen extends Component {
 
   static navigationOptions = ({ navigation }) => {
     return {
@@ -63,7 +63,10 @@ class PlaceDetailScreen extends Component {
         <OptionsMenu
           customButton={<Icon name='more-vert' size={30} color='black' style={{marginRight: 10}} />}
           options={['Edit', 'Delete']}
-          actions={[() => console.log('Edit Place'), () => console.log('Delete Place')]}
+          actions={[
+            () => navigation.navigate('PlaceEditor'),
+            () => console.log('Delete Place')
+          ]}
         />
       )
     };
@@ -123,4 +126,4 @@ const mapStateToProps = state => {
   };
 }
 
-export default connect(mapStateToProps)(PlaceDetailScreen);
+export default connect(mapStateToProps)(PlaceDetailsScreen);

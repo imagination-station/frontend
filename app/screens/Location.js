@@ -226,7 +226,7 @@ class Location extends Component {
         pins: [],
         tags: []
       });
-      this.props.navigation.navigate('RouteDetail', {new: true});
+      this.props.navigation.navigate('RouteDetails', {new: true});
     }
   }
 

@@ -326,14 +326,14 @@ function Card(props) {
     <TouchableWithoutFeedback onPress={props.onPress}>
       <View style={mapStyles.card}>
         <Image source={source} style={mapStyles.cardImage} resizeMode='cover' />
-        {/* Number label */}
-        <View style={{position: 'absolute', top: 5, right: 5}}>
+        {props.showOptions ? <View style={{position: 'absolute', top: 5, right: 5}}>
           <OptionsMenu
             customButton={<Icon name='more-vert' size={30} color={WARM_BLACK} />}
             options={props.options}
             actions={props.actions}
           />
-        </View>
+        </View> : null}
+        {/* Number label */}
         <View style={mapStyles.cardNumber}>
           <Text style={{color: 'white'}}>{props.index + 1}</Text>
         </View>
@@ -431,7 +431,7 @@ function Tag(props) {
   );
 }
 
-class RouteDetailScreen extends Component {
+class RouteDetailsScreen extends Component {
 
   static navigationOptions = ({ navigation }) => {
     return {
@@ -615,6 +615,26 @@ class RouteDetailScreen extends Component {
     });
   }
 
+  onLongPress = event => {
+    event.persist();
+    const latitude = event.nativeEvent.coordinate.latitude;
+    const longitude = event.nativeEvent.coordinate.longitude;
+
+    fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${MAPS_API_KEY}`)
+      .then(response => response.json())
+      .then(responseJson =>
+        this.fetchPlaceDetails(responseJson.results[0].place_id, () => {
+          this.mapRef.animateCamera({
+            center: {
+              latitude: this.state.focused.geometry.coordinates[0],
+              longitude: this.state.focused.geometry.coordinates[1],
+            },
+            zoom: 17
+          }, 30);
+        })
+      );
+  }
+
   fetchPlaceDetails = (placeId, callback, sessionToken) => {
     fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}${sessionToken ? '&sessiontoken=' + sessionToken : ''}`)
     .then(response => response.json())
@@ -668,6 +688,43 @@ class RouteDetailScreen extends Component {
     }, this.toggleDrawer);
   }
 
+  // assume a < b
+  onSwapPins = (a, b) => {
+    console.log('swapPins:', a, b);
+    const fetchInfos = [
+      {origin: a, dest: b + 1, newIndex: b},
+      {origin: b, dest: a, newIndex: a}
+    ];
+
+    const fetches = [];
+
+    for (let info of fetchInfos) {
+      if (info.newIndex != this.props.pins.length - 1) {
+        fetches.push(
+          fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?key=${MAPS_API_KEY}&origins=place_id:${this.props.pins[info.origin].properties.placeId}&destinations=place_id:${this.props.pins[info.dest].properties.placeId}&mode=walking`)
+            .then(response => response.json())
+            .then(responseJson => ({
+              info: info,
+              json: responseJson
+            }))
+        );
+      } else {
+        delete this.props.pins[info.origin].properties.distToNext;
+      }
+    }
+
+    Promise.all(fetches)
+      .then(responsesJson => {
+        for (let responseJson of responsesJson) {
+          this.props.pins[responseJson.info.origin].properties.distToNext = responseJson.json.rows[0].elements[0].distance;
+        }
+        this.props.swapPins([
+          this.props.pins[a],
+          this.props.pins[b]
+        ], [a, b]);
+      });
+  }
+
   onComplete = () => {
     console.log(this.props.location);
     firebase.auth().currentUser.getIdToken().then(token =>
@@ -708,12 +765,12 @@ class RouteDetailScreen extends Component {
       const actions = [() => this.props.removePin(index)];
 
       if (index != 0) {
-        options.push('Move Left');
-        actions.push(() => this.props.swapPins(index-1, index));
+        options.push('Shift Left');
+        actions.push(() => this.onSwapPins(index-1, index));
       }
       if (index != this.props.pins.length - 1) {
-        options.push('Move Right');
-        actions.push(() => this.props.swapPins(index, index+1));
+        options.push('Shift Right');
+        actions.push(() => this.onSwapPins(index, index+1));
       }
 
       res.push(
@@ -722,9 +779,10 @@ class RouteDetailScreen extends Component {
           pin={pin}
           onPress={() => {
             this.props.viewDetail(index);
-            this.props.navigation.navigate('PlaceDetail');
+            this.props.navigation.navigate('PlaceDetails');
           }}
           index={index}
+          showOptions={this.state.editing}
           options={options}
           actions={actions}
         />
@@ -760,6 +818,7 @@ class RouteDetailScreen extends Component {
           provider={'google'}
           style={mapStyles.container}
           onPoiClick={this.state.editing ? this.onPoiClick : undefined}
+          onLongPress={this.onLongPress}
           initialRegion={{
             latitude: this.initLocation[0],
             longitude: this.initLocation[1],
@@ -899,13 +958,17 @@ const mapDispatchToProps = dispatch => {
     removePin: index => dispatch({type: 'REMOVE_PIN', payload: {
       indexToRemove: index
     }}),
-    swapPins: (a, b) => dispatch({type: 'SWAP_PIN', payload: {
-      a: a,
-      b: b
+    swapPins: (pins, indices) => dispatch({type: 'SWAP_PINS', payload: {
+      pins: pins,
+      indices: indices
     }}),
     editRouteName: name => dispatch({type: 'EDIT_ROUTE_NAME', payload: {name: name}}),
     viewDetail: index => dispatch({type: 'VIEW_PLACE_DETAIL', payload: {
       selectedIndex: index
+    }}),
+    updatePin: (index, data) => dispatch({type: 'UPDATE_PIN', payload: {
+      index: index,
+      data: data
     }}),
     clear: () => dispatch({type: 'CLEAR'}),
     toggleRefresh: () => dispatch({type: 'TOGGLE_REFRESH'})
@@ -914,4 +977,4 @@ const mapDispatchToProps = dispatch => {
 
 export const MapSearchScreen = connect(mapStateToProps)(MapSearch);
 
-export default connect(mapStateToProps, mapDispatchToProps)(RouteDetailScreen);
+export default connect(mapStateToProps, mapDispatchToProps)(RouteDetailsScreen);
