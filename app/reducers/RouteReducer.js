@@ -1,5 +1,6 @@
 const INITIAL_STATE = {
   selected: null,
+  selectedBuf: null, // for editing
   user: null,
   refresh: false,
   // route flattened for easy updating
@@ -55,22 +56,25 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         name: action.payload.name
       };
     case 'VIEW_PLACE_DETAIL':
+      let selectedBuf = {...state.pins[action.payload.selectedIndex]};
+      selectedBuf.properties = {...selectedBuf.properties};
+      selectedBuf.properties.photoRefs = [...selectedBuf.properties.photoRefs];
+
       return {
         ...state,
-        selected: action.payload.selectedIndex
+        selected: action.payload.selectedIndex,
+        selectedBuf: selectedBuf
       };
     case 'UPDATE_PIN':
-      updatedPins = [...state.pins];
-      let updatedPin = {...state.pins[action.payload.index]};
+      updatedPin = {...state.selectedBuf};
       updatedPin.properties = {
         ...updatedPin.properties,
         ...action.payload.data
       };
-      updatedPins[action.payload.index] = updatedPin;
 
       return {
         ...state,
-        pins: updatedPins  
+        selectedBuf: updatedPin  
       };
     case 'CLEAR':
       return {

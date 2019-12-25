@@ -52,7 +52,6 @@ class Interests extends Component {
       headerTitle: () => <Text style={{fontSize: 20, marginLeft: 10}}>Interests</Text>,
       headerRight: () => (
         <TouchableOpacity
-          // TODO: PUT request to API server
           onPress={navigation.getParam('onPressNext')}
         >
           {/* make Next button opaque until city is chosen */}

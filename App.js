@@ -13,7 +13,7 @@ import CollectionsScreen from './app/screens/Collections.js';
 import ProfileScreen from './app/screens/Profile.js';
 
 import PlaceDetailsScreen from './app/screens/PlaceDetails.js';
-import PlaceEditorScreen from './app/screens/PlaceEditor.js';
+import PlaceEditorScreen, { PhotoRemoverScreen } from './app/screens/PlaceEditor.js';
 import TextEditorScreen from './app/screens/TextEditor.js';
 import RouteDetailsScreen, { MapSearchScreen } from './app/screens/RouteDetails.js';
 import SignUpScreen from './app/screens/SignUp.js';
@@ -85,6 +85,7 @@ const HomeStack = createStackNavigator({
   MapSearch: mapNavigationStateParamsToProps(MapSearchScreen),
   PlaceDetails: mapNavigationStateParamsToProps(PlaceDetailsScreen),
   PlaceEditor: mapNavigationStateParamsToProps(PlaceEditorScreen),
+  PhotoRemover: mapNavigationStateParamsToProps(PhotoRemoverScreen),
   TextEditor: mapNavigationStateParamsToProps(TextEditorScreen),
   RouteDetails: RouteDetailsScreen,
   Tutorial: TutorialScreen
