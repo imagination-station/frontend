@@ -8,14 +8,16 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   FlatList,
-  Image
+  Image,
+  Alert
 } from 'react-native';
 import { connect } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as firebase from 'firebase';
 
 import { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
-import { MAPS_API_KEY } from '../config/settings.js';
+import { MAPS_API_KEY, TEST_SERVER_ADDR } from '../config/settings.js';
 
 const {width, height} = Dimensions.get('window');
 const IMG_SIZE = width / 2;
@@ -86,46 +88,37 @@ class PhotoRemover extends Component {
   }
 
   state = {
-    selected: [],
+    selected: new Set(),
     photoRefs: this.props.selectedBuf.properties.photoRefs
   }
 
   componentDidMount() {
     this.props.navigation.setParams({
-      disabled: this.state.selected.length == 0,
+      disabled: this.state.selected.size == 0,
       onDelete: this.onDelete
     });
   }
 
   onTogglePhoto = item => {
-    if (this.state.selected.includes(item)) {
-      this.setState({
-        selected: this.state.selected.filter(elem => item != elem)
-      }, () => {
-        this.props.navigation.setParams({
-          disabled: this.state.selected == 0
-        })
-      });
+    let updatedSelected = new Set(this.state.selected);
+
+    if (this.state.selected.has(item)) {
+      updatedSelected.delete(item);
     } else {
-      this.setState({
-        selected: [...this.state.selected, item]
-      }, () => {
-        this.props.navigation.setParams({
-          disabled: false
-        })
-      });
+      updatedSelected.add(item);
     }
+
+    this.setState({selected: updatedSelected});
+    this.props.navigation.setParams({disabled: updatedSelected.size == 0});
   }
 
   onDelete = () => {
     this.setState({
-      photoRefs: this.state.photoRefs.filter(item => !this.state.selected.includes(item)),
-      selected: []
+      photoRefs: this.state.photoRefs.filter(item => !this.state.selected.has(item)),
+      selected: new Set()
     }, () => {
       this.props.updatePin({photoRefs: this.state.photoRefs});
-      this.props.navigation.setParams({
-        disabled: true
-      })
+      this.props.navigation.setParams({disabled: true});
     });
   }
 
@@ -138,7 +131,7 @@ class PhotoRemover extends Component {
             numColumns={2}
             renderItem={({ item }) =>
               <SelectedImage
-                selected={this.state.selected.includes(item)}
+                selected={this.state.selected.has(item)}
                 onPress={() => this.onTogglePhoto(item)}
                 source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${item}&maxheight=800&maxWidth=1000`}}
               />
@@ -177,7 +170,7 @@ class PlaceEditorScreen extends Component {
       tabBarVisible: false,
       headerTitle: () => <Text style={{fontSize: 20}}>Edit Place</Text>,
       headerRight: () =>
-        <TouchableOpacity onPress={() => console.log('Save')}>
+        <TouchableOpacity onPress={navigation.getParam('onSave')}>
           <Icon
             name='save'
             size={30}
@@ -188,21 +181,50 @@ class PlaceEditorScreen extends Component {
     };
   }
 
+  componentDidMount() {
+    this.props.navigation.setParams({onSave: this.onSave});
+  }
+
+  onSave = () => {
+    // if updating existing pin...
+    if (this.props.selectedBuf._id) {
+      firebase.auth().currentUser.getIdToken().then(token =>
+        fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/pins/${this.props.selectedBuf._id}`, {
+          method: 'PUT',
+          headers: {
+            Accept: 'application/json',
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(this.props.selectedBuf)
+        })
+      ) 
+        .then(response => {
+          this.props.commitPin();
+          this.props.navigation.goBack();
+        })
+        .catch(error => console.error(error));
+    } else {
+      this.props.commitPin();
+      this.props.navigation.goBack();
+    }
+  }
+
   onEditTitle = () => {
     this.props.navigation.navigate('TextEditor', {
-      initialText: this.props.pins[this.props.selected].properties.mainText,
+      initialText: this.props.selectedBuf.properties.mainText,
       maxLength: 280,
       placeholder: 'New title',
-      onDone: () => console.log('DONE!')
+      onDone: text => this.props.updatePin({mainText: text}),
     });
   }
 
   onEditNote = () => {
     this.props.navigation.navigate('TextEditor', {
-      initialText: this.props.pins[this.props.selected].properties.note,
+      initialText: this.props.selectedBuf.properties.note,
       maxLength: 280,
       placeholder: 'New note',
-      onDone: () => console.log('DONE!')
+      onDone: text => this.props.updatePin({note: text})
     });
   }
 
@@ -217,7 +239,7 @@ class PlaceEditorScreen extends Component {
               ellipsizeMode='tail' 
               style={{width: 300}}  
             >
-              {this.props.pins[this.props.selected].properties.mainText}
+              {this.props.selectedBuf.properties.mainText}
             </Text>
           </View>
           <TouchableOpacity onPress={this.onEditTitle}>
@@ -232,7 +254,7 @@ class PlaceEditorScreen extends Component {
               ellipsizeMode='tail'
               style={{width: 300}}
             >
-              {this.props.pins[this.props.selected].properties.note}
+              {this.props.selectedBuf.properties.note}
             </Text>
           </View>
           <TouchableOpacity onPress={this.onEditNote}>
@@ -251,7 +273,18 @@ class PlaceEditorScreen extends Component {
             </Text>
           </View>
           <View>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => {
+              // TODO: implement photo adder
+              Alert.alert(
+                'Hello',
+                "You've discovered a feature not yet implemented. Coming soon!",
+                [
+                  {
+                    text: 'OK'
+                  }
+                ]
+              );
+            }}>
               <Icon name='add' size={30} color={DARKER_GREY} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => this.props.navigation.navigate('PhotoRemover')}>
@@ -276,7 +309,8 @@ const mapDispatchToProps = dispatch => {
   return {
     updatePin: data => dispatch({type: 'UPDATE_PIN', payload: {
       data: data
-    }})
+    }}),
+    commitPin: () => dispatch({type: 'COMMIT_PIN'})
   };
 }
 

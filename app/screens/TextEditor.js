@@ -3,29 +3,11 @@ import {
   View,
   TextInput,
   Text,
-  PixelRatio,
   StyleSheet
 } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
-import { Header } from 'react-navigation-stack';
-import * as firebase from 'firebase';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { connect } from 'react-redux';
-import MapViewDirections from 'react-native-maps-directions';
-// import resolveAssetSource from 'resolveAssetSource';
-
-const pin =  require('../assets/pin.png');
 
 import Button from '../components/Buttons.js';
-import globalStyles, { GREY, DARKER_GREY, PRIMARY, ACCENT } from '../config/styles.js';
-import {
-  MAPS_API_KEY,
-  SERVER_ADDR,
-  INIT_LOCATION,
-  PLACE_ID,
-  TAGS,
-  PLACEHOLDER_IMG
-} from '../config/settings.js';
+import { DARKER_GREY } from '../config/styles.js';
 
 const styles = StyleSheet.create({
     container: {
@@ -82,14 +64,14 @@ class TextEditor extends Component {
             />
             <Text
               style={styles.charCount}
-            >
+            > 
               {`${this.state.text ? this.state.text.length : 0}/${this.props.maxLength}`}
             </Text>
           </View>
           <Button
             title='DONE'
             onPress={() => {
-              this.props.onDone();
+              this.props.onDone(this.state.text);
               this.props.navigation.goBack();
             }}
           />

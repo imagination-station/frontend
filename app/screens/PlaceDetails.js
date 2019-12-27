@@ -74,6 +74,9 @@ class PlaceDetailsScreen extends Component {
 
   componentWillMount() {
     this.scrollValue = new Animated.Value(0);
+    if (this.props.pins[this.props.selected]._id) {
+      console.log('selected', this.props.pins[this.props.selected]._id);
+    }
   }
 
   render() {
@@ -81,14 +84,8 @@ class PlaceDetailsScreen extends Component {
     const photoUris = place.properties.photoRefs
         ? place.properties.photoRefs.map(ref => `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=1000`)
         : [];
-      
 
-    let placeholder;
-    if (this.props.editable) {
-      placeholder = 'Write interesting facts, things to do, or anything you want to record about this place.';
-    } else {
-      placeholder = 'No notes :(';
-    }
+    const placeholder = 'Write interesting facts, things to do, or anything you want to record about this place.';
 
     return (
       <ScrollView style={styles.container}>
@@ -122,7 +119,7 @@ class PlaceDetailsScreen extends Component {
 const mapStateToProps = state => {
   return {
     pins: state.pins,
-    selected: state.selected,
+    selected: state.selected
   };
 }
 

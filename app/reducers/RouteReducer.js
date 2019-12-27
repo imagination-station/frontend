@@ -1,6 +1,6 @@
 const INITIAL_STATE = {
   selected: null,
-  selectedBuf: null, // for editing
+  selectedBuf: null, // buffer to save intermediate changes
   user: null,
   refresh: false,
   // route flattened for easy updating
@@ -75,6 +75,14 @@ const routeReducer = (state = INITIAL_STATE, action) => {
       return {
         ...state,
         selectedBuf: updatedPin  
+      };
+    case 'COMMIT_PIN':
+      updatedPins = [...state.pins];
+      updatedPins[state.selected] = state.selectedBuf;
+
+      return {
+        ...state,
+        pins: updatedPins
       };
     case 'CLEAR':
       return {

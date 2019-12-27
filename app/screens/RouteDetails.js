@@ -654,7 +654,9 @@ class RouteDetailsScreen extends Component {
           placeId: placeId,
           mainText: responseJson.result.name,
           secondaryText: responseJson.result.formatted_address,
-          photoRefs: photos
+          photoRefs: photos,
+          note: '',
+          creator: this.props.user._id
         }
       };
 
@@ -678,7 +680,7 @@ class RouteDetailsScreen extends Component {
     }
 
     if (distance) {
-      this.props.pins[this.props.pins.length-1].properties.distToNext = distance;
+      this.props.pins[this.props.pins.length-1].properties.distToNext = distance.value;
     }
 
     this.props.addPin(this.state.focused);
@@ -716,7 +718,7 @@ class RouteDetailsScreen extends Component {
     Promise.all(fetches)
       .then(responsesJson => {
         for (let responseJson of responsesJson) {
-          this.props.pins[responseJson.info.origin].properties.distToNext = responseJson.json.rows[0].elements[0].distance;
+          this.props.pins[responseJson.info.origin].properties.distToNext = responseJson.json.rows[0].elements[0].distance.value;
         }
         this.props.swapPins([
           this.props.pins[a],
@@ -800,7 +802,7 @@ class RouteDetailsScreen extends Component {
             <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>
               <Icon name='directions-walk' size={30} color={DARKER_GREY} />
               <Text style={{color: DARKER_GREY}}>
-                {pin.properties.distToNext.text}
+                {`${pin.properties.distToNext} m`}
               </Text>
             </View>
           </TouchableOpacity>
