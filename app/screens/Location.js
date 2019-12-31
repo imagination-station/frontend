@@ -213,7 +213,7 @@ class Location extends Component {
     } else if (this.props.purpose == 'CREATE_ROUTE') {
       this.props.loadRoute({
         name: '',
-        creator: this.props.user._id,
+        creator: this.props.user,
         location: {
           fullName: this.state.location.full_name,
           name: this.state.location.name,

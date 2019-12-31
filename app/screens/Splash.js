@@ -4,7 +4,8 @@ import {
   StyleSheet,
   Image,
   StatusBar,
-  Platform
+  Platform,
+  AsyncStorage
 } from 'react-native';
 import * as firebase from 'firebase';
 import { connect } from 'react-redux';
@@ -30,13 +31,12 @@ const styles = StyleSheet.create({
 class SplashScreen extends Component {
 
   componentDidMount() {
-    this.firebaseListener = firebase.auth().onAuthStateChanged(user => {
+    this.firebaseListener = firebase.auth().onAuthStateChanged(async user => {
       if (user != null) {
         // // check if user logged in through facebook
         // console.log('auth provider', firebase.auth().currentUser.providerData[0].providerId);
         // // can use this in Facebook Graph API
         // console.log('facebook uid', firebase.auth().currentUser.providerData[0].uid);
-
         firebase.auth().currentUser.getIdToken()
           .then(token =>
             fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}`, {
@@ -47,10 +47,21 @@ class SplashScreen extends Component {
               },
             }))
           .then(response => response.json())
-          .then(responseJson => {
-            console.log(responseJson);
+          .then(async responseJson => {
             this.props.setUser(responseJson);
-            this.props.navigation.navigate('Home');
+            if (responseJson.authProvider == 'facebook.com') {
+              let accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
+
+              // if access token expired...
+              if ((new Date()).getTime() > accessToken.expires) {
+                // must go through login flow again
+                this.props.navigation.navigate('Login');
+              } else {
+                this.props.navigation.navigate('Home');
+              }
+            } else {
+              this.props.navigation.navigate('Login');
+            }
           });
       } else {
         this.props.navigation.navigate('Auth');
@@ -80,6 +91,11 @@ const mapDispatchToProps = dispatch => {
     setUser: user => {
       dispatch({type: 'SET_USER', payload: {
         user: user
+      }});
+    },
+    setAccessToken: token => {
+      dispatch({type: 'SET_ACCESS_TOKEN', payload: {
+        token: token
       }});
     }
   };

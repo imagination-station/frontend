@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   Image,
   StatusBar,
-  Platform
+  Platform,
+  AsyncStorage
 } from 'react-native';
 import * as firebase from 'firebase';
 import * as Facebook from 'expo-facebook';
@@ -112,24 +113,31 @@ class LoginScreen extends Component {
       await Facebook.initializeAsync('2873476886029892');
       const {
         type,
-        token
+        token,
+        expires,
+        declinedPermissions
       } = await Facebook.logInWithReadPermissionsAsync('2873476886029892', {
-        permissions: ['public_profile'],
+        permissions: ['public_profile', 'email', 'user_friends'],
       });
 
       switch (type) {
         case 'success':
+          await AsyncStorage.setItem('ACCESS_TOKEN', JSON.stringify({
+            token: token,
+            expires: expires
+          }));
+          console.log('token', token);
+          console.log('expires:', expires);
+          // TODO: dispatch action for storing access token in redux store
+          this.props.setAccessToken(token);
+          
           await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
           const credential = firebase.auth.FacebookAuthProvider.credential(token);
-
           firebase.auth().signInWithCredential(credential)
             .then(cred => {
-              console.log('logged in with facebook!');
               if (!cred.additionalUserInfo.isNewUser) {
                 this.props.navigation.navigate('Home');
               } else {
-                console.log('new user!');
-                // TODO: POST request to API server
                 fetch(`${TEST_SERVER_ADDR}/api/users`, {
                   method: 'POST',
                   headers: {
@@ -227,6 +235,11 @@ const mapDispatchToProps = dispatch => {
         user: user,
       }});
     },
+    setAccessToken: token => {
+      dispatch({type: 'SET_ACCESS_TOKEN', payload: {
+        token: token
+      }});
+    }
   };
 }
 

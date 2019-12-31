@@ -12,10 +12,12 @@ import ExploreScreen, { CitySearchScreen, RouteFilterScreen } from './app/screen
 import CollectionsScreen from './app/screens/Collections.js';
 import ProfileScreen from './app/screens/Profile.js';
 
+import RouteDetailsScreen, { MapSearchScreen } from './app/screens/RouteDetails.js';
 import PlaceDetailsScreen from './app/screens/PlaceDetails.js';
 import PlaceEditorScreen, { PhotoRemoverScreen } from './app/screens/PlaceEditor.js';
 import TextEditorScreen from './app/screens/TextEditor.js';
-import RouteDetailsScreen, { MapSearchScreen } from './app/screens/RouteDetails.js';
+import FriendsListScreen from './app/screens/FriendsList.js';
+
 import SignUpScreen from './app/screens/SignUp.js';
 import SplashScreen from './app/screens/Splash.js';
 import TutorialScreen from './app/screens/Tutorial.js';
@@ -80,7 +82,6 @@ const HomeStack = createStackNavigator({
     }
   },
   CitySearch: mapNavigationStateParamsToProps(CitySearchScreen),
-  RouteFilter: mapNavigationStateParamsToProps(RouteFilterScreen),
   Location: mapNavigationStateParamsToProps(LocationScreen),
   MapSearch: mapNavigationStateParamsToProps(MapSearchScreen),
   PlaceDetails: mapNavigationStateParamsToProps(PlaceDetailsScreen),
@@ -88,6 +89,7 @@ const HomeStack = createStackNavigator({
   PhotoRemover: mapNavigationStateParamsToProps(PhotoRemoverScreen),
   TextEditor: mapNavigationStateParamsToProps(TextEditorScreen),
   RouteDetails: RouteDetailsScreen,
+  FriendsList: mapNavigationStateParamsToProps(FriendsListScreen),
   Tutorial: TutorialScreen
 });
 

@@ -1,7 +1,8 @@
 const INITIAL_STATE = {
+  user: null,
+  accessToken: null,
   selected: null,
   selectedBuf: null, // buffer to save intermediate changes
-  user: null,
   refresh: false,
   // route flattened for easy updating
   name: null,
@@ -9,6 +10,7 @@ const INITIAL_STATE = {
   location: null,
   pins: null,
   tags: null,
+  collaborators: null
 };
 
 const routeReducer = (state = INITIAL_STATE, action) => {
@@ -20,6 +22,11 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         ...state,
         user: action.payload.user
       };
+    case 'SET_ACCESS_TOKEN':
+      return {
+        ...state,
+      accessToken: action.payload.token
+      }
     case 'LOAD_ROUTE':
       return {
         ...state,
@@ -93,6 +100,7 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         location: null,
         pins: null,
         tags: null,
+        collaborators: null
       };
     case 'TOGGLE_REFRESH':
       return {

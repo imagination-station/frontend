@@ -163,7 +163,7 @@ function SelectedImage(props) {
   );
 }
 
-class PlaceEditorScreen extends Component {
+class PlaceEditor extends Component {
 
   static navigationOptions = ({ navigation }) => {
     return {
@@ -316,4 +316,4 @@ const mapDispatchToProps = dispatch => {
 
 export const PhotoRemoverScreen = connect(mapStateToProps, mapDispatchToProps)(PhotoRemover);
 
-export default connect(mapStateToProps, mapDispatchToProps)(PlaceEditorScreen);
+export default connect(mapStateToProps, mapDispatchToProps)(PlaceEditor);

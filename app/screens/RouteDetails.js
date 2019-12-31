@@ -14,7 +14,7 @@ import {
   StatusBar,
   PixelRatio,
   BackHandler,
-  FlatList
+  FlatList,
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Header } from 'react-navigation-stack';
@@ -187,15 +187,28 @@ const mapStyles = StyleSheet.create({
   infoContainer: {
     flex: 2.4,
     width: width,
-    alignItems: 'center'
+    paddingHorizontal: 15
   },
   nameBox: {
-    borderWidth: 1,
-    borderColor: GREY,
+    // borderWidth: 1,
+    // borderColor: GREY,
     height: 46,
     paddingHorizontal: 10,
     width: '90%',
-    borderRadius: 5
+    borderRadius: 20,
+    elevation: 0.5,
+    backgroundColor: 'white'
+  },
+  name: {
+    alignSelf: 'flex-start',
+    fontSize: 32
+  },
+  sectionHeader: {
+    fontSize: 20,
+    marginBottom: 10,
+    marginTop: 15,
+    color: DARKER_GREY,
+    textAlignVertical: 'center'
   },
   pin: {
     position: 'absolute',
@@ -203,6 +216,19 @@ const mapStyles = StyleSheet.create({
     height: Math.floor(PIN_HEIGHT / PIXEL_RATIO),
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  profilePic: {
+    width: 50,
+    height: 50,
+    borderRadius: 50 / 2,
+    borderColor: ACCENT
+  },
+  profilePicOwner: {
+    width: 50,
+    height: 50,
+    borderRadius: 50 / 2,
+    borderColor: ACCENT,
+    borderWidth: 2
   }
 });
 
@@ -401,7 +427,7 @@ function ActionCard(props) {
     props.view != 'info' &&
       <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}} key='buttons'>
         <TouchableOpacity onPress={props.showRouteInfo} >
-          <Icon name='more-horiz' size={30} color={WARM_BLACK} />
+          <Icon name='expand-more' size={30} color={WARM_BLACK} />
         </TouchableOpacity>
       </View>
   ];
@@ -423,6 +449,32 @@ function DrawerButton(props) {
   );
 }
 
+function ShareButton(props) {
+  return (
+    <TouchableOpacity onPress={props.onPress}>
+      <Text style={{color: 'white', backgroundColor: ACCENT, width: 60, height: 25, textAlign: 'center', textAlignVertical: 'center', borderRadius: 5}}>Share</Text>
+    </TouchableOpacity>
+  );
+}
+
+function Collaborators(props) {
+  return (
+    <View style={{flexDirection: 'row'}}>
+      <FlatList
+        data={props.collaborators.slice(0, 4)}
+        horizontal
+        renderItem={({ item, index }) =>
+          <Image
+            style={index == 0 ? mapStyles.profilePicOwner : mapStyles.profilePic}
+            source={{uri: item.photoUrl}}
+          /> 
+        }
+      />
+      {props.collaborators.length > 4 && <Text>{`and ${props.collaborators.length - 4} others`}</Text>}
+    </View>
+  );
+}
+
 function Tag(props) {
   return (
     <View style={{flexDirection: 'row', backgroundColor: ACCENT, height: 30, width: 'auto', padding: 3, alignItems: 'center', borderRadius: 5, marginRight: 10, marginBottom: 10}}>
@@ -436,11 +488,14 @@ class RouteDetailsScreen extends Component {
   static navigationOptions = ({ navigation }) => {
     return {
       tabBarVisible: false,
-      headerTitle: () => <Text style={{fontSize: 20}}>Route Details</Text>,
+      headerTitle: () => <Text style={{fontSize: 20}}>Trip Details</Text>,
       headerLeft: () => <Icon name='arrow-back' size={30} style={{marginLeft: 10}} onPress={navigation.getParam('onBack')} />,
       headerRight: () => (
-        navigation.getParam('editing') ? <TouchableOpacity onPress={navigation.getParam('onPressSave')}>
-          <Icon name='save' size={30} color={ACCENT} style={{marginRight: 10}} />
+        navigation.getParam('editing') ? <TouchableOpacity onPress={navigation.getParam('view') == 'info' ? navigation.getParam('onPressSave') : navigation.getParam('showRouteInfo')}>
+          {navigation.getParam('view') == 'info'
+              ? <Icon name='save' size={30} color={ACCENT} style={{marginRight: 10}} />
+              : <Text style={{color: ACCENT, marginRight: 10, fontSize: 18}}>Next</Text>
+          }
         </TouchableOpacity> :
         <OptionsMenu
           customButton={<Icon name='more-vert' size={30} color='black' style={{marginRight: 10}} />}
@@ -487,11 +542,14 @@ class RouteDetailsScreen extends Component {
         this.setState({editing: true});
         this.props.navigation.setParams({editing: true});
       },
-      onPressSave: this.onComplete
+      onPressSave: this.onComplete,
+      showRouteInfo: this.showRouteInfo,
+      view: this.state.view
     });
   }
 
   componentDidMount() {
+    console.log(this.props.creator);
     this.willBlur = this.props.navigation.addListener('willBlur', payload =>
       BackHandler.removeEventListener('hardwareBackPress', this.onBack)
     );
@@ -546,6 +604,7 @@ class RouteDetailsScreen extends Component {
         duration: 200
       }
     ).start);
+    this.props.navigation.setParams({view: 'map'});
   }
 
   closeDrawer = () => {
@@ -556,6 +615,7 @@ class RouteDetailsScreen extends Component {
         duration: 200
       }
     ).start);
+    this.props.navigation.setParams({view: 'map'});
   }
 
   showRouteInfo = () => {
@@ -575,6 +635,7 @@ class RouteDetailsScreen extends Component {
         }
       ).start();
     });
+    this.props.navigation.setParams({view: 'info'});
   }
 
   onPressSearch = () => {
@@ -754,6 +815,32 @@ class RouteDetailsScreen extends Component {
       .catch(error => console.error(error));
   }
 
+  onScrollRoute = event => {
+    const i = Math.round(event.nativeEvent.contentOffset.x / OFFSET_DIV);
+    if (i == 0) {
+      this.mapRef.fitToSuppliedMarkers(
+        this.props.pins.map(pin => pin.properties.placeId),
+        {
+          edgePadding: {
+            top: CARD_HEIGHT,
+            left: 150,
+            bottom: CARD_HEIGHT,
+            right: 150
+          },
+          animated: true
+        }
+      );
+    } else {
+      this.mapRef.animateCamera({
+        center: {
+          latitude: this.props.pins[i - 1].geometry.coordinates[0],
+          longitude: this.props.pins[i - 1].geometry.coordinates[1],
+        },
+        zoom: 15
+      }, 30);
+    }
+  }
+
   clearTag = value => {
     this.setState({
       tags: this.state.tags.filter(tag => tag != value)
@@ -882,35 +969,11 @@ class RouteDetailsScreen extends Component {
               horizontal
               scrollEventThrottle={1}
               showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={event => {
-                const i = Math.round(event.nativeEvent.contentOffset.x / OFFSET_DIV);
-                if (i == this.props.pins.length) {
-                  this.mapRef.fitToSuppliedMarkers(
-                    this.props.pins.map(pin => pin.properties.placeId),
-                    {
-                      edgePadding: {
-                        top: CARD_HEIGHT,
-                        left: 150,
-                        bottom: CARD_HEIGHT,
-                        right: 150
-                      },
-                      animated: true
-                    }
-                  );
-                } else {
-                  this.mapRef.animateCamera({
-                    center: {
-                      latitude: this.props.pins[i].geometry.coordinates[0],
-                      longitude: this.props.pins[i].geometry.coordinates[1],
-                    },
-                    zoom: 15
-                  }, 30);
-                }
-              }}
+              onMomentumScrollEnd={this.onScrollRoute}
             >
               <View style={mapStyles.filler} />
-              {cards}
               <ActionCard pins={this.props.pins} showRouteInfo={this.showRouteInfo} />
+              {cards}
               <View style={mapStyles.filler} />
             </ScrollView>
             {this.state.view === 'info' &&
@@ -918,14 +981,22 @@ class RouteDetailsScreen extends Component {
                 {this.state.editing ?
                   <TextInput
                     style={{...mapStyles.nameBox, marginBottom: 10}}
-                    placeholder={'Name your route'}
+                    placeholder={'Name your trip'}
                     onChangeText={text => this.props.editRouteName(text)}
                     value={this.props.name}
                   />
-                  : <Text style={{alignSelf: 'flex-start', margin: 15, fontSize: 20, fontWeight: 'bold', width: 300}}>
+                  : <Text style={mapStyles.name}>
                     {this.props.name ? this.props.name : 'Untitled'}
                   </Text>
                 }
+                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <Icon name='people' size={20} style={{marginRight: 5, paddingTop: 5}} color={DARKER_GREY} />
+                    <Text style={mapStyles.sectionHeader}>People</Text>
+                  </View>
+                  <ShareButton onPress={() => this.props.navigation.navigate('FriendsList')} />
+                </View>
+                <Collaborators collaborators={[this.props.creator, ...this.props.collaborators]} />
                 {/* {this.props.navigation.getParam('route').tags != undefined &&
                 <View style={{flexDirection: 'row', alignSelf: 'flex-start', marginLeft: 15, flexWrap: 'wrap'}}>
                   {this.props.navigation.getParam('route').tags.map(tag => <Tag title={tag} key={tag} />)}
@@ -948,7 +1019,8 @@ const mapStateToProps = state => {
     creator: state.creator,
     location: state.location,
     pins: state.pins,
-    tags: state.tags
+    tags: state.tags,
+    collaborators: state.collaborators
   };
 }
 
