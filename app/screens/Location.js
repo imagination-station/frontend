@@ -193,20 +193,37 @@ class Location extends Component {
 
   onPressNext = () => {
     if (this.props.purpose == 'UPDATE_USER') {
-      firebase.auth().currentUser.getIdToken().then(token =>
-        fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}`, {
-          method: 'PUT',
-          headers: {
-            Accept: 'application/json',
-            'Content-type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            location: this.state.location.geoname_id
+      firebase.auth().currentUser.getIdToken()
+        .then(token =>
+          fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}`, {
+            method: 'PUT',
+            headers: {
+              Accept: 'application/json',
+              'Content-type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              location: this.state.location.geoname_id
+            })
           })
-        })
-      )
+        )
         .then(response => {
+          if (response.ok) {
+            return firebase.auth().currentUser.getIdToken();
+          }
+        })
+        .then(token =>
+          fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}`, {
+            headers: {
+              Accept: 'application/json',
+              'Content-type': 'application/json',
+              Authorization: `Bearer ${token}`
+            }
+          })
+        )
+        .then(response => response.json())
+        .then(responseJson => {
+          this.props.setUser(responseJson);
           this.props.navigation.navigate('Interests');
         })
         .catch(error => console.error(error));
@@ -224,7 +241,8 @@ class Location extends Component {
           _id: this.state.location.geoname_id,
         },
         pins: [],
-        tags: []
+        tags: [],
+        collaborators: []
       });
       this.props.navigation.navigate('RouteDetails', {new: true});
     }
@@ -287,7 +305,12 @@ const mapDispatchToProps = dispatch => {
   return {
     loadRoute: route => dispatch({type: 'LOAD_ROUTE', payload: {
       route: route,
-    }})
+    }}),
+    setUser: user => {
+      dispatch({type: 'SET_USER', payload: {
+        user: user,
+      }});
+    }
   };
 }
 

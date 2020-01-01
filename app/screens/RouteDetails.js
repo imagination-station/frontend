@@ -427,7 +427,7 @@ function ActionCard(props) {
     props.view != 'info' &&
       <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}} key='buttons'>
         <TouchableOpacity onPress={props.showRouteInfo} >
-          <Icon name='expand-more' size={30} color={WARM_BLACK} />
+          <Icon name='expand-less' size={30} color={WARM_BLACK} />
         </TouchableOpacity>
       </View>
   ];

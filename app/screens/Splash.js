@@ -51,16 +51,18 @@ class SplashScreen extends Component {
             this.props.setUser(responseJson);
             if (responseJson.authProvider == 'facebook.com') {
               let accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
+              console.log(accessToken);
 
               // if access token expired...
               if ((new Date()).getTime() > accessToken.expires) {
                 // must go through login flow again
-                this.props.navigation.navigate('Login');
+                this.props.navigation.navigate('Auth');
               } else {
+                this.props.setAccessToken((JSON.parse(accessToken)).token);
                 this.props.navigation.navigate('Home');
               }
             } else {
-              this.props.navigation.navigate('Login');
+              this.props.navigation.navigate('Home');
             }
           });
       } else {

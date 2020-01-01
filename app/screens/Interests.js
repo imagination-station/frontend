@@ -82,20 +82,37 @@ class Interests extends Component {
   }
 
   onPressNext = () => {
-    firebase.auth().currentUser.getIdToken().then(token =>
-      fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}`, {
-        method: 'PUT',
-        headers: {
-          Accept: 'application/json',
-          'Content-type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          interests: this.state.interests
+    firebase.auth().currentUser.getIdToken()
+      .then(token =>
+        fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}`, {
+          method: 'PUT',
+          headers: {
+            Accept: 'application/json',
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            interests: this.state.interests
+          })
         })
-      })
-    )
+      )
       .then(response => {
+        if (response.ok) {
+          return firebase.auth().currentUser.getIdToken();
+        }
+      })
+      .then(token =>
+        fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}`, {
+          headers: {
+            Accept: 'application/json',
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+        })
+      )
+      .then(response => response.json())
+      .then(responseJson => {
+        this.props.setUser(responseJson);
         this.props.navigation.navigate('Home');
       })
       .catch(error => console.error(error));
@@ -134,4 +151,14 @@ const mapStateToProps = state => {
   };
 }
 
-export default connect(mapStateToProps)(Interests);
+const mapDispatchToProps = dispatch => {
+  return {
+    setUser: user => {
+      dispatch({type: 'SET_USER', payload: {
+        user: user,
+      }});
+    }
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Interests);

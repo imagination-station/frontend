@@ -126,10 +126,10 @@ class LoginScreen extends Component {
             token: token,
             expires: expires
           }));
-          console.log('token', token);
-          console.log('expires:', expires);
-          // TODO: dispatch action for storing access token in redux store
+          // store access token in redux store
           this.props.setAccessToken(token);
+
+          let location;
           
           await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
           const credential = firebase.auth.FacebookAuthProvider.credential(token);
@@ -137,36 +137,46 @@ class LoginScreen extends Component {
             .then(cred => {
               if (!cred.additionalUserInfo.isNewUser) {
                 this.props.navigation.navigate('Home');
-              } else {
-                fetch(`${TEST_SERVER_ADDR}/api/users`, {
-                  method: 'POST',
-                  headers: {
-                    Accept: 'application/json',
-                    'Content-type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    fullName: cred.additionalUserInfo.profile.name,
-                    email: cred.additionalUserInfo.profile.email,
-                    authProvider: cred.additionalUserInfo.providerId,
-                    bio: '',
-                    location: '',
-                    photoUrl: cred.additionalUserInfo.profile.picture.data.url,
-                    interests: [],
-                    _id: firebase.auth().currentUser.uid
-                  })
-                })
-                  .then(response => response.json())
-                  .then(responseJson => {
-                    console.log(responseJson);
-                    this.props.setUser(responseJson);
-                    this.props.navigation.navigate('Location' , {
-                      purpose: 'UPDATE_USER' 
-                    });
-                  })
-                  .catch(error => console.error(error));
+                return;
               }
-            }
-          ); 
+
+              fetch(`${TEST_SERVER_ADDR}/api/users`, {
+                method: 'POST',
+                headers: {
+                  Accept: 'application/json',
+                  'Content-type': 'application/json',
+                },
+                body: JSON.stringify({
+                  fullName: cred.additionalUserInfo.profile.name,
+                  email: cred.additionalUserInfo.profile.email,
+                  authProvider: cred.additionalUserInfo.providerId,
+                  photoUrl: cred.additionalUserInfo.profile.picture.data.url,
+                  interests: [],
+                  _id: firebase.auth().currentUser.uid
+                })
+              })
+                .then(response => {
+                  location = response.headers.map.location;
+                  return firebase.auth().currentUser.getIdToken();
+                })
+                .then(token =>
+                  fetch(`${TEST_SERVER_ADDR}${location}`, {
+                    headers: {
+                      Accept: 'application/json',
+                      'Content-type': 'application/json',
+                      Authorization: `Bearer ${token}`
+                    },
+                  }))
+                .then(response => response.json())
+                .then(async responseJson => {
+                  this.props.setUser(responseJson);
+                  this.props.navigation.navigate('Location', {
+                    purpose: 'UPDATE_USER'
+                  });
+                  return;
+                })
+                .catch(error => console.error(error));
+            }); 
 
           return Promise.resolve({type: 'success'});
         case 'cancel':

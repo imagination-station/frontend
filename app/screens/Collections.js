@@ -189,6 +189,7 @@ class CollectionsScreen extends Component {
 
   componentDidMount() {
     this.fetchRoutes();
+    console.log('user:', this.props.user);
   }
 
   componentDidUpdate() {

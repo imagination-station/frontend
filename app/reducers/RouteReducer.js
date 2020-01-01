@@ -1,16 +1,17 @@
 const INITIAL_STATE = {
   user: null,
   accessToken: null,
-  selected: null,
-  selectedBuf: null, // buffer to save intermediate changes
-  refresh: false,
   // route flattened for easy updating
   name: null,
   creator: null,
   location: null,
   pins: null,
   tags: null,
-  collaborators: null
+  collaborators: null,
+  // for selecting & editing place
+  selected: null,
+  selectedBuf: null, // buffer to save intermediate changes
+  refresh: false
 };
 
 const routeReducer = (state = INITIAL_STATE, action) => {
@@ -25,8 +26,8 @@ const routeReducer = (state = INITIAL_STATE, action) => {
     case 'SET_ACCESS_TOKEN':
       return {
         ...state,
-      accessToken: action.payload.token
-      }
+        accessToken: action.payload.token
+      };
     case 'LOAD_ROUTE':
       return {
         ...state,
