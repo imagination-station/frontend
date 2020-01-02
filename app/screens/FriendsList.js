@@ -14,60 +14,34 @@ import { connect } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as firebase from 'firebase';
 
-import { GREY, DARKER_GREY, PRIMARY } from '../config/styles.js';
-
 // dimensions of the screen
-const {width, height} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   header: {
     marginTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 5
   },
   container: {
     flex: 1,
-    paddingHorizontal: 15
-  },
-  scrollViewContainer: {
-    alignItems: 'center'
-  },
-  textContainer: {
-    padding: 10
+    paddingHorizontal: 20
   },
   textBox: {
     height: 45,
-    width: width - 60, // 60 = width of paddingHorizontal + width of icon
+    width: width - 70, // 70 = width of paddingHorizontal + width of icon
     borderBottomWidth: 2,
     borderBottomColor: 'grey'
-  },
-  sectionHeader: {
-    fontSize: 12,
-    marginBottom: 5,
-    marginTop: 25,
-    color: PRIMARY
-  },
-  buttonStyle: { 
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    borderBottomWidth: 1,
-    borderBottomColor: GREY,
-    padding: 10
   }
 });
 
 class FriendsList extends Component {
 
-  static navigationOptions = ({ navigation }) => {
+  static navigationOptions = () => {
     return {
       tabBarVisible: false,
-      header: props =>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name='keyboard-arrow-left' size={45} />
-          </TouchableOpacity>
-        </View>,
+      header: null
     };
   }
 
@@ -86,11 +60,17 @@ class FriendsList extends Component {
   render() {
     return (
       <SafeAreaView style={{flex: 1}}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => this.props.navigation.goBack()}>
+            <Icon name='keyboard-arrow-left' size={45} />
+          </TouchableOpacity>
+        </View>
         <View style={styles.container}>
           <View style={{paddingTop: 30, marginBottom: 5}}>
             <Text style={{fontSize: 32, fontWeight: 'bold', marginBottom: 5}}>Travel with your{'\n'}Friends.</Text>
             <Text style={{fontSize: 14}}>
-              People you share with will be able to view and edit your trip.{'\n'}
+              People you share with will be able to view{'\n'}
+              and edit your trip.{'\n\n'}
               Only friends who downloaded {'&'} connected their{'\n'}
               Facebook account will show up.
             </Text>

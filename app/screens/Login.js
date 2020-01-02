@@ -226,7 +226,7 @@ class LoginScreen extends Component {
           textStyle={{...styles.logInButtton, backgroundColor: FACEBOOK}}
         />
         <View style={{marginTop: 40, flexDirection: 'row', alignItems: 'center'}}>
-          <Text style={{color: DARKER_GREY}}>{"Don't have an account? "}</Text>
+          <Text style>{"Don't have an account? "}</Text>
           <SignUpButton
             title='Sign up.'
             onPress={this.onPressSignup}
