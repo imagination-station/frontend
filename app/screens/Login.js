@@ -136,7 +136,20 @@ class LoginScreen extends Component {
           firebase.auth().signInWithCredential(credential)
             .then(cred => {
               if (!cred.additionalUserInfo.isNewUser) {
-                this.props.navigation.navigate('Home');
+                firebase.auth().currentUser.getIdToken()
+                  .then(token =>
+                    fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}`, {
+                      headers: {
+                        Accept: 'application/json',
+                        'Content-type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                      },
+                    }))
+                  .then(response => response.json())
+                  .then(responseJson => {
+                    this.props.setUser(responseJson);
+                    this.props.navigation.navigate('Home');
+                  });
                 return;
               }
 
@@ -199,7 +212,7 @@ class LoginScreen extends Component {
         {/* don't worry, this is just a temporary logo. */}
         <Image
           style={styles.logo}
-          source={require('../assets/logo.png')}
+          source={require('../assets/logo-solid.png')}
         />
         <TextInput
           style={styles.textInput}

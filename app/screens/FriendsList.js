@@ -53,6 +53,7 @@ class FriendsList extends Component {
     fetch(`https://graph.facebook.com/${firebase.auth().currentUser.providerData[0].uid}/friends?access_token=${this.props.accessToken}`)
       .then(response => response.json())
       .then(responseJson => {
+        console.log(responseJson);
         this.setState({friends: responseJson});
       });
   }

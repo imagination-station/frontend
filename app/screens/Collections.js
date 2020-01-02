@@ -22,7 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { DARKER_GREY, GREY, PRIMARY } from '../config/styles.js';
 import { SERVER_ADDR, TEST_SERVER_ADDR, MAPS_API_KEY } from '../config/settings.js';
 
-const {width, height} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const CARD_HEIGHT = 200;
 const CARD_WIDTH = width - 40;
@@ -189,7 +189,11 @@ class CollectionsScreen extends Component {
 
   componentDidMount() {
     this.fetchRoutes();
-    console.log('user:', this.props.user);
+    fetch(`https://graph.facebook.com/me/friends?access_token=EAAo1aXkP5kQBAA9xyuXqMtvuKsZBJGR91ZCzkrZA9j8Tssa2anFljGr8t3Ai98ZBTzn94fTKX3EUYfXUGLAaiZBbRqoBbFemHqbmITg9DMrICzrEnMZAqtAlFnMURlWexQr1ZBaER1OuCS02RoxcaUZCsNFZABFv0RoWlR5kcAhTiWgiAZAyuTFJAC6lZBIOHxFEJJGpUsBwgKa6lHVXCKBBDf0`)
+    .then(response => response.json())
+    .then(responseJson => {
+      console.log(responseJson);
+    });
   }
 
   componentDidUpdate() {
@@ -304,7 +308,8 @@ class CollectionsScreen extends Component {
 const mapStateToProps = state => {
   return {
     user: state.user,
-    refresh: state.refresh
+    refresh: state.refresh,
+    accessToken: state.accessToken
   };
 }
 
