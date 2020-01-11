@@ -1,13 +1,16 @@
-import React, { Component, Fragment } from 'react';
+import React, { Component } from 'react';
 import {
   Text,
   View,
   Image,
   StyleSheet,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   StatusBar,
   SafeAreaView,
-  Platform
+  Platform,
+  Modal,
+  Clipboard
 } from 'react-native';
 import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -58,7 +61,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     color: DARKER_GREY
   },
-  buttonStyle: {
+  actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -66,8 +69,10 @@ const styles = StyleSheet.create({
     borderBottomColor: GREY,
     paddingVertical: 15
   },
-  buttonTextStyle: {
-    fontSize: 16
+  button: { 
+    color: ACCENT,
+    fontSize: 16,
+    paddingHorizontal: 7
   },
   safeArea: {
     flex: 1,
@@ -82,7 +87,7 @@ const styles = StyleSheet.create({
 function ActionButton(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
-      <View style={styles.buttonStyle}>
+      <View style={styles.actionButton}>
         <Text style={props.textStyle}>{props.title}</Text>
         {props.icon && <Icon name={props.icon} size={25} />}
       </View>
@@ -90,7 +95,19 @@ function ActionButton(props) {
   );
 }
 
+function Button(props) {
+  return (
+    <TouchableOpacity onPress={props.onPress}>
+      <Text style={styles.button}>{props.title}</Text>
+    </TouchableOpacity>
+  );
+}
+
 class ProfileScreen extends Component {
+
+  state = {
+    modalVisible: false
+  }
 
   componentDidMount() {
     this.firebaseListener = firebase.auth().onAuthStateChanged(user => {
@@ -117,6 +134,35 @@ class ProfileScreen extends Component {
 
     return (
       <SafeAreaView style={styles.safeArea}>
+        <Modal
+          animationType='fade'
+          visible={this.state.modalVisible}
+          transparent
+        >
+          <TouchableWithoutFeedback onPress={() => this.setState({modalVisible: false})}>
+            <View style={{backgroundColor: 'rgba(0, 0, 0, 0.5)', flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+              <TouchableWithoutFeedback onPress={() => console.log('hello world!')}>
+                <View style={{width: 300, height: 190, padding: 10, backgroundColor: 'white', elevation: 1}}>
+                  <Text style={{fontSize: 18, fontWeight: 'bold'}}>Your fingerprint is:</Text>
+                  <Text style={{alignSelf: 'center', marginVertical: 10}}>{this.props.user.fingerprint}</Text>
+                  <Text>You use fingerprints for searching and adding friends.</Text>
+                  <View style={{height: 14, marginTop: 10}}>
+                    <Text style={{color: ACCENT}}>{this.state.message}</Text>
+                  </View>
+                  <View style={{alignSelf: 'flex-end', flexDirection: 'row', marginTop: 20}}>
+                    <Button title='Copy' onPress={() => {
+                      Clipboard.setString(this.props.user.fingerprint);
+                      this.setState({message: 'Fingerprint copied to clipboard!'});
+                      setTimeout(() => this.setState({message: ''}), 5000);
+                      }} 
+                    />
+                    <Button title='Close' onPress={() => this.setState({modalVisible: false})} />
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
         <View style={styles.container}>
           <View style={styles.header}>
             <Image style={{width: 70, height: 70, borderRadius: 70 / 2}} source={{uri: this.props.user.photoUrl}} />
@@ -132,14 +178,14 @@ class ProfileScreen extends Component {
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionHeader}>ACTIONS</Text>
             <ActionButton
-              title='Tutorial'
-              onPress={this.tutorial}
-              textStyle={{...styles.textStyle, color: ACCENT}}
+              title='View fingerprint'
+              onPress={() => this.setState({modalVisible: true})}
+              textStyle={{color: ACCENT}}
             />
             <ActionButton
               title='Log out'
               onPress={this.logout}
-              textStyle={{...styles.textStyle, color: ACCENT}}
+              textStyle={{color: ACCENT}}
             />
           </View>
         </View>

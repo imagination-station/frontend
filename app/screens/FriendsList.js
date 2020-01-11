@@ -14,6 +14,8 @@ import { connect } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as firebase from 'firebase';
 
+import { TEST_SERVER_ADDR } from '../config/settings.js';
+
 // dimensions of the screen
 const { width } = Dimensions.get('window');
 
@@ -50,12 +52,23 @@ class FriendsList extends Component {
   }
 
   componentDidMount() {
-    fetch(`https://graph.facebook.com/${firebase.auth().currentUser.providerData[0].uid}/friends?access_token=${this.props.accessToken}`)
+    this.fetchFriends();
+  }
+
+  fetchFriends = () => {
+    firebase.auth().currentUser.getIdToken()
+      .then(token => 
+        fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/friends`, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        })
+      )
       .then(response => response.json())
-      .then(responseJson => {
-        console.log(responseJson);
-        this.setState({friends: responseJson});
-      });
+      .then(responseJson => this.setState({friends: responseJson.data}))
   }
 
   render() {
@@ -71,9 +84,7 @@ class FriendsList extends Component {
             <Text style={{fontSize: 32, fontWeight: 'bold', marginBottom: 5}}>Travel with your{'\n'}Friends.</Text>
             <Text style={{fontSize: 14}}>
               People you share with will be able to view{'\n'}
-              and edit your trip.{'\n\n'}
-              Only friends who downloaded {'&'} connected their{'\n'}
-              Facebook account will show up.
+              and edit your trip.{'\n'}
             </Text>
           </View>
           <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 30}}>

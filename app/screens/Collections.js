@@ -189,11 +189,6 @@ class CollectionsScreen extends Component {
 
   componentDidMount() {
     this.fetchRoutes();
-    fetch(`https://graph.facebook.com/me/friends?access_token=EAAo1aXkP5kQBAA9xyuXqMtvuKsZBJGR91ZCzkrZA9j8Tssa2anFljGr8t3Ai98ZBTzn94fTKX3EUYfXUGLAaiZBbRqoBbFemHqbmITg9DMrICzrEnMZAqtAlFnMURlWexQr1ZBaER1OuCS02RoxcaUZCsNFZABFv0RoWlR5kcAhTiWgiAZAyuTFJAC6lZBIOHxFEJJGpUsBwgKa6lHVXCKBBDf0`)
-    .then(response => response.json())
-    .then(responseJson => {
-      console.log(responseJson);
-    });
   }
 
   componentDidUpdate() {
