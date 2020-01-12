@@ -108,7 +108,7 @@ export default function RouteCard(props) {
               color='#e5446d'
               style={{marginRight: 3}}
             />
-            <Text style={{color: 'black', fontSize: 12}}>{props.numLikes}</Text>
+            <Text style={{color: 'white', fontSize: 12}}>{props.numLikes}</Text>
           </View>
         </View>
       </View>
