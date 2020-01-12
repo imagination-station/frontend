@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     flexGrow: 1
   },
   searchBoxContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     flexDirection: 'row',
     height: 46,
     borderRadius: 15,
@@ -278,22 +278,51 @@ function SearchItem(props) {
   );
 }
 
+// function RouteScrollView
+
+// function AnimatedScrollView() {
+//   return (
+//     <Animated.ScrollView
+//       contentContainerStyle={styles.endPadding}
+//       horizontal
+//       scrollEventThrottle={1}
+//       showsHorizontalScrollIndicator={false}
+//       onScroll={Animated.event([{nativeEvent: {contentOffset: {x: this.scrollValue}}}], {useNativeDriver: true})}
+//       style={{width: '100%', backgroundColor: 'transparent', paddingLeft: 10, marginBottom: 0}}
+//     >
+//   );
+// }
+
 class ExploreScreen extends Component {
 
   state = {
+    bookmarks: {},
     city: null,
+    cityByLocationServices: null,
+    interestedRoutes: [],
+    latitude: null,
+    liked: {},
+    longitude: null,
+    loaded: false,
+    nearbyRoutes: [],
     photoUri: '',
-    searchInput: '',
+    placeId: null,
+    popularRoutes: [],
     refreshing: false,
-    loaded: false
+    searchInput: '',
   };
 
   componentDidMount() {
     this.scrollValue = new Animated.Value(0);
+    console.log(this.props);
 
     navigator.geolocation.getCurrentPosition(position => {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
+      this.setState({
+        latitude: lat,
+        longitude: lng
+      });
 
       /* fetch city by user location (lat, lng) via Telepoort first,
          then fetch Google placeId using city's full name.
@@ -308,7 +337,10 @@ class ExploreScreen extends Component {
         })
         .then(response => response.json())
         .then(responseJson => {
-          this.setState({city: responseJson});
+          this.setState({
+            city: responseJson,
+            cityByLocationServices: responseJson
+          });
           this.fetchCityImage(responseJson);
         });
     });
@@ -316,6 +348,7 @@ class ExploreScreen extends Component {
 
   fetchCityImage = city => {
     // try to fetch image from Teleport first (sometimes slow)
+    let imageFound = false;
     if (city._links['city:urban_area']) {
       fetch(city._links['city:urban_area'].href + 'images/')
         .then(response => response.json())
@@ -325,22 +358,28 @@ class ExploreScreen extends Component {
               photoUri: responseJson.photos[0].image.mobile,
               loaded: true
             });
+            imageFound = true;
           }
         });
-      return;
     }
 
     // if no image found, try Google
+    console.log(`https://maps.googleapis.com/maps/api/geocode/json?address=${city.full_name}&key=${MAPS_API_KEY}`)
     fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${city.full_name}&key=${MAPS_API_KEY}`)
       .then(response => response.json())
       .then(responseJson => {
         const placeId = responseJson.results[0].place_id;
-        return fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}`);
+        this.setState({placeId: placeId});
+        this.getRoutes();
+        if (imageFound) {
+          return;
+        } else {
+          return fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${MAPS_API_KEY}`);
+        }
       })
       .then(response => response.json())
       .then(responseJson => {
         const ref = responseJson.result.photos[0].photo_reference;
-
         this.setState({
           photoUri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=${CITY_IMG_HEIGHT}&maxWidth=${CITY_IMG_WIDTH}`,
           loaded: true
@@ -371,6 +410,119 @@ class ExploreScreen extends Component {
     });
   }
 
+  onBookmark = (index) => {
+    let bookmarks = [...this.state.bookmarks];
+    bookmarks[index] = !this.state.bookmarks[index];
+    this.setState({bookmarks: bookmarks});
+    let bookmarks_id = [...this.state.bookmarks_id];
+    let routeId = this.state.routes[index]._id;
+    console.log(`Bookmarking Route ID: ${routeId}`);
+    if (bookmarks[index]) {
+      firebase.auth().currentUser.getIdToken().then(token =>
+        fetch(`${SERVER_ADDR}/users/${this.state.userId}/forks`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            routeId: routeId,
+          })
+        })
+      )
+      .then(response => response.json())
+      .then(responseJson => {
+        let tempID = responseJson["Mongo ObjectID"];
+        bookmarks_id[index] = tempID;
+        this.setState({bookmarks_id: bookmarks_id});
+      })
+     } else {
+       let route_id = this.state.bookmarks_id[index];
+       console.log(`Deleting ${route_id}`);
+       firebase.auth().currentUser.getIdToken().then(token =>
+         fetch(`${SERVER_ADDR}/cities/routes/${route_id}`, {
+           method: 'DELETE',
+           headers: {
+             Accept: 'application/json',
+             'Content-type': 'application/json',
+             Authorization: `Bearer ${token}`
+           }
+         }))
+         .then(response => response.json())
+         .then(responseJson => {
+           console.log(responseJson);
+         })
+    }
+  }
+
+  onLike = (index) => {
+    let likes = [...this.state.likes];
+    likes[index] = !this.state.likes[index];
+    this.setState({likes: likes});
+    let routeId = this.state.routes[index]._id;
+    console.log(`Liking Route ID: ${routeId}`);
+    like = likes[index] ? "like" : "unlike";
+    firebase.auth().currentUser.getIdToken().then(token =>
+      fetch(`${SERVER_ADDR}/cities/routes/${routeId}/likes`, {
+        method: 'PATCH',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          type: like,
+          userId: this.state.userId
+        })
+      })
+    )
+    .then(response => response.text())
+    .then(responseText => {
+      console.log(responseText);
+    })
+  }
+
+  getRoutes = () => {
+    // Getting nearby routes
+    firebase.auth().currentUser.getIdToken().then(token =>{
+      return fetch(`${SERVER_ADDR}/cities/routes/?lat=${this.state.longitude}&lng=${this.state.latitude}&page=0`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      })
+    })
+    .then(response => response.json())
+    .then(responseJson => {
+      this.setState({nearbyRoutes: responseJson});
+    })
+
+    // Getting tag routes
+    for (let i = 0; i < this.props.userTags.length; i++) {
+      let tag = this.props.userTags[i];
+      console.log(tag);
+      firebase.auth().currentUser.getIdToken().then(token =>{
+        return fetch(`${SERVER_ADDR}/cities/${this.state.placeId}/routes/?tag=${tag}&page=0`, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        })
+      })
+      .then(response => response.json())
+      .then(responseJson => {
+        let interestedRoutes = this.state.interestedRoutes;
+        interestedRoutes[tag] = responseJson;
+        this.setState({interestedRoutes: interestedRoutes});
+      })
+    }
+  }
+
   render() {
     if (!this.state.loaded) {
       return (
@@ -386,25 +538,116 @@ class ExploreScreen extends Component {
         refreshControl={
           <RefreshControl
             refreshing={this.state.refreshing}
-            onRefresh={this.onRefresh.bind(this)} />
-        }
-      >
-        <SearchBox onPress={this.onPressSearch} />
-        <View>
-          <Image
-            source={{uri: this.state.photoUri}} 
-            style={styles.cityImage}
-            loadingIndicatorSource={require('../assets/placeholder.jpg')}
-          />
-          <LinearGradient
-            colors={['rgba(0,0,0,0.3)', 'transparent', 'rgba(0,0,0,0.8)']}
-            style={styles.gradient}
-          />
-          <View style={{paddingLeft: 10, position: 'absolute', bottom: 10}}>
-            <Text style={styles.imageText}>
-              {this.state.loaded ? this.state.city.name : 'Loading...'}
-            </Text>
-          </View>
+            onRefresh={this.onRefresh.bind(this)}/>}
+          >
+        <View style={styles.container}>
+          <ScrollView style={{flex: 1}}>
+            <SearchBox onPress={this.onPressSearch} />
+            <View>
+              <Image
+                source={{uri: this.state.photoUri}}
+                style={styles.cityImage}
+                loadingIndicatorSource={require('../assets/placeholder.jpg')}
+              />
+              <LinearGradient
+                colors={['rgba(0,0,0,0.3)', 'transparent', 'rgba(0,0,0,0.8)']}
+                style={styles.gradient}
+              />
+              <View style={{paddingLeft: 10, position: 'absolute', bottom: 10}}>
+                <Text style={styles.imageText}>
+                  {this.state.loaded ? this.state.city.name : 'Loading...'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.sectionContainer}>
+              <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>Nearby</Text>
+              <Animated.ScrollView
+                contentContainerStyle={styles.endPadding}
+                horizontal
+                scrollEventThrottle={1}
+                showsHorizontalScrollIndicator={false}
+                onScroll={Animated.event([{nativeEvent: {contentOffset: {x: this.scrollValue}}}], {useNativeDriver: true})}
+                style={{width: '100%', backgroundColor: 'transparent', paddingLeft: 10, marginBottom: 0}}
+              >
+              {this.state.city == this.state.cityByLocationServices && this.state.nearbyRoutes.map((item, index) => {
+                let photoRef = item.pins[0].properties.photoRefs[0];
+                console.log('fuck');
+                console.log(item.numLikes);
+                return (
+                <RouteCard
+                 key={item._id}
+                 title={item.name}
+                 photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
+                 numLikes={item.numLikes}
+                 onPress={() => this.props.navigation.navigate('RouteDetail', {
+                   route: item
+                 })}
+                 // bookmarked={this.state.bookmarks[index]}
+                 // liked={this.state.likes[index]}
+                 // onBookmark={this.onBookmark(item._id)}
+                 // onLike={this.onLike(item._id)}
+               />)
+              })}
+              </Animated.ScrollView>
+              <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>Popular</Text>
+              <Animated.ScrollView
+                contentContainerStyle={styles.endPadding}
+                horizontal
+                scrollEventThrottle={1}
+                showsHorizontalScrollIndicator={false}
+                onScroll={Animated.event([{nativeEvent: {contentOffset: {x: this.scrollValue}}}], {useNativeDriver: true})}
+                style={{width: '100%', backgroundColor: 'transparent', paddingLeft: 10, marginBottom: 0}}
+              >
+              {this.state.popularRoutes != undefined && this.state.popularRoutes.map((item, index) => {
+                <RouteCard
+                 key={item._id}
+                 title={item.name}
+                 photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
+                 numLikes={item.numLikes}
+                 onPress={() => this.props.navigation.navigate('RouteDetail', {
+                   route: item
+                 })}
+                 // bookmarked={this.state.bookmarks[index]}
+                 // liked={this.state.likes[index]}
+                 // onBookmark={this.onBookmark(item._id)}
+                 // onLike={this.onLike(item._id)}
+               />
+              })}
+              </Animated.ScrollView>
+              {this.props.userTags.map((tag, index) => {
+                if (this.state.interestedRoutes[tag] != undefined && this.state.interestedRoutes[tag].length != 0) {
+                  console.log(tag, this.state.interestedRoutes[tag].length);
+                  return (
+                    <View style={styles.sectionContainer}>
+                      <Text style={{fontWeight: 'bold', fontSize: 18, marginLeft: 20}}>{tag}</Text>
+                      <Animated.ScrollView
+                        contentContainerStyle={styles.endPadding}
+                        horizontal
+                        scrollEventThrottle={1}
+                        showsHorizontalScrollIndicator={false}
+                        onScroll={Animated.event([{nativeEvent: {contentOffset: {x: this.scrollValue}}}], {useNativeDriver: true})}
+                        style={{width: '100%', backgroundColor: 'transparent', paddingLeft: 10, marginBottom: 0}}
+                      >
+                      {this.state.interestedRoutes[tag] != undefined && this.state.interestedRoutes[tag].map((item, index) => {
+                        let photoRef = item.pins[0].properties.photoRefs[0];
+                        return (
+                          <RouteCard
+                           key={item._id}
+                           title={item.name}
+                           photoRef={`https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${photoRef}&maxheight=800&maxWidth=800`}
+                           numLikes={item.numLikes}
+                           onPress={() => this.props.navigation.navigate('RouteDetail', {
+                             route: item
+                           })}
+                           // bookmarked={this.state.bookmarks[index]}
+                           // liked={this.state.likes[index]}
+                           // onBookmark={this.onBookmark(item._id)}
+                           // onLike={this.onLike(item._id)}
+                         />)})}
+                      </Animated.ScrollView>
+                    </View>)}})}
+            </View>
+          </ScrollView>
         </View>
       </ScrollView>
     );
@@ -415,7 +658,8 @@ const mapStateToProps = state => {
   return {
     userId: state.userId,
     latitude: state.latitude,
-    longitude: state.longitude
+    longitude: state.longitude,
+    userTags: state.userTags
   };
 }
 
