@@ -20,9 +20,9 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { DARKER_GREY, GREY, PRIMARY } from '../config/styles.js';
-import { SERVER_ADDR, TEST_SERVER_ADDR, MAPS_API_KEY } from '../config/settings.js';
+import { SERVER_ADDR, MAPS_API_KEY } from '../config/settings.js';
 
-const { width } = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 
 const CARD_HEIGHT = 200;
 const CARD_WIDTH = width - 40;
@@ -145,7 +145,7 @@ function RouteCard(props) {
         {buttons}
         <View style={cardStyles.textContent}>
           <Text style={cardStyles.cardtitle}>{props.route.name}</Text>
-          <Text style={{marginBottom: 5, color: GREY}}>{props.route.location.fullName}</Text>
+          <Text style={{marginBottom: 5, color: GREY}}>{props.route.city.name}</Text>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             <Icon
               name='favorite'
@@ -153,7 +153,7 @@ function RouteCard(props) {
               color='#e5446d'
               style={{marginRight: 3}}
             />
-            <Text style={{color: GREY, fontSize: 12}}>{0}</Text>
+            <Text style={{color: GREY, fontSize: 12}}>{props.route.numLikes}</Text>
           </View>
         </View>
       </View>
@@ -181,7 +181,7 @@ const screens = {
 class CollectionsScreen extends Component {
 
   state = {
-    saved: [],
+    routes: [],
     liked: [],
     screen: screens.MYTRIPS,
     refreshing: true
@@ -203,9 +203,9 @@ class CollectionsScreen extends Component {
     firebase.auth().currentUser.getIdToken()
       .then(token => {
         let fetches = [];
-        for (let endpoint of ['saved']) {
+        for (let identifier of ['routes', 'likes']) {
           fetches.push(
-            fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/routes/${endpoint}`, {
+            fetch(`${SERVER_ADDR}/users/${this.props.userId}/${identifier}`, {
               method: 'GET',
               headers: {
                 Accept: 'application/json',
@@ -221,15 +221,11 @@ class CollectionsScreen extends Component {
       })
       .then(responseJsons => {
         this.setState({
-          saved: responseJsons[0],
+          routes: responseJsons[0],
+          liked: responseJsons[1],
           refreshing: false
         });
       });
-  }
-
-  onPressRoute = route => {
-    this.props.loadRoute(route);
-    this.props.navigation.navigate('RouteDetails');
   }
 
   currentStyle = screen => {
@@ -241,7 +237,7 @@ class CollectionsScreen extends Component {
   }
 
   render() {
-    const current = this.state.screen == screens.MYTRIPS ? this.state.saved : this.state.liked;
+    const current = this.state.screen == screens.MYTRIPS ? this.state.routes : this.state.liked;
 
     const header = (
       <View style={styles.headerContainer}>
@@ -274,7 +270,9 @@ class CollectionsScreen extends Component {
                     key={item._id}
                     route={item}
                     buttons={this.state.screen != screens.MYTRIPS}
-                    onPress={() => this.onPressRoute(item)}
+                    onPress={() => this.props.navigation.navigate('RouteDetail', {
+                      route: item
+                    })}
                   />
                 );
               }}
@@ -285,7 +283,8 @@ class CollectionsScreen extends Component {
             /> : <Text style={{padding: 30, alignSelf: 'center', color: DARKER_GREY}}>Wow, so empty :)</Text>}
             <FAB onPress={() => {
               this.props.navigation.navigate('Location', {
-                purpose: 'CREATE_ROUTE'
+                purpose: 'ROUTE_CREATION',
+                update: this.fetchRoutes
               });
             }}/>
         </View>
@@ -293,27 +292,26 @@ class CollectionsScreen extends Component {
     }
 
     return (
-      <SafeAreaView style={styles.safeArea}>
-        {content}
-      </SafeAreaView>
+      <Fragment>
+        <SafeAreaView style={styles.safeStatusArea} />
+        <SafeAreaView style={styles.safeArea}>
+          {content}
+        </SafeAreaView>
+      </Fragment>
     );
   }
 }
 
 const mapStateToProps = state => {
   return {
-    user: state.user,
-    refresh: state.refresh,
-    accessToken: state.accessToken
+    userId: state.userId,
+    refresh: state.refresh
   };
 }
 
 const mapDispatchToProps = dispatch => {
   return {
-    toggleRefresh: () => dispatch({type: 'TOGGLE_REFRESH'}),
-    loadRoute: route => dispatch({type: 'LOAD_ROUTE', payload: {
-      route: route,
-    }})
+    toggleRefresh: () => dispatch({type: 'TOGGLE_REFRESH'})
   };
 }
 

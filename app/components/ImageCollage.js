@@ -3,6 +3,7 @@ import { StyleSheet, View, Image, Dimensions } from 'react-native';
 
 // dimensions of the screen
 const {width, height} = Dimensions.get('window');
+console.log(width);
 
 const IMG_WIDTH = Math.floor(width / 2.25);
 const IMG_HEIGHT = Math.floor(IMG_WIDTH * (3.0 / 4.0));
