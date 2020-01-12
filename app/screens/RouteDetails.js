@@ -801,7 +801,7 @@ class RouteDetailsScreen extends Component {
         body: JSON.stringify({	
           name: this.props.name,	
           creator: this.props.user._id,	
-          location: this.props.location._id,	
+          city: this.props.location._id,	
           pins: this.props.pins,	
           tags: this.state.tags	
         })	
