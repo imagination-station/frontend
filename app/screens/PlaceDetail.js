@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   }
 });
 
-class PlaceDetailsScreen extends Component {
+class PlaceDetailScreen extends Component {
 
   static navigationOptions = ({ navigation }) => {
     return {
@@ -63,10 +63,7 @@ class PlaceDetailsScreen extends Component {
         <OptionsMenu
           customButton={<Icon name='more-vert' size={30} color='black' style={{marginRight: 10}} />}
           options={['Edit', 'Delete']}
-          actions={[
-            () => navigation.navigate('PlaceEditor'),
-            () => console.log('Delete Place')
-          ]}
+          actions={[() => console.log('Edit Place'), () => console.log('Delete Place')]}
         />
       )
     };
@@ -74,21 +71,41 @@ class PlaceDetailsScreen extends Component {
 
   componentWillMount() {
     this.scrollValue = new Animated.Value(0);
-    if (this.props.pins[this.props.selected]._id) {
-      console.log('selected', this.props.pins[this.props.selected]._id);
-    }
   }
 
   render() {
-    const place = this.props.pins[this.props.selected];
+    const place = this.props.markers[this.props.selected];
+    // const photos = place.properties.photoRefs ?
+    //   place.properties.photoRefs.map(ref =>
+    //     <Image
+    //       source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=${CARD_WIDTH}`}}
+    //       style={styles.image}
+    //       key={ref}
+    //     />
+    //   ) : <Image source={{uri: PLACEHOLDER_IMG}} style={styles.image} />;
+
     const photoUris = place.properties.photoRefs
         ? place.properties.photoRefs.map(ref => `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=800&maxWidth=1000`)
         : [];
+      
 
-    const placeholder = 'Write interesting facts, things to do, or anything you want to record about this place.';
+    let placeholder;
+    if (this.props.editable) {
+      placeholder = 'Write interesting facts, things to do, or anything you want to record about this place.';
+    } else {
+      placeholder = 'No notes :(';
+    }
 
     return (
       <ScrollView style={styles.container}>
+        {/* <ImageCarousel
+          width={width}
+          scrollValue={this.scrollValue}
+          containerStyle={styles.scrollViewContainer}
+          scrollViewStyle={styles.imageScrollView}
+        >
+          {photos}
+        </ImageCarousel> */}
         <View style={styles.textContainer}>
           <Text style={styles.mainText}>{place.properties.mainText}</Text>
           <Text style={styles.secondaryText}>{place.properties.secondaryText}</Text>
@@ -118,9 +135,9 @@ class PlaceDetailsScreen extends Component {
 
 const mapStateToProps = state => {
   return {
-    pins: state.pins,
-    selected: state.selected
+    markers: state.markers,
+    selected: state.selected,
   };
 }
 
-export default connect(mapStateToProps)(PlaceDetailsScreen);
+export default connect(mapStateToProps)(PlaceDetailScreen);

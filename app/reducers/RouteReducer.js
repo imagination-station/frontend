@@ -1,108 +1,97 @@
 const INITIAL_STATE = {
-  user: null,
-  accessToken: null,
-  // route flattened for easy updating
-  name: null,
-  creator: null,
-  location: null,
-  pins: null,
-  tags: null,
-  collaborators: null,
-  // for selecting & editing place
+  markers: [],
+  steps: [],
   selected: null,
-  selectedBuf: null, // buffer to save intermediate changes
-  refresh: false
+  showRoute: null,
+  userId: null,
+  refresh: false,
+  latitude: null,
+  longitude: null
 };
 
 const routeReducer = (state = INITIAL_STATE, action) => {
-  let updatedPins;
-
   switch (action.type) {
-    case 'SET_USER':
+    case 'ADD':
       return {
         ...state,
-        user: action.payload.user
+        markers: [...state.markers, action.payload.marker],
+        steps: action.payload.routeInfo ? [...state.steps, action.payload.routeInfo] : state.steps
       };
-    case 'SET_ACCESS_TOKEN':
+    case 'REMOVE':
+      let indexToRemove;
       return {
         ...state,
-        accessToken: action.payload.token
+        markers: state.markers.filter((marker, index) => {
+          if (marker.properties.placeId == action.payload.id) {
+            if (index == state.markers.length - 1) {
+              indexToRemove = state.steps.length - 1;
+            } else {
+              indexToRemove = index;
+            }
+            return false;
+          }
+
+          return true;
+        }),
+        steps: state.steps.filter((_, index) => index != indexToRemove),
+      };
+    case 'VIEW_DETAIL':
+      return {
+        ...state,
+        selected: action.payload.selectedIndex
+      };
+    case 'UPDATE':
+      let updatedMarkers = [...state.markers];
+      let updatedMarker = {...state.markers[state.selected]};
+      updatedMarker.properties = {
+        ...updatedMarker.properties,
+        note: action.payload.note
+      };
+      updatedMarkers[state.selected] = updatedMarker;
+
+      return {
+        ...state,
+        markers: updatedMarkers
+      };
+    case 'CLEAR':
+      return {
+        markers: [],
+        steps: [],
+        selected: null,
+        showRoute: null
+      };
+    case 'LOG_IN':
+      return {
+        ...state,
+        userId: action.payload.userId,
+        userTags: action.payload.userTags
       };
     case 'LOAD_ROUTE':
       return {
         ...state,
-        ...action.payload.route
+        markers: action.payload.markers,
+        steps: action.payload.steps
       };
-    case 'ADD_PIN':
+    case 'SELECT_ROUTE':
       return {
         ...state,
-        pins: state.pins ? [...state.pins, action.payload.pin] : [action.payload.pin]
+        showRoute: action.payload.selectedIndex
       };
-    case 'REMOVE_PIN':
+    case 'CLEAR_ROUTE':
       return {
         ...state,
-        pins: state.pins.filter((pin, index) => index != action.payload.indexToRemove)
+        showRoute: null
       };
-    case 'SWAP_PINS':
-      updatedPins = [...state.pins];
-      
-      let updated;
-      let swapTo;
-      for (let i of [0, 1]) {
-        updated = {...action.payload.pins[i]};
-        swapTo = (i + 1) % 2;
-        updatedPins[action.payload.indices[swapTo]] = updated;
+    case 'SET_LATITUDE':
+      return {
+        ...state,
+        latitude: action.payload.latitude
+      };
+    case 'SET_LONGITUDE':
+      return {
+        ...state,
+        longitude: action.payload.longitude
       }
-
-      return {
-        ...state,
-        pins: updatedPins
-      };
-    case 'EDIT_ROUTE_NAME':
-      return {
-        ...state,
-        name: action.payload.name
-      };
-    case 'VIEW_PLACE_DETAIL':
-      let selectedBuf = {...state.pins[action.payload.selectedIndex]};
-      selectedBuf.properties = {...selectedBuf.properties};
-      selectedBuf.properties.photoRefs = [...selectedBuf.properties.photoRefs];
-
-      return {
-        ...state,
-        selected: action.payload.selectedIndex,
-        selectedBuf: selectedBuf
-      };
-    case 'UPDATE_PIN':
-      updatedPin = {...state.selectedBuf};
-      updatedPin.properties = {
-        ...updatedPin.properties,
-        ...action.payload.data
-      };
-
-      return {
-        ...state,
-        selectedBuf: updatedPin  
-      };
-    case 'COMMIT_PIN':
-      updatedPins = [...state.pins];
-      updatedPins[state.selected] = state.selectedBuf;
-
-      return {
-        ...state,
-        pins: updatedPins
-      };
-    case 'CLEAR':
-      return {
-        ...state,
-        selected: null,
-        name: null,
-        creator: null,
-        location: null,
-        pins: null,
-        tags: null,
-        collaborators: null
-      };
     case 'TOGGLE_REFRESH':
       return {
         ...state,
