@@ -3,6 +3,8 @@ import env from './.env.json';
 export const MAPS_API_KEY = env.MAPS_API_KEY;
 export const SERVER_ADDR = env.API_SERVER_ADDR;
 
+export const TEST_SERVER_ADDR = 'https://30ec3c47.ngrok.io';
+
 // hardcoded values for Providence; replace later
 export const INIT_LOCATION = {
   latitude: 41.8239891,
@@ -16,17 +18,21 @@ export const PLACE_ID = 'ChIJXXN-Q-BE5IkRJ7azSE1832k';
 export const GEONAME_ID = '5224151';
 export const NAME = 'Providence';
 
+export const PLACES_AUTOCOMPLETE_URL = 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
+
 export const PLACEHOLDER_IMG = 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/404_Store_Not_Found.jpg/1024px-404_Store_Not_Found.jpg';
 
 // hardcoded tags
 export const TAGS = [
   'Budget',
   'Walkable',
-  'Historical',
-  'Art & Architecture',
-  'Local Approved',
-  'Iconic',
-  'Foodie'
+  'History',
+  'Art',
+  'Urban',
+  'Architecture',
+  'Romantic',
+  'Nature',
+  'Food'
 ];
 
 export const FIREBASE_CONFIG = {

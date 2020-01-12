@@ -11,9 +11,13 @@ import LoginScreen from './app/screens/Login.js';
 import ExploreScreen, { CitySearchScreen, RouteFilterScreen } from './app/screens/Explore.js';
 import CollectionsScreen from './app/screens/Collections.js';
 import ProfileScreen from './app/screens/Profile.js';
-import MapScreen, { MapSearchScreen, NoteEditorScreen } from './app/screens/RouteEditor.js';
-import PlaceDetailScreen from './app/screens/PlaceDetail.js';
-import RouteDetailScreen from './app/screens/RouteDetail.js';
+
+import RouteDetailsScreen, { MapSearchScreen } from './app/screens/RouteDetails.js';
+import PlaceDetailsScreen from './app/screens/PlaceDetails.js';
+import PlaceEditorScreen, { PhotoRemoverScreen } from './app/screens/PlaceEditor.js';
+import TextEditorScreen from './app/screens/TextEditor.js';
+import FriendsListScreen from './app/screens/FriendsList.js';
+
 import SignUpScreen from './app/screens/SignUp.js';
 import SplashScreen from './app/screens/Splash.js';
 import TutorialScreen from './app/screens/Tutorial.js';
@@ -78,20 +82,21 @@ const HomeStack = createStackNavigator({
     }
   },
   CitySearch: mapNavigationStateParamsToProps(CitySearchScreen),
-  RouteFilter: mapNavigationStateParamsToProps(RouteFilterScreen),
-  RouteEditor: mapNavigationStateParamsToProps(MapScreen),
   Location: mapNavigationStateParamsToProps(LocationScreen),
   MapSearch: mapNavigationStateParamsToProps(MapSearchScreen),
-  PlaceDetail: mapNavigationStateParamsToProps(PlaceDetailScreen),
-  NoteEditor: mapNavigationStateParamsToProps(NoteEditorScreen),
-  RouteDetail: RouteDetailScreen,
+  PlaceDetails: mapNavigationStateParamsToProps(PlaceDetailsScreen),
+  PlaceEditor: mapNavigationStateParamsToProps(PlaceEditorScreen),
+  PhotoRemover: mapNavigationStateParamsToProps(PhotoRemoverScreen),
+  TextEditor: mapNavigationStateParamsToProps(TextEditorScreen),
+  RouteDetails: RouteDetailsScreen,
+  FriendsList: mapNavigationStateParamsToProps(FriendsListScreen),
   Tutorial: TutorialScreen
 });
 
 const AuthStack = createStackNavigator({
   Login: LoginScreen,
   SignUp: SignUpScreen,
-  Location: LocationScreen,
+  Location: mapNavigationStateParamsToProps(LocationScreen),
   Interests: InterestsScreen,
 }, {
   initialRouteName: 'Login'

@@ -7,13 +7,14 @@ import {
   TouchableOpacity,
   Image,
   StatusBar,
-  Platform
+  Platform,
+  AsyncStorage
 } from 'react-native';
 import * as firebase from 'firebase';
 import * as Facebook from 'expo-facebook';
 import { connect } from 'react-redux';
 
-import { SERVER_ADDR } from '../config/settings.js';
+import { SERVER_ADDR, TEST_SERVER_ADDR } from '../config/settings.js';
 import { GREY, DARKER_GREY, ACCENT, PRIMARY, FACEBOOK } from '../config/styles.js';
 
 const styles = StyleSheet.create({
@@ -79,9 +80,13 @@ class LoginScreen extends Component {
     password: ''
   };
 
+  // componentDidMount() {
+  //   fetch(`${TEST_SERVER_ADDR}/ping`)
+  //     .then(response => console.log(response));
+  // }
+
   logInWithEmail = () => {
-    firebase.auth()
-      .signInWithEmailAndPassword(this.state.email, this.state.password)
+    firebase.auth().signInWithEmailAndPassword(this.state.email, this.state.password)
       .then(cred => {
         return cred.user.getIdToken();
       })
@@ -105,31 +110,86 @@ class LoginScreen extends Component {
 
   logInWithFacebook = async () => {
     try {
+      await Facebook.initializeAsync('2873476886029892');
       const {
         type,
-        token
+        token,
+        expires,
+        declinedPermissions
       } = await Facebook.logInWithReadPermissionsAsync('2873476886029892', {
-        permissions: ['public_profile'],
+        permissions: ['public_profile', 'email', 'user_friends'],
       });
 
       switch (type) {
         case 'success':
+          await AsyncStorage.setItem('ACCESS_TOKEN', JSON.stringify({
+            token: token,
+            expires: expires
+          }));
+          // store access token in redux store
+          this.props.setAccessToken(token);
+
+          let location;
+          
           await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
           const credential = firebase.auth.FacebookAuthProvider.credential(token);
           firebase.auth().signInWithCredential(credential)
             .then(cred => {
-              console.log('logged in with facebook!');
               if (!cred.additionalUserInfo.isNewUser) {
-                this.props.navigation.navigate('Home');
-              } else {
-                console.log('new user!');
-                // TODO: POST request to API server
-                this.props.navigation.navigate('Location', {
-                  purpose: 'SIGN_UP'
-                });
+                firebase.auth().currentUser.getIdToken()
+                  .then(token =>
+                    fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}`, {
+                      headers: {
+                        Accept: 'application/json',
+                        'Content-type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                      },
+                    }))
+                  .then(response => response.json())
+                  .then(responseJson => {
+                    this.props.setUser(responseJson);
+                    this.props.navigation.navigate('Home');
+                  });
+                return;
               }
-            }
-          ); 
+
+              fetch(`${TEST_SERVER_ADDR}/api/users`, {
+                method: 'POST',
+                headers: {
+                  Accept: 'application/json',
+                  'Content-type': 'application/json',
+                },
+                body: JSON.stringify({
+                  fullName: cred.additionalUserInfo.profile.name,
+                  email: cred.additionalUserInfo.profile.email,
+                  authProvider: cred.additionalUserInfo.providerId,
+                  photoUrl: cred.additionalUserInfo.profile.picture.data.url,
+                  interests: [],
+                  _id: firebase.auth().currentUser.uid
+                })
+              })
+                .then(response => {
+                  location = response.headers.map.location;
+                  return firebase.auth().currentUser.getIdToken();
+                })
+                .then(token =>
+                  fetch(`${TEST_SERVER_ADDR}${location}`, {
+                    headers: {
+                      Accept: 'application/json',
+                      'Content-type': 'application/json',
+                      Authorization: `Bearer ${token}`
+                    },
+                  }))
+                .then(response => response.json())
+                .then(async responseJson => {
+                  this.props.setUser(responseJson);
+                  this.props.navigation.navigate('Location', {
+                    purpose: 'UPDATE_USER'
+                  });
+                  return;
+                })
+                .catch(error => console.error(error));
+            }); 
 
           return Promise.resolve({type: 'success'});
         case 'cancel':
@@ -152,7 +212,7 @@ class LoginScreen extends Component {
         {/* don't worry, this is just a temporary logo. */}
         <Image
           style={styles.logo}
-          source={require('../assets/logo.png')}
+          source={require('../assets/logo-solid.png')}
         />
         <TextInput
           style={styles.textInput}
@@ -179,7 +239,7 @@ class LoginScreen extends Component {
           textStyle={{...styles.logInButtton, backgroundColor: FACEBOOK}}
         />
         <View style={{marginTop: 40, flexDirection: 'row', alignItems: 'center'}}>
-          <Text style={{color: DARKER_GREY}}>{"Don't have an account? "}</Text>
+          <Text style>{"Don't have an account? "}</Text>
           <SignUpButton
             title='Sign up.'
             onPress={this.onPressSignup}
@@ -193,11 +253,16 @@ class LoginScreen extends Component {
 
 const mapDispatchToProps = dispatch => {
   return {
-    logIn: (id) => {
-      dispatch({type: 'LOG_IN', payload: {
-        userId: id,
+    setUser: user => {
+      dispatch({type: 'SET_USER', payload: {
+        user: user,
       }});
     },
+    setAccessToken: token => {
+      dispatch({type: 'SET_ACCESS_TOKEN', payload: {
+        token: token
+      }});
+    }
   };
 }
 

@@ -1,9 +1,24 @@
-import React, { Component, Fragment } from 'react';
-import { Text, View, Image, StyleSheet, TouchableOpacity, StatusBar, SafeAreaView, Platform } from 'react-native';
+import React, { Component } from 'react';
+import {
+  Text,
+  View,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  StatusBar,
+  SafeAreaView,
+  Platform,
+  Modal,
+  Clipboard
+} from 'react-native';
 import * as firebase from 'firebase';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { connect } from 'react-redux';
 
 import { DARKER_GREY, GREY, PRIMARY, ACCENT } from '../config/styles.js';
+
+const PROFILE_PIC_SIZE = 70;
 
 const styles = StyleSheet.create({
   container: {
@@ -19,6 +34,11 @@ const styles = StyleSheet.create({
     elevation: 0.5,
     backgroundColor: 'white'
   },
+  profilePic: {
+    width: PROFILE_PIC_SIZE,
+    height: PROFILE_PIC_SIZE,
+    borderRadius: PROFILE_PIC_SIZE / 2
+  },
   headerTextContainer: {
     flex: 1,
     marginLeft: 25
@@ -28,8 +48,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   },
   headerSecondaryText: {
-    fontSize: 14,
-    color: PRIMARY
+    color: PRIMARY,
+    fontSize: 16
   },
   sectionContainer: {
     padding: 20,
@@ -41,7 +61,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     color: DARKER_GREY
   },
-  buttonStyle: {
+  actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -49,8 +69,10 @@ const styles = StyleSheet.create({
     borderBottomColor: GREY,
     paddingVertical: 15
   },
-  buttonTextStyle: {
-    fontSize: 16
+  button: { 
+    color: ACCENT,
+    fontSize: 16,
+    paddingHorizontal: 7
   },
   safeArea: {
     flex: 1,
@@ -62,13 +84,10 @@ const styles = StyleSheet.create({
   }
 });
 
-const NAME = 'Matias Sanders';
-const BIO = "Hello! I'm a professor of art history at Georgia State. I have lived in Atlanta for about 10 years."
-
 function ActionButton(props) {
   return (
     <TouchableOpacity onPress={props.onPress}>
-      <View style={styles.buttonStyle}>
+      <View style={styles.actionButton}>
         <Text style={props.textStyle}>{props.title}</Text>
         {props.icon && <Icon name={props.icon} size={25} />}
       </View>
@@ -76,7 +95,19 @@ function ActionButton(props) {
   );
 }
 
+function Button(props) {
+  return (
+    <TouchableOpacity onPress={props.onPress}>
+      <Text style={styles.button}>{props.title}</Text>
+    </TouchableOpacity>
+  );
+}
+
 class ProfileScreen extends Component {
+
+  state = {
+    modalVisible: false
+  }
 
   componentDidMount() {
     this.firebaseListener = firebase.auth().onAuthStateChanged(user => {
@@ -99,40 +130,74 @@ class ProfileScreen extends Component {
   }
 
   render() {
+    const bio = this.props.user.bio ? this.props.user.bio : `Hello! My name is ${this.props.user.fullName}.`;
+
     return (
-      <Fragment>
-        <SafeAreaView style={styles.safeStatusArea} />
-        <SafeAreaView style={styles.safeArea}>
-          <View style={styles.container}>
-            <View style={styles.header}>
-              <Image style={{width: 70, height: 70, borderRadius: 70 / 2}} source={require('../assets/profile-pic.jpg')} />
-              <View style={styles.headerTextContainer}>
-                <Text style={styles.headerMainText}>{NAME}</Text>
-                <Text style={styles.headerSecondaryText}>{firebase.auth().currentUser.email}</Text>
-              </View>
+      <SafeAreaView style={styles.safeArea}>
+        <Modal
+          animationType='fade'
+          visible={this.state.modalVisible}
+          transparent
+        >
+          <TouchableWithoutFeedback onPress={() => this.setState({modalVisible: false})}>
+            <View style={{backgroundColor: 'rgba(0, 0, 0, 0.5)', flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+              <TouchableWithoutFeedback onPress={() => console.log('hello world!')}>
+                <View style={{width: 300, height: 190, padding: 10, backgroundColor: 'white', elevation: 1}}>
+                  <Text style={{fontSize: 18, fontWeight: 'bold'}}>Your fingerprint is:</Text>
+                  <Text style={{alignSelf: 'center', marginVertical: 10}}>{this.props.user.fingerprint}</Text>
+                  <Text>You use fingerprints for searching and adding friends.</Text>
+                  <View style={{height: 14, marginTop: 10}}>
+                    <Text style={{color: ACCENT}}>{this.state.message}</Text>
+                  </View>
+                  <View style={{alignSelf: 'flex-end', flexDirection: 'row', marginTop: 20}}>
+                    <Button title='Copy' onPress={() => {
+                      Clipboard.setString(this.props.user.fingerprint);
+                      this.setState({message: 'Fingerprint copied to clipboard!'});
+                      setTimeout(() => this.setState({message: ''}), 5000);
+                      }} 
+                    />
+                    <Button title='Close' onPress={() => this.setState({modalVisible: false})} />
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
             </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionHeader}>BIO</Text>
-              <Text style={{lineHeight: 20}}>{BIO}</Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionHeader}>ACTIONS</Text>
-              <ActionButton
-                title='Tutorial'
-                onPress={this.tutorial}
-                textStyle={{...styles.textStyle, color: ACCENT}}
-              />
-              <ActionButton
-                title='Log out'
-                onPress={this.logout}
-                textStyle={{...styles.textStyle, color: ACCENT}}
-              />
+          </TouchableWithoutFeedback>
+        </Modal>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Image style={{width: 70, height: 70, borderRadius: 70 / 2}} source={{uri: this.props.user.photoUrl}} />
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerMainText}>{this.props.user.fullName}</Text>
+              <Text style={styles.headerSecondaryText}>{this.props.user.location.fullName}</Text>
             </View>
           </View>
-        </SafeAreaView>
-      </Fragment>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionHeader}>BIO</Text>
+            <Text style={{lineHeight: 20}}>{bio}</Text>
+          </View>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionHeader}>ACTIONS</Text>
+            <ActionButton
+              title='View fingerprint'
+              onPress={() => this.setState({modalVisible: true})}
+              textStyle={{color: ACCENT}}
+            />
+            <ActionButton
+              title='Log out'
+              onPress={this.logout}
+              textStyle={{color: ACCENT}}
+            />
+          </View>
+        </View>
+      </SafeAreaView>
     );
   }
 }
 
-export default ProfileScreen;
+const mapStateToProps = state => {
+  return {
+    user: state.user
+  };
+}
+
+export default connect(mapStateToProps)(ProfileScreen);

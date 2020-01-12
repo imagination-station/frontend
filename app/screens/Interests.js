@@ -4,105 +4,180 @@ import {
   View,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  ActivityIndicator,
+  TouchableWithoutFeedback,
   FlatList,
-  ScrollView
+  SafeAreaView,
+  Platform,
+  StatusBar
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { connect } from 'react-redux';
+import * as firebase from 'firebase';
 
-import { GREY, PRIMARY, AQUAMARINE } from '../config/styles.js';
-import { TAGS } from '../config/settings.js';
+import { PRIMARY, ACCENT, BABY_POWDER, GREY, DARKER_GREY } from '../config/styles.js';
+import { TAGS, TEST_SERVER_ADDR } from '../config/settings.js';
 
 const styles = StyleSheet.create({
-  button: { 
-    color: AQUAMARINE,
-    fontSize: 18,
-    paddingHorizontal: 7,
-    marginRight: 10,
-    opacity: 1
+  header: {
+    marginTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 5
   },
   container: {
     flex: 1,
-    alignItems: 'center'
+    paddingHorizontal: 20,
+    paddingTop: 30
   },
   box: {
-    width: 170,
-    height: 170,
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    marginLeft: 15,
-    marginBottom: 15,
-    borderWidth: 2, borderColor: GREY
+    borderWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginBottom: 5,
+    marginRight: 5,
+    borderColor: 'grey',
+    borderRadius: 15
   },
   highlighted: {
-    width: 170,
-    height: 170,
-    backgroundColor: AQUAMARINE,
-    justifyContent: 'center',
-    marginLeft: 15,
-    marginBottom: 15,
+    borderWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginBottom: 5,
+    marginRight: 5,
+    borderColor: ACCENT,
+    borderRadius: 15
+  },
+  nextButton: {
+    backgroundColor: ACCENT,
+    borderRadius: 45 / 2,
+    marginRight: 10
+  },
+  nextButtonDisabled: {
+    backgroundColor: GREY,
+    borderRadius: 45 / 2,
+    marginRight: 10
   }
 });
 
 class Interests extends Component {
 
-  static navigationOptions = ({ navigation }) => {
+  static navigationOptions = () => {
     return {
-      headerTitle: () => <Text style={{fontSize: 20, marginLeft: 10}}>Interests</Text>,
-      headerRight: () => (
-        <TouchableOpacity
-          // TODO: PUT request to API server
-        >
-          {/* make Next button opaque until city is chosen */}
-          <Text style={{...styles.button, opacity: 1}}>Done!</Text>
-        </TouchableOpacity>
-      )
-    }
+      header: null
+    };
   }
 
   state = {
-    interests: []
+    interests: new Set()
   };
 
-  onToggleInterestBox = index => {
-    if (this.state.interests.includes(index)) {
-      this.setState({
-        interests: this.state.interests.filter(i => i != index)
-      });
+  onToggleInterestBox = item => {
+    let updatedInterests = new Set(this.state.interests);
+
+    if (this.state.interests.has(item)) {
+      updatedInterests.delete(item);
     } else {
-      this.setState({
-        interests: [...this.state.interests, index]
-      });
+      updatedInterests.add(item);
     }
+
+    this.setState({interests: updatedInterests});
+  }
+
+  onPressNext = () => {
+    firebase.auth().currentUser.getIdToken()
+      .then(token =>
+        fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}`, {
+          method: 'PUT',
+          headers: {
+            Accept: 'application/json',
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            interests: [...this.state.interests]
+          })
+        })
+      )
+      .then(response => {
+        if (response.ok) {
+          return firebase.auth().currentUser.getIdToken();
+        }
+      })
+      .then(token =>
+        fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}`, {
+          headers: {
+            Accept: 'application/json',
+            'Content-type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+        })
+      )
+      .then(response => response.json())
+      .then(responseJson => {
+        this.props.setUser(responseJson);
+        this.props.navigation.navigate('Home');
+      })
+      .catch(error => console.error(error));
   }
 
   render() {
     return (
-      <View style={styles.container}>
-        <View style={{width: '90%', marginVertical: 10, marginHorizontal: '5%'}}>
-          <Text style={{fontSize: 32, color: 'grey'}}>What are</Text>
-          <Text style={{fontSize: 32, color: 'grey'}}>you interested in?</Text>
-          <View style={{flexDirection: 'row', marginTop: 10}}>
-            <Icon name='help-outline' size={20} color={PRIMARY} style={{marginRight: 5}}/>
-            <Text>This helps us better individualize content.</Text>
-          </View>
+      <SafeAreaView style={{flex: 1}}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => this.props.navigation.goBack()}>
+            <Icon name='keyboard-arrow-left' size={45} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={this.state.interests.size > 0 ? styles.nextButton : styles.nextButtonDisabled}
+            onPress={this.onPressNext}
+          >
+            <Icon
+              name='keyboard-arrow-right'
+              size={45}
+              color={'white'}
+            />
+          </TouchableOpacity>
         </View>
+      <View style={styles.container}>
+        <Text style={{fontSize: 32, fontWeight: 'bold', marginBottom: 5}}>
+          What are you{'\n'}interested in?
+        </Text>
+        <Text style={{fontSize: 18, marginBottom: 45}}>
+          We will customize your feed based on them.
+        </Text>
         <FlatList
-          style={{padding: 10, width: '100%'}}
+          style={{width: '100%'}}
           data={TAGS}
-          renderItem={({ item , index }) => <TouchableOpacity onPress={() => this.onToggleInterestBox(index)}>
-            <View style={this.state.interests.includes(index) ? styles.highlighted : styles.box}>
-              <Text style={{fontSize: 18, textAlign: 'center', color: this.state.interests.includes(index) ? 'white' : 'grey'}}>{item}</Text>
+          renderItem={({ item }) => <TouchableWithoutFeedback onPress={() => this.onToggleInterestBox(item)}>
+            <View style={this.state.interests.has(item) ? styles.highlighted : styles.box}>
+              <Text style={{fontSize: 18, textAlign: 'center', color: this.state.interests.has(item) ? ACCENT : 'black'}}>{item}</Text>
             </View>
-          </TouchableOpacity>}
-          numColumns={2}
+          </TouchableWithoutFeedback>}
+          numColumns={3}
           keyExtractor={item => item}
         />
       </View>
-    );
+    </SafeAreaView>
+  );
   }
 }
 
-export default Interests;
+const mapStateToProps = state => {
+  return {
+    user: state.user
+  };
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    setUser: user => {
+      dispatch({type: 'SET_USER', payload: {
+        user: user,
+      }});
+    }
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Interests);
