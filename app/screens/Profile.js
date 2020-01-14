@@ -176,16 +176,22 @@ class ProfileScreen extends Component {
             <Text style={{lineHeight: 20}}>{bio}</Text>
           </View>
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionHeader}>ACTIONS</Text>
+            <Text style={styles.sectionHeader}>SOCIAL</Text>
             <ActionButton
               title='View fingerprint'
               onPress={() => this.setState({modalVisible: true})}
-              textStyle={{color: ACCENT}}
             />
+            <ActionButton
+              title='Add friends'
+              onPress={() => this.props.navigation.navigate('FriendSearch')}
+            />
+          </View>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionHeader}>ACTIONS</Text>
             <ActionButton
               title='Log out'
               onPress={this.logout}
-              textStyle={{color: ACCENT}}
+              textStyle={{color: 'red'}}
             />
           </View>
         </View>

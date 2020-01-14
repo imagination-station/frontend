@@ -11,6 +11,7 @@ import LoginScreen from './app/screens/Login.js';
 import ExploreScreen, { CitySearchScreen, RouteFilterScreen } from './app/screens/Explore.js';
 import CollectionsScreen from './app/screens/Collections.js';
 import ProfileScreen from './app/screens/Profile.js';
+import FriendSearchScreen from './app/screens/FriendSearch.js';
 
 import RouteDetailsScreen, { MapSearchScreen } from './app/screens/RouteDetails.js';
 import PlaceDetailsScreen from './app/screens/PlaceDetails.js';
@@ -90,6 +91,7 @@ const HomeStack = createStackNavigator({
   TextEditor: mapNavigationStateParamsToProps(TextEditorScreen),
   RouteDetails: RouteDetailsScreen,
   FriendsList: mapNavigationStateParamsToProps(FriendsListScreen),
+  FriendSearch: mapNavigationStateParamsToProps(FriendSearchScreen),
   Tutorial: TutorialScreen
 });
 
