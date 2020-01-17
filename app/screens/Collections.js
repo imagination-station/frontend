@@ -18,6 +18,8 @@ import * as firebase from 'firebase';
 import { connect } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Constants from 'expo-constants';
+import * as Permissions from 'expo-permissions';
 
 import { DARKER_GREY, GREY, PRIMARY } from '../config/styles.js';
 import { SERVER_ADDR, TEST_SERVER_ADDR, MAPS_API_KEY } from '../config/settings.js';
@@ -49,7 +51,7 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    backgroundColor: GREY
+    backgroundColor: PRIMARY
   },
   safeStatusArea: {
     flex: 0,
@@ -189,12 +191,25 @@ class CollectionsScreen extends Component {
 
   componentDidMount() {
     this.fetchRoutes();
+    this.getPermissionAsync();
   }
 
   componentDidUpdate() {
     if (this.props.refresh) {
       this.fetchRoutes();
       this.props.toggleRefresh();
+    }
+  }
+
+  getPermissionAsync = async () => {
+    console.log('get permission');
+    if (Constants.platform.ios) {
+      const { status } = await Permissions.askAsync(Permissions.CAMERA_ROLL);
+      if (status !== 'granted') {
+        alert('Sorry, we need camera roll permissions to make this work!');
+      } else {
+        console.log('Photo permissions granted');
+      }
     }
   }
 

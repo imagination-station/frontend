@@ -69,14 +69,14 @@ const styles = StyleSheet.create({
     borderBottomColor: GREY,
     paddingVertical: 15
   },
-  button: { 
+  button: {
     color: ACCENT,
     fontSize: 16,
     paddingHorizontal: 7
   },
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor: PRIMARY
   },
   safeStatusArea: {
     flex: 0,
@@ -154,7 +154,7 @@ class ProfileScreen extends Component {
                       Clipboard.setString(this.props.user.fingerprint);
                       this.setState({message: 'Fingerprint copied to clipboard!'});
                       setTimeout(() => this.setState({message: ''}), 5000);
-                      }} 
+                      }}
                     />
                     <Button title='Close' onPress={() => this.setState({modalVisible: false})} />
                   </View>
