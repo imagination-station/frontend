@@ -17,6 +17,8 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { connect } from 'react-redux';
 
 import { DARKER_GREY, GREY, PRIMARY, ACCENT } from '../config/styles.js';
+import { TEST_SERVER_ADDR } from '../config/settings.js';
+
 
 const PROFILE_PIC_SIZE = 70;
 
@@ -115,6 +117,30 @@ class ProfileScreen extends Component {
         this.props.navigation.navigate('Auth');
       }
     });
+
+    firebase.auth().currentUser.getIdToken()
+      .then(token =>
+        fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/friends`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+      )
+      .then(response => response.json())
+      .then(responseJson => this.props.setFriends(responseJson.data))
+      .catch(error => console.error(error));
+
+    firebase.auth().currentUser.getIdToken()
+      .then(token =>
+        fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/requests`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+      )
+      .then(response => response.json())
+      .then(responseJson => this.props.setFriendReqs(responseJson.data))
+      .catch(error => console.error(error));	
   }
 
   componentWillUnmount() {
@@ -131,6 +157,7 @@ class ProfileScreen extends Component {
 
   render() {
     const bio = this.props.user.bio ? this.props.user.bio : `Hello! My name is ${this.props.user.fullName}.`;
+    const receivedReq = this.props.friendReqs && this.props.friendReqs.received.length > 0;
 
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -177,6 +204,20 @@ class ProfileScreen extends Component {
           </View>
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionHeader}>SOCIAL</Text>
+            <View style={{flexDirection: 'row', marginTop: 5}}>
+              <TouchableOpacity onPress={() => this.props.navigation.navigate('FriendsList')}>
+                <View style={{backgroundColor: GREY, borderRadius: 5, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 3, marginRight: 10}}>
+                  <Text numberOfLines={1} ellipsizeMode='middle' adjustsFontSizeToFit>
+                    {this.props.friends ? `${this.props.friends.length} Friends` : '...'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => this.props.navigation.navigate('FriendRequests')}>
+                <View style={{backgroundColor: receivedReq ? ACCENT : GREY, borderRadius: 5, flexDirection: 'row', alignItems: 'center', padding: 3}}>
+                  <Text style={{color: receivedReq ? 'white' : 'black'}}>{this.props.friendReqs ? `${this.props.friendReqs.received.length} Requests` : '...'}</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
             <ActionButton
               title='View fingerprint'
               onPress={() => this.setState({modalVisible: true})}
@@ -202,8 +243,25 @@ class ProfileScreen extends Component {
 
 const mapStateToProps = state => {
   return {
-    user: state.user
+    user: state.user,
+    friends: state.friends,
+    friendReqs: state.friendReqs
   };
 }
 
-export default connect(mapStateToProps)(ProfileScreen);
+const mapDispatchToProps = dispatch => {
+  return {
+    setFriends: friends => {
+      dispatch({type: 'SET_FRIENDS', payload: {
+        friends: friends
+      }});
+    },
+    setFriendReqs: reqs => {
+      dispatch({type: 'SET_FRIEND_REQS', payload: {
+        reqs: reqs
+      }});
+    }
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(ProfileScreen);

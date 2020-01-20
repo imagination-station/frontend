@@ -37,6 +37,28 @@ class SplashScreen extends Component {
         // console.log('auth provider', firebase.auth().currentUser.providerData[0].providerId);
         // // can use this in Facebook Graph API
         // console.log('facebook uid', firebase.auth().currentUser.providerData[0].uid);
+
+        // listener for friend requests & set requests number
+        firebase.database().ref(`/requests/${user.uid}`).on('child_changed', snapshot => {
+          user.getIdToken().then(token => {
+            const headers = {
+              Authorization: `Bearer ${token}`
+            };
+
+            return Promise.all(
+              [fetch(`${TEST_SERVER_ADDR}/api/users/${user.uid}/requests`, {headers: headers})
+                .then(response => response.json()),
+              fetch(`${TEST_SERVER_ADDR}/api/users/${user.uid}/friends`, {headers: headers})
+                .then(response => response.json())]
+            );
+          })
+            .then(responsesJson => {
+              this.props.setFriendReqs(responsesJson[0].data);
+              this.props.setFriends(responsesJson[1].data);
+            })
+            .catch(error => console.error(error));	
+        });
+
         firebase.auth().currentUser.getIdToken()
           .then(token =>
             fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}`, {
@@ -49,21 +71,7 @@ class SplashScreen extends Component {
           .then(response => response.json())
           .then(async responseJson => {
             this.props.setUser(responseJson);
-            if (responseJson.authProvider == 'facebook.com') {
-              let accessToken = await AsyncStorage.getItem('ACCESS_TOKEN');
-              console.log(accessToken);
-
-              // if access token expired...
-              if ((new Date()).getTime() > accessToken.expires) {
-                // must go through login flow again
-                this.props.navigation.navigate('Auth');
-              } else {
-                this.props.setAccessToken((JSON.parse(accessToken)).token);
-                this.props.navigation.navigate('Home');
-              }
-            } else {
-              this.props.navigation.navigate('Home');
-            }
+            this.props.navigation.navigate('Home');
           });
       } else {
         this.props.navigation.navigate('Auth');
@@ -95,9 +103,14 @@ const mapDispatchToProps = dispatch => {
         user: user
       }});
     },
-    setAccessToken: token => {
-      dispatch({type: 'SET_ACCESS_TOKEN', payload: {
-        token: token
+    setFriendReqs: reqs => {
+      dispatch({type: 'SET_FRIEND_REQS', payload: {
+        reqs: reqs
+      }});
+    },
+    setFriends: friends => {
+      dispatch({type: 'SET_FRIENDS', payload: {
+        friends: friends
       }});
     }
   };

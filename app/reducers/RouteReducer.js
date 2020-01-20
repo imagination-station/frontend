@@ -1,6 +1,9 @@
 const INITIAL_STATE = {
   user: null,
   accessToken: null,
+  friends: null,
+  friendReqs: null,
+  people: {},
   // route flattened for easy updating
   name: null,
   creator: null,
@@ -14,14 +17,47 @@ const INITIAL_STATE = {
   refresh: false
 };
 
+const peopleReducer = (accumulator, cur) => {
+  accumulator[cur._id] = cur.status;
+  return accumulator;
+}
+
 const routeReducer = (state = INITIAL_STATE, action) => {
   let updatedPins;
+  let newPeople;
 
   switch (action.type) {
     case 'SET_USER':
       return {
         ...state,
-        user: action.payload.user
+        user: action.payload.user,
+        people: {[action.payload.user._id]: 'SELF'}
+      };
+    case 'SET_FRIENDS':
+      newPeople = {...state.people};
+
+      return {
+        ...state,
+        friends: action.payload.friends,
+        people: action.payload.friends
+          .map(elem => ({...elem, status: 'ADDED'}))
+          .reduce(peopleReducer, newPeople)
+      };
+    case 'SET_FRIEND_REQS':
+      newPeople = {...state.people};
+
+      newPeople = action.payload.reqs.received
+        .map(elem => ({...elem, status: 'RECEIVED'}))
+        .reduce(peopleReducer, newPeople);
+
+      newPeople = action.payload.reqs.sent
+        .map(elem => ({...elem, status: 'SENT'}))
+        .reduce(peopleReducer, newPeople);
+
+      return {
+        ...state,
+        friendReqs: action.payload.reqs,
+        people: newPeople
       };
     case 'SET_ACCESS_TOKEN':
       return {

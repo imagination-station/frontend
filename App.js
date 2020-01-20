@@ -17,7 +17,9 @@ import RouteDetailsScreen, { MapSearchScreen } from './app/screens/RouteDetails.
 import PlaceDetailsScreen from './app/screens/PlaceDetails.js';
 import PlaceEditorScreen, { PhotoRemoverScreen } from './app/screens/PlaceEditor.js';
 import TextEditorScreen from './app/screens/TextEditor.js';
-import FriendsListScreen from './app/screens/FriendsList.js';
+import FriendsShareScreen from './app/screens/FriendsShare.js';
+import FriendsManagerScreen from './app/screens/FriendsManager.js';
+import FriendRequestsScreen from './app/screens/FriendRequests.js';
 
 import SignUpScreen from './app/screens/SignUp.js';
 import SplashScreen from './app/screens/Splash.js';
@@ -90,8 +92,10 @@ const HomeStack = createStackNavigator({
   PhotoRemover: mapNavigationStateParamsToProps(PhotoRemoverScreen),
   TextEditor: mapNavigationStateParamsToProps(TextEditorScreen),
   RouteDetails: RouteDetailsScreen,
-  FriendsList: mapNavigationStateParamsToProps(FriendsListScreen),
+  FriendsShare: mapNavigationStateParamsToProps(FriendsShareScreen),
   FriendSearch: mapNavigationStateParamsToProps(FriendSearchScreen),
+  FriendsList: mapNavigationStateParamsToProps(FriendsManagerScreen),
+  FriendRequests: mapNavigationStateParamsToProps(FriendRequestsScreen),
   Tutorial: TutorialScreen
 });
 

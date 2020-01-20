@@ -16,7 +16,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as firebase from 'firebase';
 
 import { TEST_SERVER_ADDR } from '../config/settings.js';
-import { ACCENT } from '../config/styles.js';
+import { ACCENT, GREY, PRIMARY } from '../config/styles.js';
 
 // dimensions of the screen
 const { width } = Dimensions.get('window');
@@ -40,19 +40,59 @@ const styles = StyleSheet.create({
   }
 });
 
-function Friend(props) {
+function FriendItem(props) {
+  let action;
+
+  switch (props.status) {
+    case 'SELF':
+      action = null;
+      break;
+    case 'ADDED':
+      action = (
+        <TouchableOpacity>
+          <View style={{backgroundColor: GREY, borderRadius: 5, flexDirection: 'row', alignItems: 'center', padding: 3}}>
+            <Text>ADDED</Text>
+          </View>
+        </TouchableOpacity>
+      );
+      break;
+    case 'SENT':
+      action = (
+        <TouchableOpacity>
+          <View style={{backgroundColor: PRIMARY, borderRadius: 5, flexDirection: 'row', alignItems: 'center', padding: 3}}>
+            <Text style={{color: 'white'}}>SENT</Text>
+          </View>
+        </TouchableOpacity>
+      );
+      break;
+    case 'RECEIVED':
+      action = (
+        <TouchableOpacity onPress={props.onAcceptReq}>
+          <View style={{backgroundColor: ACCENT, borderRadius: 5, flexDirection: 'row', alignItems: 'center', padding: 3}}>
+            <Text style={{color: 'white'}}>ACCEPT</Text>
+          </View>
+        </TouchableOpacity>
+      );
+      break;
+    default:
+      action = (
+        <TouchableOpacity onPress={props.onMakeReq}>
+          <View style={{backgroundColor: ACCENT, borderRadius: 5, flexDirection: 'row', alignItems: 'center', padding: 3}}>
+            <Icon name='add' color='white' size={18} />
+            <Text style={{color: 'white'}}>ADD</Text>
+          </View>
+        </TouchableOpacity>
+      );
+      break;
+  }
+
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
       <View style={{flexDirection: 'row', alignItems: 'center'}}>
-        <Image style={{height: 50, width: 50, borderRadius: 25, marginRight: 20}} source={{uri: props.url}} />
-        <Text style={{fontSize: 16}}>{props.name}</Text>
+        <Image style={{height: 50, width: 50, borderRadius: 25, marginRight: 20}} source={{uri: props.photoUrl}} />
+        <Text style={{fontSize: 16}}>{props.fullName}</Text>
       </View>
-      <TouchableOpacity onPress={props.onAdd}>
-        <View style={{backgroundColor: ACCENT, borderRadius: 5, flexDirection: 'row', alignItems: 'center', padding: 3}}>
-          <Icon name='add' color='white' size={18} />
-          <Text style={{color: 'white'}}>ADD</Text>
-        </View>
-      </TouchableOpacity>
+      {action}
     </View>
   )
 }
@@ -81,7 +121,14 @@ class FriendSearch extends Component {
   }
 
   searchFriend = () => {
-    fetch(`${TEST_SERVER_ADDR}/api/users/search?fingerprint=${this.state.input}`)
+    firebase.auth().currentUser.getIdToken()
+      .then(token =>
+        fetch(`${TEST_SERVER_ADDR}/api/user-search?fingerprint=${this.state.input}`, {
+          headers: {	
+            Authorization: `Bearer ${token}`	
+          }
+        })
+      )
       .then(response => response.json())
       .then(responseJson => {
         if (responseJson.status == 'OK') {
@@ -92,15 +139,47 @@ class FriendSearch extends Component {
       });
   }
 
+  onMakeReq = () => {
+    firebase.auth().currentUser.getIdToken()
+      .then(token =>
+        fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/requests?to=${this.state.result._id}`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',	
+            'Content-type': 'application/json',	
+            Authorization: `Bearer ${token}`
+          }
+        })
+      )
+      .catch(error => console.error(error));	
+  }
+
+  onAcceptReq = () => {
+    console.log('doh!');
+    firebase.auth().currentUser.getIdToken()
+      .then(token =>
+        fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/requests?to=${this.state.result._id}&action=ACCEPT`, {
+          method: 'DELETE',
+          headers: {
+            Accept: 'application/json',	
+            'Content-type': 'application/json',	
+            Authorization: `Bearer ${token}`
+          }
+        })
+      )
+      .catch(error => console.error(error));	
+  }
+
   render() {
     let content;
 
     switch (this.state.state) {
       case 'FOUND':
-        content = <Friend
-          url={this.state.result.photoUrl}
-          name={this.state.result.fullName}
-          onAdd={() => console.log('onAdd')}
+        content = <FriendItem
+          {...this.state.result}
+          onMakeReq={this.onMakeReq}
+          onAcceptReq={this.onAcceptReq}
+          status={this.props.people[this.state.result._id]}
         />;
         break;
       case 'NOT_FOUND':
@@ -150,8 +229,23 @@ class FriendSearch extends Component {
 
 const mapStateToProps = state => {
   return {
-    accessToken: state.accessToken
+    people: state.people
   };
 }
 
-export default connect(mapStateToProps)(FriendSearch);
+const mapDispatchToProps = dispatch => {
+  return {
+    setFriends: friends => {
+      dispatch({type: 'SET_FRIENDS', payload: {
+        friends: friends
+      }});
+    },
+    setFriendReqs: reqs => {
+      dispatch({type: 'SET_FRIEND_REQS', payload: {
+        reqs: reqs
+      }});
+    }
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(FriendSearch);

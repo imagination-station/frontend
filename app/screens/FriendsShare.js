@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
   }
 });
 
-class FriendsList extends Component {
+class FriendsShare extends Component {
 
   static navigationOptions = () => {
     return {
@@ -110,4 +110,4 @@ const mapStateToProps = state => {
   };
 }
 
-export default connect(mapStateToProps)(FriendsList);
+export default connect(mapStateToProps)(FriendsShare);
