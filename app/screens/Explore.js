@@ -193,11 +193,14 @@ class CitySearch extends Component {
         </View>
         <View style={searchStyles.list}>
           <FlatList
-            data={this.state.results}
+            data={this.state.results ? this.state.results : this.props.previousCities}
             renderItem={({ item }) => <SearchItem
               item={item}
               // navigation passed in to pop from search page
-              onPress={() => this.props.onPressItem(item, this.props.navigation)}
+              onPress={() => {
+                this.props.setPreviousCities(item);
+                this.props.onPressItem(item, this.props.navigation);
+              }}
             />}
             keyExtractor={item => item._links['city:item'].href}
           />
@@ -285,7 +288,8 @@ class ExploreScreen extends Component {
     photoUri: '',
     searchInput: '',
     refreshing: false,
-    loaded: false
+    loaded: false,
+    previousCities: []
   };
 
   componentDidMount() {
@@ -356,6 +360,8 @@ class ExploreScreen extends Component {
     this.props.navigation.navigate('CitySearch', {
       searchInput: this.state.searchInput,
       onPressItem: this.onPressSearchItem,
+      previousCities: this.state.previousCities,
+      setPreviousCities: this.setPreviousCities
     });
   }
 
@@ -369,6 +375,12 @@ class ExploreScreen extends Component {
           this.fetchCityImage(responseJson);
         });
     });
+  }
+
+  setPreviousCities = (item) => {
+    let previousCities = this.state.previousCities;
+    previousCities.unshift(item);
+    this.setState({previousCities: previousCities});
   }
 
   render() {
