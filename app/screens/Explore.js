@@ -152,11 +152,8 @@ class CitySearch extends Component {
 
   SEARCH_TIMEOUT = 100; // ms
 
-  componentWillMount() {
-    this.searchTimer = null;
-  }
-
   componentDidMount() {
+    this.searchTimer = null;
     if (this.state.textInput) {
       fetch(`https://api.teleport.org/api/cities/?search=${this.state.textInput.replace(' ', '%20')}`)
         .then(response => response.json())

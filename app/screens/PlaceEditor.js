@@ -136,8 +136,9 @@ class PhotoRemover extends Component {
                 source={{uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${item}&maxheight=800&maxWidth=1000`}}
               />
             }
+            keyExtractor={item => item._id}
           />
-        </View>        
+        </View>
       </SafeAreaView>
     );
   }
@@ -198,7 +199,7 @@ class PlaceEditor extends Component {
           },
           body: JSON.stringify(this.props.selectedBuf)
         })
-      ) 
+      )
         .then(response => {
           this.props.commitPin();
           this.props.navigation.goBack();
@@ -236,8 +237,8 @@ class PlaceEditor extends Component {
             <Text style={styles.sectionHeader}>TITLE</Text>
             <Text
               numberOfLines={1}
-              ellipsizeMode='tail' 
-              style={{width: 300}}  
+              ellipsizeMode='tail'
+              style={{width: 300}}
             >
               {this.props.selectedBuf.properties.mainText}
             </Text>

@@ -491,6 +491,7 @@ function Collaborators(props) {
             source={{uri: item.photoUrl}}
           />
         }
+        keyExtractor={item => item._id}
       />
       {props.collaborators.length > 4 && <Text>{`and ${props.collaborators.length - 4} others`}</Text>}
     </View>
@@ -553,7 +554,7 @@ class RouteDetailsScreen extends Component {
     }
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.mapRef = null;
     // for animating bottom drawer collapse
     this.collapseValue = new Animated.Value(DRAWER_OPEN);
@@ -569,9 +570,6 @@ class RouteDetailsScreen extends Component {
       showRouteInfo: this.showRouteInfo,
       view: this.state.view
     });
-  }
-
-  componentDidMount() {
     console.log(this.props.creator);
     this.willBlur = this.props.navigation.addListener('willBlur', payload =>
       BackHandler.removeEventListener('hardwareBackPress', this.onBack)
@@ -920,6 +918,7 @@ class RouteDetailsScreen extends Component {
       if (pin.properties.distToNext) {
         res.push(
           <TouchableOpacity
+            key={this.props.key}
             onPress={() => {
               // TODO: Fix this
               // Open Google Maps
