@@ -358,7 +358,6 @@ function SearchItem(props) {
 }
 
 function Card(props) {
-  console.log(props);
   const source = props.pin.properties.photoRefs ?
     {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.pin.properties.photoRefs[0]}&maxheight=${IMG_HEIGHT}&maxWidth=${IMG_WIDTH}`} :
     {uri: PLACEHOLDER_IMG};
@@ -918,7 +917,7 @@ class RouteDetailsScreen extends Component {
       if (pin.properties.distToNext) {
         res.push(
           <TouchableOpacity
-            key={this.props.key}
+            key={this.props.pins[index]['_id'] + this.props.pins[index + 1]['_id']}
             onPress={() => {
               // TODO: Fix this
               // Open Google Maps

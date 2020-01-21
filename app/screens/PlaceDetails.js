@@ -72,7 +72,7 @@ class PlaceDetailsScreen extends Component {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.scrollValue = new Animated.Value(0);
     if (this.props.pins[this.props.selected]._id) {
       console.log('selected', this.props.pins[this.props.selected]._id);
