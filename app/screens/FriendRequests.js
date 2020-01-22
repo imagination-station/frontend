@@ -65,11 +65,10 @@ class FriendRequests extends Component {
     };
   }
 
-  onAcceptReq = to => {
-    console.log('doh!');
+  onAcceptReq = from => {
     firebase.auth().currentUser.getIdToken()
       .then(token =>
-        fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/requests?to=${to}&action=ACCEPT`, {
+        fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/requests?from=${from}&action=ACCEPT`, {
           method: 'DELETE',
           headers: {
             Accept: 'application/json',	
@@ -82,6 +81,7 @@ class FriendRequests extends Component {
   }
 
   render() {
+    console.log('FriendRequests render()');
     return (
       <SafeAreaView style={{flex: 1}}>
         <View style={styles.header}>

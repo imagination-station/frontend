@@ -155,10 +155,9 @@ class FriendSearch extends Component {
   }
 
   onAcceptReq = () => {
-    console.log('doh!');
     firebase.auth().currentUser.getIdToken()
-      .then(token =>
-        fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/requests?to=${this.state.result._id}&action=ACCEPT`, {
+      .then(token => 
+        fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/requests?from=${this.state.result._id}&action=ACCEPT`, {
           method: 'DELETE',
           headers: {
             Accept: 'application/json',	

@@ -40,6 +40,7 @@ class SplashScreen extends Component {
 
         // listener for friend requests & set requests number
         firebase.database().ref(`/requests/${user.uid}`).on('child_changed', snapshot => {
+          console.log('child changed');
           user.getIdToken().then(token => {
             const headers = {
               Authorization: `Bearer ${token}`
