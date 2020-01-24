@@ -120,18 +120,6 @@ class ProfileScreen extends Component {
 
     firebase.auth().currentUser.getIdToken()
       .then(token =>
-        fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/friends`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        })
-      )
-      .then(response => response.json())
-      .then(responseJson => this.props.setFriends(responseJson.data))
-      .catch(error => console.error(error));
-
-    firebase.auth().currentUser.getIdToken()
-      .then(token =>
         fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/requests`, {
           headers: {
             Authorization: `Bearer ${token}`

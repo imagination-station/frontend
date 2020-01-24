@@ -221,14 +221,16 @@ const mapStyles = StyleSheet.create({
     width: 50,	
     height: 50,	
     borderRadius: 50 / 2,	
-    borderColor: ACCENT	
+    borderColor: ACCENT	,
+    marginRight: 7,
   },	
   profilePicOwner: {	
     width: 50,	
     height: 50,	
     borderRadius: 50 / 2,	
     borderColor: ACCENT,	
-    borderWidth: 2	
+    borderWidth: 2,
+    marginRight: 7
   }	
 });	
 
@@ -424,12 +426,15 @@ function ActionCard(props) {
     // <Text style={{color: DARKER_GREY}} key='time'>	
     //   {`${timeString}`}	
     // </Text>,	
-    props.view != 'info' &&	
-      <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}} key='buttons'>	
-        <TouchableOpacity onPress={props.showRouteInfo} >	
-          <Icon name='expand-less' size={30} color={WARM_BLACK} />	
-        </TouchableOpacity>	
-      </View>	
+    <View style={{flexDirection: 'row', justifyContent: 'center', marginTop: 20}} key='buttons'>	
+      <TouchableOpacity onPress={props.view == 'info' ? props.toggleDrawer : props.showRouteInfo}>	
+        <Icon
+          name={props.view == 'info' ? 'expand-more' : 'expand-less'}
+          size={30}
+          color={WARM_BLACK}
+        />	
+      </TouchableOpacity>	
+    </View>	
   ];	
 
   return (	
@@ -473,7 +478,7 @@ function Collaborators(props) {
       {props.collaborators.length > 4 && <Text>{`and ${props.collaborators.length - 4} others`}</Text>}	
     </View>	
   );	
-}	
+}
 
 function Tag(props) {	
   return (	
@@ -549,7 +554,7 @@ class RouteDetailsScreen extends Component {
   }	
 
   componentDidMount() {	
-    console.log(this.props.creator);	
+    console.log('collaborators', this.props.collaborators);	
     this.willBlur = this.props.navigation.addListener('willBlur', payload =>	
       BackHandler.removeEventListener('hardwareBackPress', this.onBack)	
     );	
@@ -972,7 +977,12 @@ class RouteDetailsScreen extends Component {
               onMomentumScrollEnd={this.onScrollRoute}	
             >	
               <View style={mapStyles.filler} />	
-              <ActionCard pins={this.props.pins} showRouteInfo={this.showRouteInfo} />	
+              <ActionCard
+                pins={this.props.pins}
+                showRouteInfo={this.showRouteInfo}
+                toggleDrawer={this.toggleDrawer}
+                view={this.state.view}
+              />	
               {cards}	
               <View style={mapStyles.filler} />	
             </ScrollView>	
@@ -994,7 +1004,7 @@ class RouteDetailsScreen extends Component {
                     <Icon name='people' size={20} style={{marginRight: 5, paddingTop: 5}} color={DARKER_GREY} />	
                     <Text style={mapStyles.sectionHeader}>People</Text>	
                   </View>	
-                  <ShareButton onPress={() => this.props.navigation.navigate('FriendsList')} />	
+                  <ShareButton onPress={() => this.props.navigation.navigate('FriendsShare')} />	
                 </View>	
                 <Collaborators collaborators={[this.props.creator, ...this.props.collaborators]} />	
                 {/* {this.props.navigation.getParam('route').tags != undefined &&	

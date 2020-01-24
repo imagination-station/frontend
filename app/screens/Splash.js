@@ -38,6 +38,18 @@ class SplashScreen extends Component {
         // // can use this in Facebook Graph API
         // console.log('facebook uid', firebase.auth().currentUser.providerData[0].uid);
 
+        firebase.auth().currentUser.getIdToken()
+          .then(token =>
+            fetch(`${TEST_SERVER_ADDR}/api/users/${user.uid}/friends`, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            })
+          )
+          .then(response => response.json())
+          .then(responseJson => this.props.setFriends(responseJson.data))
+          .catch(error => console.error(error));
+
         // listener for friend requests & set requests number
         firebase.database().ref(`/requests/${user.uid}`).on('child_changed', snapshot => {
           console.log('child changed');

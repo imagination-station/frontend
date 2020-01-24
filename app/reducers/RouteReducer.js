@@ -10,7 +10,9 @@ const INITIAL_STATE = {
   location: null,
   pins: null,
   tags: null,
+  _id: null,
   collaborators: null,
+  collaboratorsSet: null,
   // for selecting & editing place
   selected: null,
   selectedBuf: null, // buffer to save intermediate changes
@@ -25,6 +27,8 @@ const peopleReducer = (accumulator, cur) => {
 const routeReducer = (state = INITIAL_STATE, action) => {
   let updatedPins;
   let newPeople;
+  let collaborators;
+  let collaboratorsSet;
 
   switch (action.type) {
     case 'SET_USER':
@@ -67,7 +71,8 @@ const routeReducer = (state = INITIAL_STATE, action) => {
     case 'LOAD_ROUTE':
       return {
         ...state,
-        ...action.payload.route
+        ...action.payload.route,
+        collaboratorsSet: new Set(action.payload.route.collaborators.map(elem => elem._id))
       };
     case 'ADD_PIN':
       return {
@@ -98,6 +103,27 @@ const routeReducer = (state = INITIAL_STATE, action) => {
       return {
         ...state,
         name: action.payload.name
+      };
+    case 'ADD_COLLABORATOR':
+      collaborators = [...state.collaborators];
+      collaboratorsSet = new Set(state.collaborators);
+
+      collaborators.push(action.payload.collaborator);
+      collaboratorsSet.add(action.payload.collaborator._id);
+
+      return {
+        ...state,
+        collaborators: collaborators,
+        collaboratorsSet: collaboratorsSet
+      };
+    case 'REMOVE_COLLABORATOR':
+      collaborators = state.collaborators.filter(elem => elem._id != action.payload.id);
+      collaboratorsSet = new Set(collaborators);
+
+      return {
+        ...state,
+        collaborators: collaborators,
+        collaboratorsSet: collaboratorsSet
       };
     case 'VIEW_PLACE_DETAIL':
       let selectedBuf = {...state.pins[action.payload.selectedIndex]};
@@ -137,7 +163,9 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         location: null,
         pins: null,
         tags: null,
-        collaborators: null
+        _id: null,
+        collaborators: null,
+        collaboratorsSet: null
       };
     case 'TOGGLE_REFRESH':
       return {
