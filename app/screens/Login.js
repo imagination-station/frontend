@@ -113,22 +113,13 @@ class LoginScreen extends Component {
       await Facebook.initializeAsync('2873476886029892');
       const {
         type,
-        token,
-        expires,
-        declinedPermissions
+        token
       } = await Facebook.logInWithReadPermissionsAsync('2873476886029892', {
         permissions: ['public_profile', 'email', 'user_friends'],
       });
 
       switch (type) {
         case 'success':
-          await AsyncStorage.setItem('ACCESS_TOKEN', JSON.stringify({
-            token: token,
-            expires: expires
-          }));
-          // store access token in redux store
-          this.props.setAccessToken(token);
-
           let location;
           
           await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
@@ -256,11 +247,6 @@ const mapDispatchToProps = dispatch => {
     setUser: user => {
       dispatch({type: 'SET_USER', payload: {
         user: user,
-      }});
-    },
-    setAccessToken: token => {
-      dispatch({type: 'SET_ACCESS_TOKEN', payload: {
-        token: token
       }});
     }
   };

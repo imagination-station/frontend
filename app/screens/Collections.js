@@ -110,13 +110,18 @@ const cardStyles = StyleSheet.create({
 });
 
 function RouteCard(props) {
-  const ref = props.route.pins[0].properties.photoRefs[0];
   const imgHeight = PixelRatio.getPixelSizeForLayoutSize(CARD_HEIGHT);
   const imgWidth = PixelRatio.getPixelSizeForLayoutSize(CARD_WIDTH);
-
-  let pic = {
-    uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=${imgHeight}&maxWidth=${imgWidth}`
-  };
+  
+  let pic;
+  if (props.route.pins[0]) {
+    let ref = props.route.pins[0].properties.photoRefs[0];
+    pic = {
+      uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${ref}&maxheight=${imgHeight}&maxWidth=${imgWidth}`
+    };
+  } else {
+    pic = require('../assets/placeholder.jpg');
+  }
 
   let buttons = null;
   if (props.buttons) {
@@ -283,11 +288,7 @@ class CollectionsScreen extends Component {
               onRefresh={this.fetchRoutes}
               refreshing={this.state.refreshing}
             /> : <Text style={{padding: 30, alignSelf: 'center', color: DARKER_GREY}}>Wow, so empty :)</Text>}
-            <FAB onPress={() => {
-              this.props.navigation.navigate('Location', {
-                purpose: 'CREATE_ROUTE'
-              });
-            }}/>
+            <FAB onPress={() => this.props.navigation.navigate('RouteCreator')} />
         </View>
       );
     }

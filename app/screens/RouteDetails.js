@@ -14,7 +14,8 @@ import {
   StatusBar,	
   PixelRatio,	
   BackHandler,	
-  FlatList,	
+  FlatList,
+  SafeAreaView	
 } from 'react-native';	
 import MapView, { Marker } from 'react-native-maps';	
 import { Header } from 'react-navigation-stack';	
@@ -51,8 +52,8 @@ const OFFSET_DIV = CARD_WIDTH * (5/4);
 const IMG_HEIGHT = PixelRatio.getPixelSizeForLayoutSize(CARD_HEIGHT);	
 const IMG_WIDTH = PixelRatio.getPixelSizeForLayoutSize(CARD_WIDTH);	
 
-const DRAWER_OPEN = Platform.OS === 'ios' ? height - (Header.HEIGHT) - (CARD_HEIGHT + 80) : height - (Header.HEIGHT + StatusBar.currentHeight) - (CARD_HEIGHT + 35);	
-const DRAWER_CLOSED = Platform.OS === 'ios' ? height - Header.HEIGHT - 80 : height - Header.HEIGHT - 35;	
+const DRAWER_OPEN = Platform.OS === 'ios' ? height - (Header.HEIGHT) - (CARD_HEIGHT + 80) : height - (Header.HEIGHT + StatusBar.currentHeight) - (CARD_HEIGHT + 35) + 45 + StatusBar.currentHeight;	
+const DRAWER_CLOSED = Platform.OS === 'ios' ? height - Header.HEIGHT - 80 : height - Header.HEIGHT - 35 + 45 + StatusBar.currentHeight;	
 const DRAWER_EXPANDED = 0;	
 
 const pinImage =  require('../assets/pin.png');	
@@ -65,16 +66,30 @@ const METERS_TO_MILES = 1609.34;
 const SECONDS_TO_MINUTES = 60;	
 
 const mapStyles = StyleSheet.create({	
-  container: {	
+  container: {
+    marginTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,	
     flex: 1	
-  },	
+  },
+  header: {
+    marginTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 5,
+    backgroundColor: 'transparent',
+    position: 'absolute',
+    top: 0,
+    zIndex: 5,
+    width: '100%',
+    height: 45
+  },
   searchBoxContainer: {	
     backgroundColor: 'rgba(255, 255, 255, 0.9)',	
     flexDirection: 'row',	
     height: 46,	
     borderRadius: 20,	
     width: '90%',	
-    top: 10,	
+    top: 55,	
     marginHorizontal: '5%',	
     position: 'absolute',	
     alignItems: 'center',	
@@ -372,7 +387,7 @@ function Card(props) {
           <Text numberOfLines={1} style={mapStyles.cardDescription}>	
             {props.pin.properties.secondaryText}	
           </Text>	
-        </View>	
+        </View>
       </View>	
     </TouchableWithoutFeedback>	
   );	
@@ -381,7 +396,7 @@ function Card(props) {
 function FocusedCard(props) {	
   const source = props.pin.properties.photoRefs ?	
     {uri: `https://maps.googleapis.com/maps/api/place/photo?key=${MAPS_API_KEY}&photoreference=${props.pin.properties.photoRefs[0]}&maxheight=${FOCUSED_IMG_HEIGHT}&maxWidth=${FOCUSED_IMG_WIDTH}`} :	
-    {uri: PLACEHOLDER_IMG};	
+    require('../assets/placeholder.jpg');
 
   return (	
     <View style={mapStyles.focusedCard}>	
@@ -397,6 +412,9 @@ function FocusedCard(props) {
       <View style={mapStyles.cardButtonBar}>	
         <Button title={'Add'} onPress={props.onAdd} />	
       </View>	
+      <TouchableOpacity onPress={props.onClear} style={{position: 'absolute', top: 5, left: 5, backgroundColor: GREY, borderRadius: 20/2, zIndex: 10}}>
+          <Icon name='clear' size={20} />
+      </TouchableOpacity>	
     </View>	
   );	
 }	
@@ -492,22 +510,23 @@ class RouteDetailsScreen extends Component {
 
   static navigationOptions = ({ navigation }) => {	
     return {	
-      tabBarVisible: false,	
-      headerTitle: () => <Text style={{fontSize: 20}}>Trip Details</Text>,	
-      headerLeft: () => <Icon name='arrow-back' size={30} style={{marginLeft: 10}} onPress={navigation.getParam('onBack')} />,	
-      headerRight: () => (	
-        navigation.getParam('editing') ? <TouchableOpacity onPress={navigation.getParam('view') == 'info' ? navigation.getParam('onPressSave') : navigation.getParam('showRouteInfo')}>	
-          {navigation.getParam('view') == 'info'	
-              ? <Icon name='save' size={30} color={ACCENT} style={{marginRight: 10}} />	
-              : <Text style={{color: ACCENT, marginRight: 10, fontSize: 18}}>Next</Text>	
-          }	
-        </TouchableOpacity> :	
-        <OptionsMenu	
-          customButton={<Icon name='more-vert' size={30} color='black' style={{marginRight: 10}} />}	
-          options={['Edit', 'Delete']}	
-          actions={[navigation.getParam('onPressEdit'), () => console.log('Delete')]}	
-        />	
-      )	
+      tabBarVisible: false,
+      header: null,	
+      // headerTitle: () => <Text style={{fontSize: 20}}>Trip Details</Text>,	
+      // headerLeft: () => <Icon name='arrow-back' size={30} style={{marginLeft: 10}} onPress={navigation.getParam('onBack')} />,	
+      // headerRight: () => (	
+      //   navigation.getParam('editing') ? <TouchableOpacity onPress={navigation.getParam('view') == 'info' ? navigation.getParam('onPressSave') : navigation.getParam('showRouteInfo')}>	
+      //     {navigation.getParam('view') == 'info'	
+      //         ? <Icon name='save' size={30} color={ACCENT} style={{marginRight: 10}} />	
+      //         : <Text style={{color: ACCENT, marginRight: 10, fontSize: 18}}>Next</Text>	
+      //     }	
+      //   </TouchableOpacity> :	
+      //   <OptionsMenu	
+      //     customButton={<Icon name='more-vert' size={30} color='black' style={{marginRight: 10}} />}	
+      //     options={['Edit', 'Delete']}	
+      //     actions={[navigation.getParam('onPressEdit'), () => console.log('Delete')]}	
+      //   />	
+      // )	
     };	
   }	
 
@@ -515,7 +534,8 @@ class RouteDetailsScreen extends Component {
     view: 'map',	
     drawer: 'open',	
     // if new, default to editing	
-    editing: this.props.navigation.getParam('new'),	
+    editing: true,
+    loading: false,
     searchInput: '',	
     // search result	
     focused: null	
@@ -531,7 +551,7 @@ class RouteDetailsScreen extends Component {
      if (this.props.pins.length != 0) {	
       this.initLocation = this.props.pins[0].geometry.coordinates;	
     } else {	
-      this.initLocation = this.props.location.coordinates;	
+      this.initLocation = this.props.city.coordinates;	
     }	
   }	
 
@@ -734,31 +754,122 @@ class RouteDetailsScreen extends Component {
     });	
   }	
 
-  onAddItem = async () => {	
-    let distance;	
+  onAddPin = async () => {	
+    // first update last pin's distToNext
+    this.setState({loading: true});
     if (this.props.pins.length > 0) {	
+      let distance;	
       await fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?key=${MAPS_API_KEY}&origins=place_id:${this.props.pins[this.props.pins.length-1].properties.placeId}&destinations=place_id:${this.state.focused.properties.placeId}&mode=walking`)	
         .then(response => response.json())	
         .then(responseJson => {	
-          distance = responseJson.rows[0].elements[0].distance;	
-          console.log(distance);	
-        });	
+          distance = responseJson.rows[0].elements[0].distance;
+          return firebase.auth().currentUser.getIdToken();
+        })
+        .then(token => fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/pins/${this.props.pins[this.props.pins.length-1]._id}`, {	
+          method: 'PUT',	
+          headers: {	
+            Accept: 'application/json',	
+            'Content-type': 'application/json',	
+            Authorization: `Bearer ${token}`	
+          },	
+          body: JSON.stringify({	
+            distToNext: distance.value			
+          })	
+        }))
+        .then(response => {
+          // TODO: This is broken: updatedPin updates selected pin
+          this.props.updatePin(this.props.pins.length-1, {distToNext: distance.value});
+        })
+        .catch(error => console.error(error));	
     }	
 
-     if (distance) {	
-      this.props.pins[this.props.pins.length-1].properties.distToNext = distance.value;	
-    }	
+    // then update route itself
+    await firebase.auth().currentUser.getIdToken().then(token =>	
+      fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/routes/saved?route_id=${this.props._id}`, {	
+          method: 'PUT',	
+          headers: {	
+            Accept: 'application/json',	
+            'Content-type': 'application/json',	
+            Authorization: `Bearer ${token}`	
+          },	
+          body: JSON.stringify({	
+            pins: [...this.props.pins, this.state.focused]			
+          })	
+      })	
+    )
+      .then(response => response.json())
+      .then(responseJson => {
+        // finally, update pins in redux store with returned pin id
+        this.props.addPin({...this.state.focused, _id: responseJson.id});	
+        this.setState({	
+          focused: null,	
+          searchInput: '',
+          loading: false	
+        }, this.toggleDrawer);
+      })
+      .catch(error => console.error(error));	
+  }
+  
+  onRemovePin = async index => {
+    // first, update last pin's distance
+    this.setState({loading: true});
+    let distance;
+    if (index != this.props.pins.length - 1 && index != 0 && this.props.pins.length > 2) {
+      await fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?key=${MAPS_API_KEY}&origins=place_id:${this.props.pins[index-1].properties.placeId}&destinations=place_id:${this.props.pins[index+1].properties.placeId}&mode=walking`)	
+        .then(response => response.json())	
+        .then(responseJson => {	
+          distance = responseJson.rows[0].elements[0].distance;
+        });
+    } else if (index == this.props.pins.length - 1 && this.props.length > 1) {
+      distance = 'NONE';
+    }
 
-    this.props.addPin(this.state.focused);	
-    this.setState({	
-      focused: null,	
-      searchInput: '',	
-    }, this.toggleDrawer);	
-  }	
+    if (distance) {
+      await firebase.auth().currentUser.getIdToken()
+        .then(token => fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/pins/${this.props.pins[index-1]._id}`, {	
+          method: 'PUT',	
+          headers: {	
+            Accept: 'application/json',	
+            'Content-type': 'application/json',	
+            Authorization: `Bearer ${token}`	
+          },	
+          body: JSON.stringify({	
+            distToNext: distance == 'NONE' ? distance : distance.value			
+          })	
+        }))
+        .then(response => {
+          // TODO: This is broken: updatedPin updates selected pin
+          this.props.updatePin(index-1, {distToNext: distance == 'NONE' ? distance : distance.value});
+        })
+        .catch(error => console.error(error));
+    }
+
+    // then update route itself
+    await firebase.auth().currentUser.getIdToken().then(token =>	
+      fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/routes/saved?route_id=${this.props._id}`, {	
+          method: 'PUT',	
+          headers: {	
+            Accept: 'application/json',	
+            'Content-type': 'application/json',	
+            Authorization: `Bearer ${token}`	
+          },	
+          body: JSON.stringify({	
+            pins: this.props.pins.filter((pin, i) => i != index)			
+          })	
+      })	
+    )
+      .then(response => {
+        // finally, update pins in redux store with returned pin id
+        this.props.removePin(index);	
+        this.setState({	
+          loading: false	
+        }, this.toggleDrawer);
+      })
+      .catch(error => console.error(error));	
+  }
 
    // assume a < b	
   onSwapPins = (a, b) => {	
-    console.log('swapPins:', a, b);	
     const fetchInfos = [	
       {origin: a, dest: b + 1, newIndex: b},	
       {origin: b, dest: a, newIndex: a}	
@@ -782,19 +893,60 @@ class RouteDetailsScreen extends Component {
     }	
 
     Promise.all(fetches)	
-      .then(responsesJson => {	
-        for (let responseJson of responsesJson) {	
-          this.props.pins[responseJson.info.origin].properties.distToNext = responseJson.json.rows[0].elements[0].distance.value;	
-        }	
+      .then(responsesJson => {
+        let updates = [];	
+        for (let responseJson of responsesJson) {
+          updates.push(firebase.auth().currentUser.getIdToken()
+            .then(token => {
+              return fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/pins/${this.props.pins[responseJson.info.origin]._id}`, {
+                method: 'PUT',
+                headers: {	
+                  Accept: 'application/json',	
+                  'Content-type': 'application/json',	
+                  Authorization: `Bearer ${token}`	
+                },	
+                body: JSON.stringify({	
+                  distToNext: responseJson.json.rows[0].elements[0].distance.value
+                })	
+              });
+            })
+            .then(response => {
+              this.props.updatePin(responseJson.info.origin, {distToNext: responseJson.json.rows[0].elements[0].distance.value});
+            })
+          );
+        }
+        
+        // swap
+        let newPins = [...this.props.pins];
+        newPins[a] = this.props.pins[b];
+        newPins[b] = this.props.pins[a];
+
+        updates.push(firebase.auth().currentUser.getIdToken()
+          .then(token => {
+            return fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/routes/saved??route_id=${this.props._id}`, {
+              method: 'PUT',
+              headers: {	
+                Accept: 'application/json',	
+                'Content-type': 'application/json',	
+                Authorization: `Bearer ${token}`	
+              },	
+              body: JSON.stringify({	
+                pins: newPins
+              })	
+            });
+          })
+        );
+        return updates;
+      })
+      .then(responses => {
         this.props.swapPins([	
           this.props.pins[a],	
           this.props.pins[b]	
         ], [a, b]);	
-      });	
-  }	
+      });
+  }
 
   onComplete = () => {	
-    console.log(this.props.location);	
     firebase.auth().currentUser.getIdToken().then(token =>	
       fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/routes/saved`, {	
         method: 'POST',	
@@ -806,7 +958,7 @@ class RouteDetailsScreen extends Component {
         body: JSON.stringify({	
           name: this.props.name,	
           creator: this.props.user._id,	
-          city: this.props.location._id,	
+          city: this.props.city._id,	
           pins: this.props.pins,	
           tags: this.state.tags	
         })	
@@ -823,18 +975,18 @@ class RouteDetailsScreen extends Component {
   onScrollRoute = event => {	
     const i = Math.round(event.nativeEvent.contentOffset.x / OFFSET_DIV);	
     if (i == 0) {	
-      this.mapRef.fitToSuppliedMarkers(	
-        this.props.pins.map(pin => pin.properties.placeId),	
-        {	
-          edgePadding: {	
-            top: CARD_HEIGHT,	
-            left: 150,	
-            bottom: CARD_HEIGHT,	
-            right: 150	
-          },	
-          animated: true	
-        }	
-      );	
+      // this.mapRef.fitToSuppliedMarkers(	
+      //   this.props.pins.map(pin => pin.properties.placeId),	
+      //   {	
+      //     edgePadding: {	
+      //       top: CARD_HEIGHT,	
+      //       left: 150,	
+      //       bottom: CARD_HEIGHT,	
+      //       right: 150	
+      //     },	
+      //     animated: true	
+      //   }	
+      // );	
     } else {	
       this.mapRef.animateCamera({	
         center: {	
@@ -906,116 +1058,137 @@ class RouteDetailsScreen extends Component {
 
     const cards = this.props.pins.reduce(reducer, []);	
 
-    return (	
-      <View style={mapStyles.container}>	
-        <MapView	
-          provider={'google'}	
-          style={mapStyles.container}	
-          onPoiClick={this.state.editing ? this.onPoiClick : undefined}	
-          onLongPress={this.onLongPress}	
-          initialRegion={{	
-            latitude: this.initLocation[0],	
-            longitude: this.initLocation[1],	
-            // arbitary numbers 	
-            latitudeDelta: 0.0922,	
-            longitudeDelta: 0.0421	
-          }}	
-          showsUserLocation={true}	
-          ref={ref => this.mapRef = ref}	
-        >	
-          {this.props.pins.map((pin, index) =>	
-            <Marker	
-              key={pin.properties.placeId}	
-              identifier={pin.properties.placeId}	
-              coordinate={{latitude: pin.geometry.coordinates[0], longitude: pin.geometry.coordinates[1]}}	
-              title={pin.properties.mainText}	
-              description={pin.properties.secondaryText}	
-              image={pinImage}	
-            >	
-              <View style={mapStyles.pin}>	
-                <Text style={{color: 'white'}}>{index+1}</Text>	
-              </View>	
-            </Marker>	
-          )}	
-          {this.state.focused &&	
-            <Marker	
-              key={this.state.focused.properties.placeId}	
-              identifier={this.state.focused.properties.placeId}	
-              coordinate={{latitude: this.state.focused.geometry.coordinates[0], longitude: this.state.focused.geometry.coordinates[1]}}	
-              title={this.state.focused.properties.mainText}	
-              description={this.state.focused.properties.secondaryText}	
-              icon={pinImage}	
-            />	
-          }	
-        </MapView>	
-        {this.state.editing && <View style={mapStyles.searchBoxContainer}>	
-          <TextInput	
-            style={mapStyles.searchBox}	
-            placeholder='Search'	
-            value={this.state.searchInput}	
-            onTouchEnd={this.onPressSearch}	
-          />	
-          <TouchableOpacity onPress={this.onClearSearch}>	
-            <Icon name='clear' size={30} color='grey' />	
-          </TouchableOpacity>	
-        </View>}	
-        <Animated.View style={{...mapStyles.animated, top: this.collapseValue}}>	
-          {/* show focused card */}	
-          {this.state.focused && <FocusedCard	
-            pin={this.state.focused}	
-            onAdd={this.onAddItem}	
-          />}	
-          <View style={mapStyles.drawer} >	
-            <DrawerButton onPress={this.toggleDrawer} />	
-            <ScrollView	
-              style={{flex: 1}}	
-              scrollEnabled={this.props.pins.length > 0}	
-              contentContainerStyle={mapStyles.endPadding}	
-              horizontal	
-              scrollEventThrottle={1}	
-              showsHorizontalScrollIndicator={false}	
-              onMomentumScrollEnd={this.onScrollRoute}	
-            >	
-              <View style={mapStyles.filler} />	
-              <ActionCard
-                pins={this.props.pins}
-                showRouteInfo={this.showRouteInfo}
-                toggleDrawer={this.toggleDrawer}
-                view={this.state.view}
-              />	
-              {cards}	
-              <View style={mapStyles.filler} />	
-            </ScrollView>	
-            {this.state.view === 'info' &&	
-              <View style={mapStyles.infoContainer}>	
-                {this.state.editing ?	
-                  <TextInput	
-                    style={{...mapStyles.nameBox, marginBottom: 10}}	
-                    placeholder={'Name your trip'}	
-                    onChangeText={text => this.props.editRouteName(text)}	
-                    value={this.props.name}	
-                  />	
-                  : <Text style={mapStyles.name}>	
-                    {this.props.name ? this.props.name : 'Untitled'}	
-                  </Text>	
-                }	
-                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>	
-                  <View style={{flexDirection: 'row', alignItems: 'center'}}>	
-                    <Icon name='people' size={20} style={{marginRight: 5, paddingTop: 5}} color={DARKER_GREY} />	
-                    <Text style={mapStyles.sectionHeader}>People</Text>	
-                  </View>	
-                  <ShareButton onPress={() => this.props.navigation.navigate('FriendsShare')} />	
+    return (
+      <SafeAreaView style={{flex: 1}}>
+        <View style={mapStyles.header}>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <TouchableOpacity onPress={this.onBack} style={{marginRight: 5}}>
+              <Icon name='keyboard-arrow-left' size={45} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={this.onBack} style={{marginRight: 5}}>
+              <View style={{borderRadius: 20 / 2, backgroundColor: this.state.loading ? ACCENT : GREY, width: 20, height: 20, justifyContent: 'center', alignItems: 'center'}}>
+                <Icon name='autorenew' size={15} color={this.state.loading ? 'white' : 'black'} />
+              </View>
+            </TouchableOpacity>
+            <Text style={{backgroundColor: 'rgba(0,0,0,0.4)', color: 'white', padding: 2, borderRadius: 2, fontSize: 12}}>{this.state.loading ? 'Saving...' : 'Saved'}</Text>
+          </View>
+          <TouchableOpacity style={{paddingRight: 10}} onPress={this.onPressSearch}>
+            <View style={{borderRadius: 40 / 2, backgroundColor: GREY, width: 40, height: 40, justifyContent: 'center', alignItems: 'center'}}>
+              <Icon name='search' size={30} />
+            </View>
+          </TouchableOpacity>
+        </View>
+        <View style={mapStyles.container}>
+          <MapView	
+            provider={'google'}	
+            style={{flex: 1}}
+            onPoiClick={this.state.editing ? this.onPoiClick : undefined}	
+            onLongPress={this.onLongPress}	
+            initialRegion={{	
+              latitude: this.initLocation[0],	
+              longitude: this.initLocation[1],	
+              // arbitary numbers 	
+              latitudeDelta: 0.0922,	
+              longitudeDelta: 0.0421	
+            }}	
+            showsUserLocation={true}	
+            ref={ref => this.mapRef = ref}	
+          >	
+            {this.props.pins.map((pin, index) =>	
+              <Marker	
+                key={pin.properties.placeId}	
+                identifier={pin.properties.placeId}	
+                coordinate={{latitude: pin.geometry.coordinates[0], longitude: pin.geometry.coordinates[1]}}	
+                title={pin.properties.mainText}	
+                description={pin.properties.secondaryText}	
+                image={pinImage}	
+              >	
+                <View style={mapStyles.pin}>	
+                  <Text style={{color: 'white'}}>{index+1}</Text>	
                 </View>	
-                <Collaborators collaborators={[this.props.creator, ...this.props.collaborators]} />	
-                {/* {this.props.navigation.getParam('route').tags != undefined &&	
-                <View style={{flexDirection: 'row', alignSelf: 'flex-start', marginLeft: 15, flexWrap: 'wrap'}}>	
-                  {this.props.navigation.getParam('route').tags.map(tag => <Tag title={tag} key={tag} />)}	
-                </View> */}	
-              </View>	
+              </Marker>	
+            )}	
+            {this.state.focused &&	
+              <Marker	
+                key={this.state.focused.properties.placeId}	
+                identifier={this.state.focused.properties.placeId}	
+                coordinate={{latitude: this.state.focused.geometry.coordinates[0], longitude: this.state.focused.geometry.coordinates[1]}}	
+                title={this.state.focused.properties.mainText}	
+                description={this.state.focused.properties.secondaryText}	
+                icon={pinImage}	
+              />	
             }	
-          </View>	
-        </Animated.View>	
-      </View>	
+          </MapView>	
+          {/* {this.state.editing && <View style={mapStyles.searchBoxContainer}>	
+            <TextInput	
+              style={mapStyles.searchBox}	
+              placeholder='Search'	
+              value={this.state.searchInput}	
+              onTouchEnd={this.onPressSearch}	
+            />	
+            <TouchableOpacity onPress={this.onClearSearch}>	
+              <Icon name='clear' size={30} color='grey' />	
+            </TouchableOpacity>
+          </View>}	 */}
+          <Animated.View style={{...mapStyles.animated, top: this.collapseValue}}>	
+            {/* show focused card */}	
+            {this.state.focused && <FocusedCard	
+              pin={this.state.focused}	
+              onAdd={this.onAddPin}
+              onClear={this.onClearSearch}
+            />}	
+            <View style={mapStyles.drawer} >	
+              <DrawerButton onPress={this.toggleDrawer} />	
+              <ScrollView	
+                style={{flex: 1}}	
+                scrollEnabled={this.props.pins.length > 0}	
+                contentContainerStyle={mapStyles.endPadding}	
+                horizontal	
+                scrollEventThrottle={1}	
+                showsHorizontalScrollIndicator={false}	
+                onMomentumScrollEnd={this.onScrollRoute}	
+              >	
+                <View style={mapStyles.filler} />	
+                <ActionCard
+                  pins={this.props.pins}
+                  showRouteInfo={this.showRouteInfo}
+                  toggleDrawer={this.toggleDrawer}
+                  view={this.state.view}
+                />	
+                {cards}	
+                <View style={mapStyles.filler} />	
+              </ScrollView>	
+              {this.state.view === 'info' &&	
+                <View style={mapStyles.infoContainer}>	
+                  {this.state.editing ?	
+                    <TextInput	
+                      style={{...mapStyles.nameBox, marginBottom: 10}}	
+                      placeholder={'Name your trip'}	
+                      onChangeText={text => this.props.editRouteName(text)}	
+                      value={this.props.name}	
+                    />	
+                    : <Text style={mapStyles.name}>	
+                      {this.props.name ? this.props.name : 'Untitled'}	
+                    </Text>	
+                  }	
+                  <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>	
+                    <View style={{flexDirection: 'row', alignItems: 'center'}}>	
+                      <Icon name='people' size={20} style={{marginRight: 5, paddingTop: 5}} color={DARKER_GREY} />	
+                      <Text style={mapStyles.sectionHeader}>People</Text>	
+                    </View>	
+                    <ShareButton onPress={() => this.props.navigation.navigate('FriendsShare')} />	
+                  </View>	
+                  <Collaborators collaborators={[this.props.creator, ...this.props.collaborators]} />	
+                  {/* {this.props.navigation.getParam('route').tags != undefined &&	
+                  <View style={{flexDirection: 'row', alignSelf: 'flex-start', marginLeft: 15, flexWrap: 'wrap'}}>	
+                    {this.props.navigation.getParam('route').tags.map(tag => <Tag title={tag} key={tag} />)}	
+                  </View> */}	
+                </View>	
+              }	
+            </View>	
+          </Animated.View>	
+        </View>	
+      </SafeAreaView>
     );	
   }	
 }	
@@ -1027,9 +1200,10 @@ const mapStateToProps = state => {
     // flattened route	
     name: state.name,	
     creator: state.creator,	
-    location: state.location,	
+    city: state.city,	
     pins: state.pins,	
     tags: state.tags,	
+    _id: state._id,
     collaborators: state.collaborators	
   };	
 }	

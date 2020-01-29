@@ -1,13 +1,12 @@
 const INITIAL_STATE = {
   user: null,
-  accessToken: null,
   friends: null,
   friendReqs: null,
   people: {},
   // route flattened for easy updating
   name: null,
   creator: null,
-  location: null,
+  city: null,
   pins: null,
   tags: null,
   _id: null,
@@ -50,11 +49,11 @@ const routeReducer = (state = INITIAL_STATE, action) => {
     case 'SET_FRIEND_REQS':
       newPeople = {...state.people};
 
-      newPeople = action.payload.reqs.received
+      action.payload.reqs.received
         .map(elem => ({...elem, status: 'RECEIVED'}))
         .reduce(peopleReducer, newPeople);
 
-      newPeople = action.payload.reqs.sent
+      action.payload.reqs.sent
         .map(elem => ({...elem, status: 'SENT'}))
         .reduce(peopleReducer, newPeople);
 
@@ -62,11 +61,6 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         ...state,
         friendReqs: action.payload.reqs,
         people: newPeople
-      };
-    case 'SET_ACCESS_TOKEN':
-      return {
-        ...state,
-        accessToken: action.payload.token
       };
     case 'LOAD_ROUTE':
       return {
@@ -83,6 +77,22 @@ const routeReducer = (state = INITIAL_STATE, action) => {
       return {
         ...state,
         pins: state.pins.filter((pin, index) => index != action.payload.indexToRemove)
+      };
+    case 'UPDATE_PIN':
+      updatedPin = {...state.pins[action.payload.index]};
+
+      // update with given data
+      updatedPin.properties = {
+        ...updatedPin.properties,
+        ...action.payload.data
+      };
+
+      updatedPins = [...state.pins];
+      updatedPins[action.payload.index] = updatedPin;
+
+      return {
+        ...state,
+        pins: updatedPins 
       };
     case 'SWAP_PINS':
       updatedPins = [...state.pins];
@@ -135,8 +145,10 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         selected: action.payload.selectedIndex,
         selectedBuf: selectedBuf
       };
-    case 'UPDATE_PIN':
+    case 'UPDATE_SELECTED':
       updatedPin = {...state.selectedBuf};
+
+      // update with given data
       updatedPin.properties = {
         ...updatedPin.properties,
         ...action.payload.data
@@ -160,7 +172,7 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         selected: null,
         name: null,
         creator: null,
-        location: null,
+        city: null,
         pins: null,
         tags: null,
         _id: null,

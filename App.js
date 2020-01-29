@@ -26,6 +26,7 @@ import SplashScreen from './app/screens/Splash.js';
 import TutorialScreen from './app/screens/Tutorial.js';
 import LocationScreen from './app/screens/Location.js';
 import InterestsScreen from './app/screens/Interests.js';
+import RouteCreatorScreen from './app/screens/RouteCreator.js';
 
 import Playground from './app/screens/Playground.js';
 
@@ -86,6 +87,7 @@ const HomeStack = createStackNavigator({
   },
   CitySearch: mapNavigationStateParamsToProps(CitySearchScreen),
   Location: mapNavigationStateParamsToProps(LocationScreen),
+  RouteCreator: RouteCreatorScreen,
   MapSearch: mapNavigationStateParamsToProps(MapSearchScreen),
   PlaceDetails: mapNavigationStateParamsToProps(PlaceDetailsScreen),
   PlaceEditor: mapNavigationStateParamsToProps(PlaceEditorScreen),
