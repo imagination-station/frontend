@@ -120,7 +120,7 @@ class ProfileScreen extends Component {
 
     firebase.auth().currentUser.getIdToken()
       .then(token =>
-        fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/requests`, {
+        fetch(`${TEST_SERVER_ADDR}/api/users/requests`, {
           headers: {
             Authorization: `Bearer ${token}`
           }

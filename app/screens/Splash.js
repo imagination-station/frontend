@@ -4,8 +4,7 @@ import {
   StyleSheet,
   Image,
   StatusBar,
-  Platform,
-  AsyncStorage
+  Platform
 } from 'react-native';
 import * as firebase from 'firebase';
 import { connect } from 'react-redux';
@@ -40,7 +39,7 @@ class SplashScreen extends Component {
 
         firebase.auth().currentUser.getIdToken()
           .then(token =>
-            fetch(`${TEST_SERVER_ADDR}/api/users/${user.uid}/friends`, {
+            fetch(`${TEST_SERVER_ADDR}/api/users/friends`, {
               headers: {
                 Authorization: `Bearer ${token}`
               }
@@ -59,9 +58,9 @@ class SplashScreen extends Component {
             };
 
             return Promise.all(
-              [fetch(`${TEST_SERVER_ADDR}/api/users/${user.uid}/requests`, {headers: headers})
+              [fetch(`${TEST_SERVER_ADDR}/api/users/requests`, {headers: headers})
                 .then(response => response.json()),
-              fetch(`${TEST_SERVER_ADDR}/api/users/${user.uid}/friends`, {headers: headers})
+              fetch(`${TEST_SERVER_ADDR}/api/users/friends`, {headers: headers})
                 .then(response => response.json())]
             );
           })
@@ -74,7 +73,7 @@ class SplashScreen extends Component {
 
         firebase.auth().currentUser.getIdToken()
           .then(token =>
-            fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}`, {
+            fetch(`${TEST_SERVER_ADDR}/api/me`, {
               headers: {
                 Accept: 'application/json',
                 'Content-type': 'application/json',

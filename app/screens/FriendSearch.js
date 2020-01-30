@@ -123,7 +123,7 @@ class FriendSearch extends Component {
   searchFriend = () => {
     firebase.auth().currentUser.getIdToken()
       .then(token =>
-        fetch(`${TEST_SERVER_ADDR}/api/user-search?fingerprint=${this.state.input}`, {
+        fetch(`${TEST_SERVER_ADDR}/api/users?fingerprint=${this.state.input}`, {
           headers: {	
             Authorization: `Bearer ${token}`	
           }
@@ -142,7 +142,7 @@ class FriendSearch extends Component {
   onMakeReq = () => {
     firebase.auth().currentUser.getIdToken()
       .then(token =>
-        fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/requests?to=${this.state.result._id}`, {
+        fetch(`${TEST_SERVER_ADDR}/api/users/requests?to=${this.state.result._id}`, {
           method: 'POST',
           headers: {
             Accept: 'application/json',	
@@ -157,7 +157,7 @@ class FriendSearch extends Component {
   onAcceptReq = () => {
     firebase.auth().currentUser.getIdToken()
       .then(token => 
-        fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/requests?from=${this.state.result._id}&action=ACCEPT`, {
+        fetch(`${TEST_SERVER_ADDR}/api/users/requests?from=${this.state.result._id}&action=ACCEPT`, {
           method: 'DELETE',
           headers: {
             Accept: 'application/json',	

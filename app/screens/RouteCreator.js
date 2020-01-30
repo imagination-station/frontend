@@ -128,7 +128,7 @@ class RouteCreator extends Component {
 
   onPressNext = () => {
     firebase.auth().currentUser.getIdToken().then(token =>	
-      fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/routes/saved`, {	
+      fetch(`${TEST_SERVER_ADDR}/api/routes/saved`, {	
           method: 'POST',	
           headers: {	
             Accept: 'application/json',	

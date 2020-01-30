@@ -210,7 +210,7 @@ class CollectionsScreen extends Component {
         let fetches = [];
         for (let endpoint of ['saved']) {
           fetches.push(
-            fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/routes/${endpoint}`, {
+            fetch(`${TEST_SERVER_ADDR}/api/routes/${endpoint}`, {
               method: 'GET',
               headers: {
                 Accept: 'application/json',

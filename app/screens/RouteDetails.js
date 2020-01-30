@@ -300,7 +300,7 @@ class MapSearch extends Component {
     // renew token every 3 minutes	
     this.renewToken = setInterval(() => this.sessionToken = uuidv4(), 1000 * 180);	
 
-    fetch(`${PLACES_AUTOCOMPLETE_URL}?input=${this.state.textInput}&key=${MAPS_API_KEY}&location=${this.props.location.coordinates[0]},${this.props.location.coordinates[1]}&radius=10000&sessiontoken=${this.sessionToken}`)	
+    fetch(`${PLACES_AUTOCOMPLETE_URL}?input=${this.state.textInput}&key=${MAPS_API_KEY}&location=${this.props.location[0]},${this.props.location[1]}&radius=10000&sessiontoken=${this.sessionToken}`)	
       .then(response => response.json())	
       .then(responseJson => this.setState({results: responseJson.predictions}));	
   }	
@@ -311,7 +311,7 @@ class MapSearch extends Component {
 
   onChangeText = text => {	
     this.setState({textInput: text}, () => 	
-      fetch(`${PLACES_AUTOCOMPLETE_URL}?input=${this.state.textInput}&key=${MAPS_API_KEY}&location=${this.props.location.coordinates[0]},${this.props.location.coordinates[1]}&radius=10000&sessiontoken=${this.sessionToken}`)	
+      fetch(`${PLACES_AUTOCOMPLETE_URL}?input=${this.state.textInput}&key=${MAPS_API_KEY}&location=${this.props.location[0]},${this.props.location[1]}&radius=10000&sessiontoken=${this.sessionToken}`)	
         .then(response => response.json())	
         .then(responseJson => this.setState({results: responseJson.predictions}))	
     );	
@@ -343,7 +343,7 @@ class MapSearch extends Component {
             keyExtractor={item => item.place_id}	
           />	
         </View>	
-        <Text>{`${this.props.location.coordinates[0]},${this.props.location.coordinates[1]}`}</Text>	
+        <Text>{`${this.props.location[0]},${this.props.location[1]}`}</Text>	
       </View>	
     );	
   }	
@@ -755,52 +755,41 @@ class RouteDetailsScreen extends Component {
   }	
 
   onAddPin = async () => {	
-    // first update last pin's distToNext
     this.setState({loading: true});
-    if (this.props.pins.length > 0) {	
-      let distance;	
-      await fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?key=${MAPS_API_KEY}&origins=place_id:${this.props.pins[this.props.pins.length-1].properties.placeId}&destinations=place_id:${this.state.focused.properties.placeId}&mode=walking`)	
-        .then(response => response.json())	
-        .then(responseJson => {	
-          distance = responseJson.rows[0].elements[0].distance;
-          return firebase.auth().currentUser.getIdToken();
-        })
-        .then(token => fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/pins/${this.props.pins[this.props.pins.length-1]._id}`, {	
-          method: 'PUT',	
-          headers: {	
-            Accept: 'application/json',	
-            'Content-type': 'application/json',	
-            Authorization: `Bearer ${token}`	
-          },	
-          body: JSON.stringify({	
-            distToNext: distance.value			
-          })	
-        }))
-        .then(response => {
-          // TODO: This is broken: updatedPin updates selected pin
-          this.props.updatePin(this.props.pins.length-1, {distToNext: distance.value});
-        })
-        .catch(error => console.error(error));	
-    }	
+    
+    let pinData = {...this.state.focused};
+    pinData.properties = {...this.state.focused.properties, parentRoute: this.props._id};
 
-    // then update route itself
-    await firebase.auth().currentUser.getIdToken().then(token =>	
-      fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/routes/saved?route_id=${this.props._id}`, {	
-          method: 'PUT',	
-          headers: {	
+    let pinLocation;
+    await firebase.auth().currentUser.getIdToken()
+      .then(token =>	
+        fetch(`${TEST_SERVER_ADDR}/api/pins`, {	
+            method: 'POST',	
+            headers: {	
+              Accept: 'application/json',	
+              'Content-type': 'application/json',	
+              Authorization: `Bearer ${token}`	
+            },	
+            body: JSON.stringify(pinData)
+        })	
+      )
+      .then(response => {
+        pinLocation = response.headers.map.location;
+        return firebase.auth().currentUser.getIdToken();
+      })
+      .then(token => 
+        fetch(TEST_SERVER_ADDR + pinLocation, {
+          headers: {
             Accept: 'application/json',	
             'Content-type': 'application/json',	
-            Authorization: `Bearer ${token}`	
-          },	
-          body: JSON.stringify({	
-            pins: [...this.props.pins, this.state.focused]			
-          })	
-      })	
-    )
+            Authorization: `Bearer ${token}`
+          }
+        })
+      )
       .then(response => response.json())
       .then(responseJson => {
-        // finally, update pins in redux store with returned pin id
-        this.props.addPin({...this.state.focused, _id: responseJson.id});	
+        // update pins in redux store with returned pin id
+        this.props.addPin(responseJson);	
         this.setState({	
           focused: null,	
           searchInput: '',
@@ -811,59 +800,22 @@ class RouteDetailsScreen extends Component {
   }
   
   onRemovePin = async index => {
-    // first, update last pin's distance
     this.setState({loading: true});
-    let distance;
-    if (index != this.props.pins.length - 1 && index != 0 && this.props.pins.length > 2) {
-      await fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?key=${MAPS_API_KEY}&origins=place_id:${this.props.pins[index-1].properties.placeId}&destinations=place_id:${this.props.pins[index+1].properties.placeId}&mode=walking`)	
-        .then(response => response.json())	
-        .then(responseJson => {	
-          distance = responseJson.rows[0].elements[0].distance;
-        });
-    } else if (index == this.props.pins.length - 1 && this.props.length > 1) {
-      distance = 'NONE';
-    }
 
-    if (distance) {
-      await firebase.auth().currentUser.getIdToken()
-        .then(token => fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/pins/${this.props.pins[index-1]._id}`, {	
-          method: 'PUT',	
-          headers: {	
-            Accept: 'application/json',	
-            'Content-type': 'application/json',	
-            Authorization: `Bearer ${token}`	
-          },	
-          body: JSON.stringify({	
-            distToNext: distance == 'NONE' ? distance : distance.value			
-          })	
-        }))
-        .then(response => {
-          // TODO: This is broken: updatedPin updates selected pin
-          this.props.updatePin(index-1, {distToNext: distance == 'NONE' ? distance : distance.value});
-        })
-        .catch(error => console.error(error));
-    }
-
-    // then update route itself
     await firebase.auth().currentUser.getIdToken().then(token =>	
-      fetch(`${TEST_SERVER_ADDR}/api/users/${this.props.user._id}/routes/saved?route_id=${this.props._id}`, {	
-          method: 'PUT',	
+      fetch(`${TEST_SERVER_ADDR}/api/pins/${this.props.pins[index]._id}`, {	
+          method: 'DELETE',	
           headers: {	
             Accept: 'application/json',	
             'Content-type': 'application/json',	
             Authorization: `Bearer ${token}`	
-          },	
-          body: JSON.stringify({	
-            pins: this.props.pins.filter((pin, i) => i != index)			
-          })	
-      })	
-    )
+          }
+      })
+    ) 
       .then(response => {
-        // finally, update pins in redux store with returned pin id
+        // update pins in redux store with returned pin id
         this.props.removePin(index);	
-        this.setState({	
-          loading: false	
-        }, this.toggleDrawer);
+        this.setState({loading: false});
       })
       .catch(error => console.error(error));	
   }
@@ -1007,8 +959,8 @@ class RouteDetailsScreen extends Component {
   render() {	
     // render place cards	
     const reducer = (res, pin, index) => {	
-      const options = ['Remove'];	
-      const actions = [() => this.props.removePin(index)];	
+      const options = [];	
+      const actions = [];	
 
       if (index != 0) {	
         options.push('Shift Left');	
@@ -1018,6 +970,9 @@ class RouteDetailsScreen extends Component {
         options.push('Shift Right');	
         actions.push(() => this.onSwapPins(index, index+1));	
       }	
+
+      options.push('Delete');
+      actions.push(() => this.onRemovePin(index));
 
       res.push(	
         <Card	
@@ -1033,30 +988,10 @@ class RouteDetailsScreen extends Component {
           actions={actions}	
         />	
       );	
-
-      if (pin.properties.distToNext) {	
-        res.push(	
-          <TouchableOpacity	
-            onPress={() => {	
-              // TODO: Fix this	
-              // Open Google Maps	
-              Linking.openURL(`https://www.google.com/maps/dir/?api=1&origin=${this.props.pins[index].properties.secondaryText}&destination=${this.props.pins[index + 1].properties.secondaryText}&travelmode=walking`);	
-            }}	
-          >	
-            <View style={{...mapStyles.filler, alignItems: 'center', justifyContent: 'center'}}>	
-              <Icon name='directions-walk' size={30} color={DARKER_GREY} />	
-              <Text style={{color: DARKER_GREY}}>	
-                {`${pin.properties.distToNext} m`}	
-              </Text>	
-            </View>	
-          </TouchableOpacity>	
-        );	
-      }	
-
       return res;	
-    }	
-
-    const cards = this.props.pins.reduce(reducer, []);	
+    }
+    
+    let cards = this.props.pins.reduce(reducer, []);
 
     return (
       <SafeAreaView style={{flex: 1}}>
@@ -1065,12 +1000,12 @@ class RouteDetailsScreen extends Component {
             <TouchableOpacity onPress={this.onBack} style={{marginRight: 5}}>
               <Icon name='keyboard-arrow-left' size={45} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={this.onBack} style={{marginRight: 5}}>
-              <View style={{borderRadius: 20 / 2, backgroundColor: this.state.loading ? ACCENT : GREY, width: 20, height: 20, justifyContent: 'center', alignItems: 'center'}}>
-                <Icon name='autorenew' size={15} color={this.state.loading ? 'white' : 'black'} />
+            <TouchableOpacity onPress={this.onBack}>
+              <View style={{borderRadius: 4, padding: 5, backgroundColor: this.state.loading ? ACCENT : 'rgba(0,0,0,0.4)', flexDirection: 'row', alignItems: 'center'}}>
+                <Icon name='autorenew' size={15} color='white' style={{marginRight: 5}} />
+                <Text style={{fontSize: 12, color: 'white'}}>{this.state.loading ? 'Saving...' : 'Saved'}</Text>
               </View>
             </TouchableOpacity>
-            <Text style={{backgroundColor: 'rgba(0,0,0,0.4)', color: 'white', padding: 2, borderRadius: 2, fontSize: 12}}>{this.state.loading ? 'Saving...' : 'Saved'}</Text>
           </View>
           <TouchableOpacity style={{paddingRight: 10}} onPress={this.onPressSearch}>
             <View style={{borderRadius: 40 / 2, backgroundColor: GREY, width: 40, height: 40, justifyContent: 'center', alignItems: 'center'}}>
@@ -1119,17 +1054,6 @@ class RouteDetailsScreen extends Component {
               />	
             }	
           </MapView>	
-          {/* {this.state.editing && <View style={mapStyles.searchBoxContainer}>	
-            <TextInput	
-              style={mapStyles.searchBox}	
-              placeholder='Search'	
-              value={this.state.searchInput}	
-              onTouchEnd={this.onPressSearch}	
-            />	
-            <TouchableOpacity onPress={this.onClearSearch}>	
-              <Icon name='clear' size={30} color='grey' />	
-            </TouchableOpacity>
-          </View>}	 */}
           <Animated.View style={{...mapStyles.animated, top: this.collapseValue}}>	
             {/* show focused card */}	
             {this.state.focused && <FocusedCard	
@@ -1141,7 +1065,6 @@ class RouteDetailsScreen extends Component {
               <DrawerButton onPress={this.toggleDrawer} />	
               <ScrollView	
                 style={{flex: 1}}	
-                scrollEnabled={this.props.pins.length > 0}	
                 contentContainerStyle={mapStyles.endPadding}	
                 horizontal	
                 scrollEventThrottle={1}	
