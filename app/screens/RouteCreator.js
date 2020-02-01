@@ -91,7 +91,10 @@ class RouteCreator extends Component {
   } 
 
   componentDidMount() {
+    // Timer state machine
     this.searchTimer = null;
+    // this is to let Collections 
+    this.props.setRefresh();
   }
 
   onChangeLocationInput = text => {
@@ -162,7 +165,9 @@ class RouteCreator extends Component {
           tags: [],
           collaborators: []
         });
-        this.props.navigation.navigate('RouteDetails', {new: true});
+        // Let collections know to re-fetch
+        this.props.setRefresh();
+        this.props.navigation.navigate('RouteDetails');
       })
       .catch(error => console.error(error));	
   }
@@ -235,11 +240,9 @@ const mapDispatchToProps = dispatch => {
     loadRoute: route => dispatch({type: 'LOAD_ROUTE', payload: {
       route: route,
     }}),
-    setUser: user => {
-      dispatch({type: 'SET_USER', payload: {
-        user: user,
-      }});
-    }
+    setRefresh: () => dispatch({type: 'SET_REFRESH', payload: {
+      refresh: true
+    }})
   };
 }
 

@@ -9,7 +9,9 @@ import {
   TouchableWithoutFeedback,
   FlatList,
   Image,
-  Alert
+  Alert,
+  Platform,
+  StatusBar
 } from 'react-native';
 import { connect } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -28,6 +30,16 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1
+  },
+  header: {
+    marginTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 5,
+    backgroundColor: 'transparent',
+    width: '100%',
+    height: 45
   },
   sectionContainer: {
     padding: 10,
@@ -65,26 +77,9 @@ const photoRemoverStyles = StyleSheet.create({
 
 class PhotoRemover extends Component {
 
-  static navigationOptions = ({ navigation }) => {
-    return {
-      tabBarVisible: false,
-      headerTitle: () => <Text style={{fontSize: 20}}>Remove Photos</Text>,
-      headerRight: () =>
-        <TouchableOpacity
-          onPress={navigation.getParam('onDelete')}
-          disabled={navigation.getParam('disabled')}
-        >
-          <Icon
-            name='delete'
-            size={30}
-            color={ACCENT}
-            style={{
-              marginRight: 10,
-              opacity: navigation.getParam('disabled') ? 0.3 : 1
-            }}
-          />
-        </TouchableOpacity>
-    };
+  static navigationOptions = {
+    tabBarVisible: false,
+    header: null
   }
 
   state = {
@@ -165,21 +160,10 @@ function SelectedImage(props) {
 
 class PlaceEditor extends Component {
 
-  static navigationOptions = ({ navigation }) => {
-    return {
-      tabBarVisible: false,
-      headerTitle: () => <Text style={{fontSize: 20}}>Edit Place</Text>,
-      headerRight: () =>
-        <TouchableOpacity onPress={navigation.getParam('onSave')}>
-          <Icon
-            name='save'
-            size={30}
-            color={ACCENT}
-            style={{marginRight: 10}}
-          />
-        </TouchableOpacity>
-    };
-  }
+  static navigationOptions = {
+    tabBarVisible: false,
+    header: null
+  };
 
   componentDidMount() {
     this.props.navigation.setParams({onSave: this.onSave});
@@ -231,6 +215,13 @@ class PlaceEditor extends Component {
   render() {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <TouchableOpacity onPress={() => this.props.navigation.goBack()} style={{marginRight: 5}}>
+              <Icon name='keyboard-arrow-left' size={45} />
+            </TouchableOpacity>
+          </View>
+        </View>
         <View style={styles.sectionContainer}>
           <View>
             <Text style={styles.sectionHeader}>TITLE</Text>
@@ -243,7 +234,7 @@ class PlaceEditor extends Component {
             </Text>
           </View>
           <TouchableOpacity onPress={this.onEditTitle}>
-            <Icon name='edit' size={30} color={DARKER_GREY} />
+            <Icon name='edit' size={30} />
           </TouchableOpacity>
         </View>
         <View style={styles.sectionContainer}>
@@ -258,7 +249,7 @@ class PlaceEditor extends Component {
             </Text>
           </View>
           <TouchableOpacity onPress={this.onEditNote}>
-            <Icon name='edit' size={30} color={DARKER_GREY} />
+            <Icon name='edit' size={30}/>
           </TouchableOpacity>
         </View>
         <View style={styles.sectionContainer}>
@@ -285,10 +276,10 @@ class PlaceEditor extends Component {
                 ]
               );
             }}>
-              <Icon name='add' size={30} color={DARKER_GREY} />
+              <Icon name='add' size={30} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => this.props.navigation.navigate('PhotoRemover')}>
-              <Icon name='remove' size={30} color={DARKER_GREY} />
+              <Icon name='remove' size={30} />
             </TouchableOpacity>
           </View>
         </View>

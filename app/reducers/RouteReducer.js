@@ -68,48 +68,25 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         ...action.payload.route,
         collaboratorsSet: new Set(action.payload.route.collaborators.map(elem => elem._id))
       };
+    case 'SET_PINS':
+      return {
+        ...state,
+        pins: action.payload.pins,
+        refresh: true
+      };
     case 'ADD_PIN':
       return {
         ...state,
-        pins: state.pins ? [...state.pins, action.payload.pin] : [action.payload.pin]
+        pins: state.pins ? [...state.pins, action.payload.pin] : [action.payload.pin],
+        refresh: true
       };
     case 'REMOVE_PIN':
       return {
         ...state,
-        pins: state.pins.filter((pin, index) => index != action.payload.indexToRemove)
+        pins: state.pins.filter((pin, index) => index != action.payload.indexToRemove),
+        refresh: true
       };
-    case 'UPDATE_PIN':
-      updatedPin = {...state.pins[action.payload.index]};
-
-      // update with given data
-      updatedPin.properties = {
-        ...updatedPin.properties,
-        ...action.payload.data
-      };
-
-      updatedPins = [...state.pins];
-      updatedPins[action.payload.index] = updatedPin;
-
-      return {
-        ...state,
-        pins: updatedPins 
-      };
-    case 'SWAP_PINS':
-      updatedPins = [...state.pins];
-      
-      let updated;
-      let swapTo;
-      for (let i of [0, 1]) {
-        updated = {...action.payload.pins[i]};
-        swapTo = (i + 1) % 2;
-        updatedPins[action.payload.indices[swapTo]] = updated;
-      }
-
-      return {
-        ...state,
-        pins: updatedPins
-      };
-    case 'EDIT_ROUTE_NAME':
+    case 'SET_ROUTE_NAME':
       return {
         ...state,
         name: action.payload.name
@@ -179,10 +156,10 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         collaborators: null,
         collaboratorsSet: null
       };
-    case 'TOGGLE_REFRESH':
+    case 'SET_REFRESH':
       return {
         ...state,
-        refresh: !state.refresh
+        refresh: action.payload.refresh
       };
     default:
       return state;

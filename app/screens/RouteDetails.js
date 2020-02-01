@@ -47,14 +47,14 @@ const FOCUSED_CARD_WIDTH = width * 0.9;
 const FOCUSED_IMG_HEIGHT = PixelRatio.getPixelSizeForLayoutSize(FOCUSED_CARD_HEIGHT);	
 const FOCUSED_IMG_WIDTH = PixelRatio.getPixelSizeForLayoutSize(FOCUSED_CARD_WIDTH);	
 
-const OFFSET_DIV = CARD_WIDTH * (5/4);	
+const OFFSET_DIV = CARD_WIDTH;	
 
 const IMG_HEIGHT = PixelRatio.getPixelSizeForLayoutSize(CARD_HEIGHT);	
 const IMG_WIDTH = PixelRatio.getPixelSizeForLayoutSize(CARD_WIDTH);	
 
 const DRAWER_OPEN = Platform.OS === 'ios' ? height - (Header.HEIGHT) - (CARD_HEIGHT + 80) : height - (Header.HEIGHT + StatusBar.currentHeight) - (CARD_HEIGHT + 35) + 45 + StatusBar.currentHeight;	
 const DRAWER_CLOSED = Platform.OS === 'ios' ? height - Header.HEIGHT - 80 : height - Header.HEIGHT - 35 + 45 + StatusBar.currentHeight;	
-const DRAWER_EXPANDED = 0;	
+const DRAWER_EXPANDED = 45;	
 
 const pinImage =  require('../assets/pin.png');	
 
@@ -71,14 +71,13 @@ const mapStyles = StyleSheet.create({
     flex: 1	
   },
   header: {
-    marginTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 5,
     backgroundColor: 'transparent',
     position: 'absolute',
-    top: 0,
+    top: StatusBar.currentHeight,
     zIndex: 5,
     width: '100%',
     height: 45
@@ -508,32 +507,14 @@ function Tag(props) {
 
 class RouteDetailsScreen extends Component {	
 
-  static navigationOptions = ({ navigation }) => {	
-    return {	
-      tabBarVisible: false,
-      header: null,	
-      // headerTitle: () => <Text style={{fontSize: 20}}>Trip Details</Text>,	
-      // headerLeft: () => <Icon name='arrow-back' size={30} style={{marginLeft: 10}} onPress={navigation.getParam('onBack')} />,	
-      // headerRight: () => (	
-      //   navigation.getParam('editing') ? <TouchableOpacity onPress={navigation.getParam('view') == 'info' ? navigation.getParam('onPressSave') : navigation.getParam('showRouteInfo')}>	
-      //     {navigation.getParam('view') == 'info'	
-      //         ? <Icon name='save' size={30} color={ACCENT} style={{marginRight: 10}} />	
-      //         : <Text style={{color: ACCENT, marginRight: 10, fontSize: 18}}>Next</Text>	
-      //     }	
-      //   </TouchableOpacity> :	
-      //   <OptionsMenu	
-      //     customButton={<Icon name='more-vert' size={30} color='black' style={{marginRight: 10}} />}	
-      //     options={['Edit', 'Delete']}	
-      //     actions={[navigation.getParam('onPressEdit'), () => console.log('Delete')]}	
-      //   />	
-      // )	
-    };	
-  }	
+  static navigationOptions = {		
+    tabBarVisible: false,
+    header: null	
+  };
 
   state = {	
     view: 'map',	
-    drawer: 'open',	
-    // if new, default to editing	
+    drawer: 'open',
     editing: true,
     loading: false,
     searchInput: '',	
@@ -548,33 +529,18 @@ class RouteDetailsScreen extends Component {
       BackHandler.addEventListener('hardwareBackPress', this.onBack)	
     );	
 
-     if (this.props.pins.length != 0) {	
+    if (this.props.pins.length != 0) {	
       this.initLocation = this.props.pins[0].geometry.coordinates;	
     } else {	
       this.initLocation = this.props.city.coordinates;	
-    }	
-  }	
-
-  componentWillMount() {	
+    }
+    
     this.mapRef = null;	
     // for animating bottom drawer collapse	
     this.collapseValue = new Animated.Value(DRAWER_OPEN);	
-
-     this.props.navigation.setParams({	
-      editing: this.state.editing,	
-      onBack: this.onBack,	
-      onPressEdit: () => {	
-        this.setState({editing: true});	
-        this.props.navigation.setParams({editing: true});	
-      },	
-      onPressSave: this.onComplete,	
-      showRouteInfo: this.showRouteInfo,	
-      view: this.state.view	
-    });	
   }	
 
-  componentDidMount() {	
-    console.log('collaborators', this.props.collaborators);	
+  componentDidMount() {		
     this.willBlur = this.props.navigation.addListener('willBlur', payload =>	
       BackHandler.removeEventListener('hardwareBackPress', this.onBack)	
     );	
@@ -665,7 +631,7 @@ class RouteDetailsScreen extends Component {
 
   onPressSearch = () => {	
     this.props.navigation.navigate('MapSearch', {	
-      location: this.initLocation,	
+      location: this.props.city.coordinates,	
       searchInput: this.state.searchInput,	
       onPressItem: this.onPressSearchItem,	
     });	
@@ -758,10 +724,10 @@ class RouteDetailsScreen extends Component {
     this.setState({loading: true});
     
     let pinData = {...this.state.focused};
-    pinData.properties = {...this.state.focused.properties, parentRoute: this.props._id};
+    pinData.properties.parentRoute = this.props._id;
 
-    let pinLocation;
-    await firebase.auth().currentUser.getIdToken()
+    let pinURI;
+    firebase.auth().currentUser.getIdToken()
       .then(token =>	
         fetch(`${TEST_SERVER_ADDR}/api/pins`, {	
             method: 'POST',	
@@ -774,11 +740,11 @@ class RouteDetailsScreen extends Component {
         })	
       )
       .then(response => {
-        pinLocation = response.headers.map.location;
+        pinURI = response.headers.map.location;
         return firebase.auth().currentUser.getIdToken();
       })
       .then(token => 
-        fetch(TEST_SERVER_ADDR + pinLocation, {
+        fetch(TEST_SERVER_ADDR + pinURI, {
           headers: {
             Accept: 'application/json',	
             'Content-type': 'application/json',	
@@ -788,7 +754,7 @@ class RouteDetailsScreen extends Component {
       )
       .then(response => response.json())
       .then(responseJson => {
-        // update pins in redux store with returned pin id
+        // update pin in redux store
         this.props.addPin(responseJson);	
         this.setState({	
           focused: null,	
@@ -799,10 +765,10 @@ class RouteDetailsScreen extends Component {
       .catch(error => console.error(error));	
   }
   
-  onRemovePin = async index => {
+  onRemovePin = index => {
     this.setState({loading: true});
 
-    await firebase.auth().currentUser.getIdToken().then(token =>	
+    firebase.auth().currentUser.getIdToken().then(token =>	
       fetch(`${TEST_SERVER_ADDR}/api/pins/${this.props.pins[index]._id}`, {	
           method: 'DELETE',	
           headers: {	
@@ -813,141 +779,75 @@ class RouteDetailsScreen extends Component {
       })
     ) 
       .then(response => {
-        // update pins in redux store with returned pin id
+        // update pin in redux store
         this.props.removePin(index);	
         this.setState({loading: false});
       })
       .catch(error => console.error(error));	
   }
 
-   // assume a < b	
-  onSwapPins = (a, b) => {	
-    const fetchInfos = [	
-      {origin: a, dest: b + 1, newIndex: b},	
-      {origin: b, dest: a, newIndex: a}	
-    ];	
+  onSwapPins = (a, b) => {
+    this.setState({loading: true});
 
-    const fetches = [];	
+    let updatedPins = [...this.props.pins];
+    updatedPins[a] = this.props.pins[b];
+    updatedPins[b] = this.props.pins[a];
 
-     for (let info of fetchInfos) {	
-      if (info.newIndex != this.props.pins.length - 1) {	
-        fetches.push(	
-          fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?key=${MAPS_API_KEY}&origins=place_id:${this.props.pins[info.origin].properties.placeId}&destinations=place_id:${this.props.pins[info.dest].properties.placeId}&mode=walking`)	
-            .then(response => response.json())	
-            .then(responseJson => ({	
-              info: info,	
-              json: responseJson	
-            }))	
-        );	
-      } else {	
-        delete this.props.pins[info.origin].properties.distToNext;	
-      }	
-    }	
-
-    Promise.all(fetches)	
-      .then(responsesJson => {
-        let updates = [];	
-        for (let responseJson of responsesJson) {
-          updates.push(firebase.auth().currentUser.getIdToken()
-            .then(token => {
-              return fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/pins/${this.props.pins[responseJson.info.origin]._id}`, {
-                method: 'PUT',
-                headers: {	
-                  Accept: 'application/json',	
-                  'Content-type': 'application/json',	
-                  Authorization: `Bearer ${token}`	
-                },	
-                body: JSON.stringify({	
-                  distToNext: responseJson.json.rows[0].elements[0].distance.value
-                })	
-              });
-            })
-            .then(response => {
-              this.props.updatePin(responseJson.info.origin, {distToNext: responseJson.json.rows[0].elements[0].distance.value});
-            })
-          );
-        }
-        
-        // swap
-        let newPins = [...this.props.pins];
-        newPins[a] = this.props.pins[b];
-        newPins[b] = this.props.pins[a];
-
-        updates.push(firebase.auth().currentUser.getIdToken()
-          .then(token => {
-            return fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/routes/saved??route_id=${this.props._id}`, {
-              method: 'PUT',
-              headers: {	
-                Accept: 'application/json',	
-                'Content-type': 'application/json',	
-                Authorization: `Bearer ${token}`	
-              },	
-              body: JSON.stringify({	
-                pins: newPins
-              })	
-            });
-          })
-        );
-        return updates;
-      })
-      .then(responses => {
-        this.props.swapPins([	
-          this.props.pins[a],	
-          this.props.pins[b]	
-        ], [a, b]);	
+    firebase.auth().currentUser.getIdToken()
+      .then(token =>	
+        fetch(`${TEST_SERVER_ADDR}/api/routes/saved?route_id=${this.props._id}`, {	
+            method: 'PUT',	
+            headers: {	
+              Accept: 'application/json',	
+              'Content-type': 'application/json',	
+              Authorization: `Bearer ${token}`	
+            },	
+            body: JSON.stringify({pins: updatedPins.map(pin => pin._id)})
+        })	
+      )
+      .then(response => {
+        this.props.setPins(updatedPins);
+        this.setState({loading: false});
       });
   }
 
-  onComplete = () => {	
-    firebase.auth().currentUser.getIdToken().then(token =>	
-      fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/routes/saved`, {	
-        method: 'POST',	
-        headers: {	
-          Accept: 'application/json',	
-          'Content-type': 'application/json',	
-          Authorization: `Bearer ${token}`	
-        },	
-        body: JSON.stringify({	
-          name: this.props.name,	
-          creator: this.props.user._id,	
-          city: this.props.city._id,	
-          pins: this.props.pins,	
-          tags: this.state.tags	
-        })	
-      })	
-    )	
-      .then(response => {	
-        this.props.toggleRefresh();	
-        this.setState({editing: false});	
-        this.props.navigation.setParams({editing: false});	
-      })	
-      .catch(error => console.error(error));	
-  }	
+  // onComplete = () => {	
+  //   firebase.auth().currentUser.getIdToken().then(token =>	
+  //     fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/routes/saved`, {	
+  //       method: 'POST',	
+  //       headers: {	
+  //         Accept: 'application/json',	
+  //         'Content-type': 'application/json',	
+  //         Authorization: `Bearer ${token}`	
+  //       },	
+  //       body: JSON.stringify({	
+  //         name: this.props.name,	
+  //         creator: this.props.user._id,	
+  //         city: this.props.city._id,	
+  //         pins: this.props.pins,	
+  //         tags: this.state.tags	
+  //       })	
+  //     })	
+  //   )	
+  //     .then(response => {	
+  //       this.props.toggleRefresh();	
+  //       this.setState({editing: false});	
+  //       this.props.navigation.setParams({editing: false});	
+  //     })	
+  //     .catch(error => console.error(error));	
+  // }	
 
   onScrollRoute = event => {	
-    const i = Math.round(event.nativeEvent.contentOffset.x / OFFSET_DIV);	
-    if (i == 0) {	
-      // this.mapRef.fitToSuppliedMarkers(	
-      //   this.props.pins.map(pin => pin.properties.placeId),	
-      //   {	
-      //     edgePadding: {	
-      //       top: CARD_HEIGHT,	
-      //       left: 150,	
-      //       bottom: CARD_HEIGHT,	
-      //       right: 150	
-      //     },	
-      //     animated: true	
-      //   }	
-      // );	
-    } else {	
+    const i = Math.round(event.nativeEvent.contentOffset.x / OFFSET_DIV);
+    if (i != 0) {
       this.mapRef.animateCamera({	
         center: {	
           latitude: this.props.pins[i - 1].geometry.coordinates[0],	
           longitude: this.props.pins[i - 1].geometry.coordinates[1],	
         },	
         zoom: 15	
-      }, 30);	
-    }	
+      }, 30);		
+    }
   }	
 
   clearTag = value => {	
@@ -963,11 +863,11 @@ class RouteDetailsScreen extends Component {
       const actions = [];	
 
       if (index != 0) {	
-        options.push('Shift Left');	
+        options.push('Move Left');	
         actions.push(() => this.onSwapPins(index-1, index));	
       }	
       if (index != this.props.pins.length - 1) {	
-        options.push('Shift Right');	
+        options.push('Move Right');	
         actions.push(() => this.onSwapPins(index, index+1));	
       }	
 
@@ -1000,7 +900,7 @@ class RouteDetailsScreen extends Component {
             <TouchableOpacity onPress={this.onBack} style={{marginRight: 5}}>
               <Icon name='keyboard-arrow-left' size={45} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={this.onBack}>
+            <TouchableOpacity>
               <View style={{borderRadius: 4, padding: 5, backgroundColor: this.state.loading ? ACCENT : 'rgba(0,0,0,0.4)', flexDirection: 'row', alignItems: 'center'}}>
                 <Icon name='autorenew' size={15} color='white' style={{marginRight: 5}} />
                 <Text style={{fontSize: 12, color: 'white'}}>{this.state.loading ? 'Saving...' : 'Saved'}</Text>
@@ -1139,20 +1039,14 @@ const mapDispatchToProps = dispatch => {
     removePin: index => dispatch({type: 'REMOVE_PIN', payload: {	
       indexToRemove: index	
     }}),	
-    swapPins: (pins, indices) => dispatch({type: 'SWAP_PINS', payload: {	
-      pins: pins,	
-      indices: indices	
+    setPins: pins => dispatch({type: 'SET_PINS', payload: {	
+      pins: pins
     }}),	
-    editRouteName: name => dispatch({type: 'EDIT_ROUTE_NAME', payload: {name: name}}),	
+    editRouteName: name => dispatch({type: 'SET_ROUTE_NAME', payload: {name: name}}),	
     viewDetail: index => dispatch({type: 'VIEW_PLACE_DETAIL', payload: {	
       selectedIndex: index	
-    }}),	
-    updatePin: (index, data) => dispatch({type: 'UPDATE_PIN', payload: {	
-      index: index,	
-      data: data	
-    }}),	
-    clear: () => dispatch({type: 'CLEAR'}),	
-    toggleRefresh: () => dispatch({type: 'TOGGLE_REFRESH'})	
+    }}),		
+    clear: () => dispatch({type: 'CLEAR'}),
   };	
 }	
 

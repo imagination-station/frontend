@@ -199,7 +199,7 @@ class CollectionsScreen extends Component {
   componentDidUpdate() {
     if (this.props.refresh) {
       this.fetchRoutes();
-      this.props.toggleRefresh();
+      this.props.clearRefresh();
     }
   }
 
@@ -311,7 +311,9 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
   return {
-    toggleRefresh: () => dispatch({type: 'TOGGLE_REFRESH'}),
+    clearRefresh: () => dispatch({type: 'SET_REFRESH', payload: {
+      refresh: false
+    }}),
     loadRoute: route => dispatch({type: 'LOAD_ROUTE', payload: {
       route: route,
     }})
