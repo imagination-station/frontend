@@ -62,7 +62,8 @@ const styles = StyleSheet.create({
 const photoRemoverStyles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center'
+    alignItems: 'center',
+    marginTop: 30
   },
   image: {
     width: IMG_SIZE,
@@ -83,15 +84,7 @@ class PhotoRemover extends Component {
   }
 
   state = {
-    selected: new Set(),
-    photoRefs: this.props.selectedBuf.properties.photoRefs
-  }
-
-  componentDidMount() {
-    this.props.navigation.setParams({
-      disabled: this.state.selected.size == 0,
-      onDelete: this.onDelete
-    });
+    selected: new Set()
   }
 
   onTogglePhoto = item => {
@@ -104,25 +97,48 @@ class PhotoRemover extends Component {
     }
 
     this.setState({selected: updatedSelected});
-    this.props.navigation.setParams({disabled: updatedSelected.size == 0});
   }
 
   onDelete = () => {
-    this.setState({
-      photoRefs: this.state.photoRefs.filter(item => !this.state.selected.has(item)),
-      selected: new Set()
-    }, () => {
-      this.props.updatePin({photoRefs: this.state.photoRefs});
-      this.props.navigation.setParams({disabled: true});
-    });
+    let refs = this.props.selectedBuf.properties.photoRefs;
+    let pinData = {photoRefs: refs.filter(item => !this.state.selected.has(item))};
+
+    firebase.auth().currentUser.getIdToken()
+      .then(token =>	
+        fetch(`${TEST_SERVER_ADDR}/api/pins/${this.props.selectedBuf._id}`, {	
+            method: 'PUT',	
+            headers: {	
+              Accept: 'application/json',	
+              'Content-type': 'application/json',	
+              Authorization: `Bearer ${token}`	
+            },	
+            body: JSON.stringify(pinData)
+        })	
+      )
+      .then(response => {
+        this.props.updatePin(pinData);
+        this.setState({selected: new Set()});
+      })
+      .catch(error => console.error(error));
   }
 
   render() {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => this.props.navigation.goBack()} style={{marginRight: 5}}>
+            <Icon name='keyboard-arrow-left' size={45} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            disabled={this.state.selected.size == 0}
+            onPress={this.onDelete}
+          >
+            <Icon name='delete-forever' size={30} color={this.state.selected.size == 0 ? GREY : 'red'} />
+          </TouchableOpacity>
+        </View>
         <View style={photoRemoverStyles.container}>
           <FlatList
-            data={this.state.photoRefs}
+            data={this.props.selectedBuf.properties.photoRefs}
             numColumns={2}
             renderItem={({ item }) =>
               <SelectedImage
@@ -165,51 +181,64 @@ class PlaceEditor extends Component {
     header: null
   };
 
-  componentDidMount() {
-    this.props.navigation.setParams({onSave: this.onSave});
-  }
-
-  onSave = () => {
-    // if updating existing pin...
-    if (this.props.selectedBuf._id) {
-      firebase.auth().currentUser.getIdToken().then(token =>
-        fetch(`${TEST_SERVER_ADDR}/api/users/${firebase.auth().currentUser.uid}/pins/${this.props.selectedBuf._id}`, {
-          method: 'PUT',
-          headers: {
-            Accept: 'application/json',
-            'Content-type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify(this.props.selectedBuf)
-        })
-      ) 
-        .then(response => {
-          this.props.commitPin();
-          this.props.navigation.goBack();
-        })
-        .catch(error => console.error(error));
-    } else {
-      this.props.commitPin();
-      this.props.navigation.goBack();
-    }
-  }
-
-  onEditTitle = () => {
+  onPressEditTitle = () => {
     this.props.navigation.navigate('TextEditor', {
       initialText: this.props.selectedBuf.properties.mainText,
       maxLength: 280,
       placeholder: 'New title',
-      onDone: text => this.props.updatePin({mainText: text}),
+      onDone: this.onEditTitle
     });
   }
 
-  onEditNote = () => {
+  onEditTitle = text => {
+    let pinData = {mainText: text};
+
+    firebase.auth().currentUser.getIdToken()
+      .then(token =>	
+        fetch(`${TEST_SERVER_ADDR}/api/pins/${this.props.selectedBuf._id}`, {	
+            method: 'PUT',	
+            headers: {	
+              Accept: 'application/json',	
+              'Content-type': 'application/json',	
+              Authorization: `Bearer ${token}`	
+            },	
+            body: JSON.stringify(pinData)
+        })	
+      )
+      .then(response => {
+        this.props.updatePin(pinData);
+      })
+      .catch(error => console.error(error));	
+  }
+
+  onPressEditNote = () => {
     this.props.navigation.navigate('TextEditor', {
       initialText: this.props.selectedBuf.properties.note,
       maxLength: 280,
       placeholder: 'New note',
-      onDone: text => this.props.updatePin({note: text})
+      onDone: this.onEditNote
     });
+  }
+
+  onEditNote = text => {
+    let pinData = {note: text};
+
+    firebase.auth().currentUser.getIdToken()
+      .then(token =>	
+        fetch(`${TEST_SERVER_ADDR}/api/pins/${this.props.selectedBuf._id}`, {	
+            method: 'PUT',	
+            headers: {	
+              Accept: 'application/json',	
+              'Content-type': 'application/json',	
+              Authorization: `Bearer ${token}`	
+            },	
+            body: JSON.stringify(pinData)
+        })	
+      )
+      .then(response => {
+        this.props.updatePin(pinData);
+      })
+      .catch(error => console.error(error));
   }
 
   render() {
@@ -233,7 +262,7 @@ class PlaceEditor extends Component {
               {this.props.selectedBuf.properties.mainText}
             </Text>
           </View>
-          <TouchableOpacity onPress={this.onEditTitle}>
+          <TouchableOpacity onPress={this.onPressEditTitle}>
             <Icon name='edit' size={30} />
           </TouchableOpacity>
         </View>
@@ -248,7 +277,7 @@ class PlaceEditor extends Component {
               {this.props.selectedBuf.properties.note}
             </Text>
           </View>
-          <TouchableOpacity onPress={this.onEditNote}>
+          <TouchableOpacity onPress={this.onPressEditNote}>
             <Icon name='edit' size={30}/>
           </TouchableOpacity>
         </View>
@@ -290,6 +319,7 @@ class PlaceEditor extends Component {
 
 const mapStateToProps = state => {
   return {
+    user: state.user,
     pins: state.pins,
     selected: state.selected,
     selectedBuf: state.selectedBuf
@@ -298,10 +328,9 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
   return {
-    updatePin: data => dispatch({type: 'UPDATE_PIN', payload: {
+    updatePin: data => dispatch({type: 'UPDATE_SELECTED', payload: {
       data: data
-    }}),
-    commitPin: () => dispatch({type: 'COMMIT_PIN'})
+    }})
   };
 }
 

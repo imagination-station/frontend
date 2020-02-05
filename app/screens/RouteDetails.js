@@ -544,12 +544,18 @@ class RouteDetailsScreen extends Component {
     this.willBlur = this.props.navigation.addListener('willBlur', payload =>	
       BackHandler.removeEventListener('hardwareBackPress', this.onBack)	
     );	
+
+    // listener for friend requests & set requests number
+    firebase.database().ref(`/users/${this.props.user._id}/${this.props._id}`).on('child_changed', snapshot => {
+      this.props.setLastModified(snapshot.val());
+    });
   }	
 
   componentWillUnmount() {	
     this.props.clear();	
     this.didFocus.remove();	
     this.willBlur.remove();	
+    firebase.database().ref(`/users/${this.props.user._id}/${this.props._id}`).off();
   }	
 
   onBack = () => {	
@@ -879,7 +885,7 @@ class RouteDetailsScreen extends Component {
           key={pin.properties.placeId}	
           pin={pin}	
           onPress={() => {	
-            this.props.viewDetail(index);	
+            this.props.viewDetails(index);	
             this.props.navigation.navigate('PlaceDetails');	
           }}	
           index={index}	
@@ -903,7 +909,7 @@ class RouteDetailsScreen extends Component {
             <TouchableOpacity>
               <View style={{borderRadius: 4, padding: 5, backgroundColor: this.state.loading ? ACCENT : 'rgba(0,0,0,0.4)', flexDirection: 'row', alignItems: 'center'}}>
                 <Icon name='autorenew' size={15} color='white' style={{marginRight: 5}} />
-                <Text style={{fontSize: 12, color: 'white'}}>{this.state.loading ? 'Saving...' : 'Saved'}</Text>
+                <Text style={{fontSize: 12, color: 'white'}}>{this.state.loading ? 'Saving...' : '' + this.props.lastModified}</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -1027,7 +1033,8 @@ const mapStateToProps = state => {
     pins: state.pins,	
     tags: state.tags,	
     _id: state._id,
-    collaborators: state.collaborators	
+    collaborators: state.collaborators,
+    lastModified: state.lastModified
   };	
 }	
 
@@ -1043,10 +1050,15 @@ const mapDispatchToProps = dispatch => {
       pins: pins
     }}),	
     editRouteName: name => dispatch({type: 'SET_ROUTE_NAME', payload: {name: name}}),	
-    viewDetail: index => dispatch({type: 'VIEW_PLACE_DETAIL', payload: {	
+    viewDetails: index => dispatch({type: 'VIEW_PLACE_DETAILS', payload: {	
       selectedIndex: index	
     }}),		
     clear: () => dispatch({type: 'CLEAR'}),
+    setLastModified: lastModified => {
+      dispatch({type: 'SET_LAST_MODIFIED', payload: {
+        lastModified: lastModified
+      }});
+    }
   };	
 }	
 

@@ -12,6 +12,7 @@ const INITIAL_STATE = {
   _id: null,
   collaborators: null,
   collaboratorsSet: null,
+  lastModified: null,
   // for selecting & editing place
   selected: null,
   selectedBuf: null, // buffer to save intermediate changes
@@ -112,10 +113,8 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         collaborators: collaborators,
         collaboratorsSet: collaboratorsSet
       };
-    case 'VIEW_PLACE_DETAIL':
+    case 'VIEW_PLACE_DETAILS':
       let selectedBuf = {...state.pins[action.payload.selectedIndex]};
-      selectedBuf.properties = {...selectedBuf.properties};
-      selectedBuf.properties.photoRefs = [...selectedBuf.properties.photoRefs];
 
       return {
         ...state,
@@ -133,7 +132,8 @@ const routeReducer = (state = INITIAL_STATE, action) => {
 
       return {
         ...state,
-        selectedBuf: updatedPin  
+        selectedBuf: updatedPin,
+        refresh: true 
       };
     case 'COMMIT_PIN':
       updatedPins = [...state.pins];
@@ -154,12 +154,18 @@ const routeReducer = (state = INITIAL_STATE, action) => {
         tags: null,
         _id: null,
         collaborators: null,
-        collaboratorsSet: null
+        collaboratorsSet: null,
+        lastModified: null
       };
     case 'SET_REFRESH':
       return {
         ...state,
         refresh: action.payload.refresh
+      };
+    case 'SET_LAST_MODIFIED':
+      return {
+        ...state,
+        lastModified: action.payload.lastModified 
       };
     default:
       return state;

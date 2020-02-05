@@ -71,6 +71,12 @@ class SplashScreen extends Component {
             .catch(error => console.error(error));	
         });
 
+        firebase.database().ref(`/users/${user.uid}`).on('value', snapshot => {
+          let val = snapshot.val();
+          console.log(val);
+          // TODO: update based on changes
+        });
+
         firebase.auth().currentUser.getIdToken()
           .then(token =>
             fetch(`${TEST_SERVER_ADDR}/api/me`, {
@@ -108,6 +114,21 @@ class SplashScreen extends Component {
   }
 }
 
+const mapStateToProps = state => {	
+  return {	
+    selected: state.selected,	
+    user: state.user,	
+    // flattened route	
+    name: state.name,	
+    creator: state.creator,	
+    city: state.city,	
+    pins: state.pins,	
+    tags: state.tags,	
+    _id: state._id,
+    collaborators: state.collaborators	
+  };	
+}
+
 const mapDispatchToProps = dispatch => {
   return {
     setUser: user => {
@@ -124,8 +145,13 @@ const mapDispatchToProps = dispatch => {
       dispatch({type: 'SET_FRIENDS', payload: {
         friends: friends
       }});
+    },
+    setRefresh: () => {
+      dispatch({type: 'SET_REFRESH', payload: {
+        refresh: true
+      }});
     }
   };
 }
 
-export default connect(null, mapDispatchToProps)(SplashScreen);
+export default connect(mapStateToProps, mapDispatchToProps)(SplashScreen);
